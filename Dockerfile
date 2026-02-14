@@ -29,7 +29,7 @@ RUN flutter build web --release --web-renderer canvaskit
 # ---------------------------------------------------------------------------
 # Production stage
 # ---------------------------------------------------------------------------
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.29-alpine AS production
 
 # Remove default nginx content
 RUN rm -rf /usr/share/nginx/html/*
