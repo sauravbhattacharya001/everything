@@ -65,7 +65,7 @@ lib/
 
 ### **2. Clone the Repository**
 Clone the repository to your local machine:
-git clone https://github.com/sauravbhattacharya/everything.git
+git clone https://github.com/sauravbhattacharya001/everything.git
 cd everything
 
 ---
