@@ -26,4 +26,32 @@ class EventModel {
       'date': date.toIso8601String(),
     };
   }
+
+  /// Creates a copy of this event with the given fields replaced.
+  EventModel copyWith({
+    String? id,
+    String? title,
+    DateTime? date,
+  }) {
+    return EventModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      date: date ?? this.date,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EventModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          title == other.title &&
+          date == other.date;
+
+  @override
+  int get hashCode => Object.hash(id, title, date);
+
+  @override
+  String toString() => 'EventModel(id: $id, title: $title, date: $date)';
 }
