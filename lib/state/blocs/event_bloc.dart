@@ -24,13 +24,18 @@ class EventBloc extends Cubit<EventState> {
     emit(EventLoaded(events));
   }
 
-  void addEvent(EventModel event, List<EventModel> existingEvents) {
-    final updatedEvents = [...existingEvents, event];
-    emit(EventLoaded(updatedEvents));
+  void addEvent(EventModel event) {
+    final current = state;
+    if (current is EventLoaded) {
+      emit(EventLoaded([...current.events, event]));
+    }
   }
 
-  void removeEvent(String id, List<EventModel> existingEvents) {
-    final updatedEvents = existingEvents.where((e) => e.id != id).toList();
-    emit(EventLoaded(updatedEvents));
+  void removeEvent(String id) {
+    final current = state;
+    if (current is EventLoaded) {
+      final updated = current.events.where((e) => e.id != id).toList();
+      emit(EventLoaded(updated));
+    }
   }
 }
