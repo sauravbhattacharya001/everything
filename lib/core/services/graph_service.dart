@@ -24,9 +24,14 @@ class GraphService {
     int page = 0;
 
     while (nextUrl != null && page < _maxPages) {
-      final response = await HttpUtils.getRequest(nextUrl, headers: {
-        'Authorization': 'Bearer $accessToken',
-      });
+      // Use requireTrustedHost for pagination links to prevent SSRF —
+      // a malicious API response could set @odata.nextLink to an internal
+      // service URL (e.g., cloud metadata endpoint).
+      final response = await HttpUtils.getRequest(
+        nextUrl,
+        headers: {'Authorization': 'Bearer $accessToken'},
+        requireTrustedHost: page > 0, // First request is our own URL; subsequent are from API
+      );
 
       // Validate response structure — the Graph API returns errors as
       // { "error": { "code": "...", "message": "..." } } rather than

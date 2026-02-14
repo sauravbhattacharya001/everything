@@ -67,8 +67,26 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
+      // Don't expose internal error details to the user — they could
+      // leak stack traces, service names, or auth provider details.
+      String userMessage;
+      if (e is AuthException) {
+        switch (e.code) {
+          case 'user-not-found':
+          case 'wrong-password':
+            userMessage = 'Invalid email or password';
+            break;
+          case 'invalid-email':
+            userMessage = 'Invalid email format';
+            break;
+          default:
+            userMessage = 'Login failed. Please try again.';
+        }
+      } else {
+        userMessage = 'Login failed. Please try again.';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
+        SnackBar(content: Text(userMessage)),
       );
     } finally {
       if (mounted) {
