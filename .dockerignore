@@ -1,0 +1,33 @@
+# Build artifacts
+build/
+.dart_tool/
+.packages
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+docs/
+README.md
+LICENSE
+CHANGELOG.md
+
+# CI/CD
+.github/
+
+# Test files
+test/
+integration_test/
+
+# Analysis
+analysis_options.yaml
