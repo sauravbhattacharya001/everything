@@ -1,0 +1,34 @@
+# Copilot Setup Steps
+# Installs dependencies and builds the project so GitHub Copilot coding agents
+# (Claude, Codex, etc.) can autonomously work on issues and PRs.
+
+name: Copilot Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run static analysis
+        run: flutter analyze --no-pub --fatal-infos
+
+      - name: Run tests
+        run: flutter test --reporter expanded
+
+      - name: Build web (verify compilation)
+        run: flutter build web --release --web-renderer canvaskit
