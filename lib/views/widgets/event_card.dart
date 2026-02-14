@@ -12,7 +12,9 @@ class EventCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: ListTile(
         title: Text(event.title),
-        subtitle: Text(event.date),
+        subtitle: Text(
+          '${event.date.year}-${event.date.month.toString().padLeft(2, '0')}-${event.date.day.toString().padLeft(2, '0')}',
+        ),
       ),
     );
   }

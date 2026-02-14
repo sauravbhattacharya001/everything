@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
             EventModel(
               id: DateTime.now().toString(),
               title: 'New Event',
-              date: '2025-01-18 10:00 AM',
+              date: DateTime.now(),
             ),
           );
         },

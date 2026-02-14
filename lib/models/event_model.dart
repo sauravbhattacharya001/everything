@@ -1,7 +1,7 @@
 class EventModel {
   final String id;
   final String title;
-  final String date;
+  final DateTime date;
 
   EventModel({
     required this.id,
@@ -12,9 +12,9 @@ class EventModel {
   // Factory method to create an EventModel from JSON
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
-      id: json['id'],
-      title: json['title'],
-      date: json['date'],
+      id: json['id'] as String,
+      title: json['title'] as String,
+      date: DateTime.parse(json['date'] as String),
     );
   }
 
@@ -23,7 +23,7 @@ class EventModel {
     return {
       'id': id,
       'title': title,
-      'date': date,
+      'date': date.toIso8601String(),
     };
   }
 }
