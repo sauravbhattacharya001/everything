@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/auth_service.dart';
+import '../../models/user_model.dart';
 import '../../state/providers/user_provider.dart';
 import '../home/home_screen.dart';
 
@@ -11,6 +13,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -23,8 +27,10 @@ class _LoginScreenState extends State<LoginScreen> {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  void _login(BuildContext context) {
+  Future<void> _login(BuildContext context) async {
     final email = emailController.text.trim();
+    final password = passwordController.text;
+
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your email')),
@@ -37,15 +43,38 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your password')),
+      );
+      return;
+    }
 
-    // Set user in UserProvider using the entered email
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    userProvider.setUser(
-      UserModel(id: '1', name: email.split('@').first, email: email),
-    );
+    setState(() => _isLoading = true);
 
-    // Navigate to HomeScreen
-    Navigator.pushReplacementNamed(context, '/home');
+    try {
+      final firebaseUser = await _authService.loginWithEmail(email, password);
+      if (firebaseUser != null) {
+        final userProvider =
+            Provider.of<UserProvider>(context, listen: false);
+        userProvider.setUser(
+          UserModel(
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName ?? email.split('@').first,
+            email: firebaseUser.email ?? email,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -68,8 +97,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => _login(context),
-              child: const Text('Login'),
+              onPressed: _isLoading ? null : () => _login(context),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Login'),
             ),
           ],
         ),
