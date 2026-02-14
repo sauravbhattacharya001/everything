@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'state/providers/user_provider.dart';
 import 'state/providers/event_provider.dart';
 import 'views/home/home_screen.dart';
 import 'views/login/login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+    // Continue — non-Firebase features still work, auth will fail gracefully.
+  }
   runApp(MyApp());
 }
 
