@@ -14,10 +14,12 @@ void main() async {
     debugPrint('Firebase initialization failed: $e');
     // Continue — non-Firebase features still work, auth will fail gracefully.
   }
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

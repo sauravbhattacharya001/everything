@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../../state/providers/user_provider.dart';
-import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

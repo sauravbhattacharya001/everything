@@ -1,8 +1,21 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+/// Singleton SQLite database manager for local persistence.
+///
+/// Provides a shared [Database] instance via the [database] getter,
+/// which lazily initializes the database on first access. The database
+/// contains two tables:
+///
+/// - `users` — id (TEXT PK), name (TEXT), email (TEXT)
+/// - `events` — id (TEXT PK), title (TEXT), date (TEXT)
+///
+/// All operations use parameterized queries to prevent SQL injection.
 class LocalStorage {
   static Database? _db;
+
+  // Prevent instantiation — all methods are static.
+  LocalStorage._();
 
   /// Returns the cached database instance, creating it on first access.
   static Future<Database> get database async {
@@ -12,7 +25,7 @@ class LocalStorage {
   }
 
   static Future<Database> _initializeDB() async {
-    String path = await getDatabasesPath();
+    final path = await getDatabasesPath();
     return openDatabase(
       join(path, 'app_database.db'),
       onCreate: (db, version) async {
@@ -39,22 +52,32 @@ class LocalStorage {
     );
   }
 
+  /// Inserts or replaces a row in [table].
+  ///
+  /// Uses [ConflictAlgorithm.replace] so upserting is automatic.
   static Future<void> insert(String table, Map<String, dynamic> data) async {
     final db = await database;
     await db.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  /// Returns all rows from [table] as a list of JSON-compatible maps.
   static Future<List<Map<String, dynamic>>> getAll(String table) async {
     final db = await database;
     return db.query(table);
   }
 
+  /// Deletes the row with the given [id] from [table].
+  ///
+  /// Uses parameterized queries (`whereArgs`) to prevent SQL injection.
   static Future<void> delete(String table, String id) async {
     final db = await database;
     await db.delete(table, where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Closes the database connection. Call during app shutdown if needed.
+  /// Closes the database connection and clears the cached instance.
+  ///
+  /// After calling this, the next access to [database] will re-open
+  /// the connection. Call during app shutdown or testing teardown.
   static Future<void> close() async {
     if (_db != null) {
       await _db!.close();
