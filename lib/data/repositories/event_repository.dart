@@ -32,4 +32,12 @@ class EventRepository {
   Future<void> deleteEvent(String id) async {
     await LocalStorage.delete('events', id);
   }
+
+  /// Updates an existing event in local storage.
+  ///
+  /// Uses insert with replace conflict algorithm, so this effectively
+  /// upserts the event data.
+  Future<void> updateEvent(Map<String, dynamic> event) async {
+    await LocalStorage.insert('events', event);
+  }
 }

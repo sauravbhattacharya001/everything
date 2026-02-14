@@ -43,12 +43,23 @@ class LocalStorage {
           CREATE TABLE events(
             id TEXT PRIMARY KEY,
             title TEXT,
-            date TEXT
+            description TEXT DEFAULT '',
+            date TEXT,
+            priority TEXT DEFAULT 'medium'
           )
           ''',
         );
       },
-      version: 1,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Add new columns for existing databases
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN description TEXT DEFAULT ''");
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN priority TEXT DEFAULT 'medium'");
+        }
+      },
+      version: 2,
     );
   }
 

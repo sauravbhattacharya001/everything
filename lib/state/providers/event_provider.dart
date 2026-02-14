@@ -61,6 +61,17 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replaces the event with the same [id] as [updatedEvent].
+  ///
+  /// No-op if no event with that ID exists.
+  void updateEvent(EventModel updatedEvent) {
+    final index = _events.indexWhere((e) => e.id == updatedEvent.id);
+    if (index != -1) {
+      _events[index] = updatedEvent;
+      notifyListeners();
+    }
+  }
+
   /// Removes all events from the list.
   void clearEvents() {
     _events.clear();

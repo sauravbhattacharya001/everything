@@ -7,7 +7,9 @@ void main() {
     final sampleJson = {
       'id': 'evt-001',
       'title': 'Team Standup',
+      'description': 'Daily sync meeting',
       'date': '2026-02-14T10:30:00.000',
+      'priority': 'high',
     };
 
     group('fromJson', () {
@@ -16,11 +18,24 @@ void main() {
 
         expect(event.id, 'evt-001');
         expect(event.title, 'Team Standup');
+        expect(event.description, 'Daily sync meeting');
+        expect(event.priority, EventPriority.high);
         expect(event.date.year, 2026);
         expect(event.date.month, 2);
         expect(event.date.day, 14);
         expect(event.date.hour, 10);
         expect(event.date.minute, 30);
+      });
+
+      test('defaults description and priority when missing', () {
+        final json = {
+          'id': '1',
+          'title': 'Test',
+          'date': '2026-01-01T00:00:00.000',
+        };
+        final event = EventModel.fromJson(json);
+        expect(event.description, '');
+        expect(event.priority, EventPriority.medium);
       });
 
       test('throws on missing id field', () {
@@ -61,23 +76,38 @@ void main() {
 
     group('toJson', () {
       test('converts EventModel to JSON map', () {
-        final event = EventModel(id: 'evt-001', title: 'Standup', date: sampleDate);
+        final event = EventModel(
+          id: 'evt-001',
+          title: 'Standup',
+          description: 'Team sync',
+          date: sampleDate,
+          priority: EventPriority.urgent,
+        );
         final json = event.toJson();
 
         expect(json['id'], 'evt-001');
         expect(json['title'], 'Standup');
+        expect(json['description'], 'Team sync');
+        expect(json['priority'], 'urgent');
         expect(json['date'], isA<String>());
-        // Verify the date round-trips
         expect(DateTime.parse(json['date'] as String), sampleDate);
       });
 
       test('toJson/fromJson round-trip preserves data', () {
-        final original = EventModel(id: 'rt-1', title: 'Round Trip', date: sampleDate);
+        final original = EventModel(
+          id: 'rt-1',
+          title: 'Round Trip',
+          description: 'Full round trip test',
+          date: sampleDate,
+          priority: EventPriority.high,
+        );
         final restored = EventModel.fromJson(original.toJson());
 
         expect(restored.id, original.id);
         expect(restored.title, original.title);
+        expect(restored.description, original.description);
         expect(restored.date, original.date);
+        expect(restored.priority, original.priority);
       });
     });
 
@@ -99,12 +129,18 @@ void main() {
         expect(copy.date, sampleDate);
       });
 
-      test('copies with changed id', () {
+      test('copies with changed description', () {
         final event = EventModel(id: '1', title: 'Test', date: sampleDate);
-        final copy = event.copyWith(id: '2');
+        final copy = event.copyWith(description: 'New desc');
 
-        expect(copy.id, '2');
-        expect(copy.title, 'Test');
+        expect(copy.description, 'New desc');
+      });
+
+      test('copies with changed priority', () {
+        final event = EventModel(id: '1', title: 'Test', date: sampleDate);
+        final copy = event.copyWith(priority: EventPriority.urgent);
+
+        expect(copy.priority, EventPriority.urgent);
       });
 
       test('copies with changed date', () {
@@ -140,6 +176,13 @@ void main() {
         expect(a, isNot(b));
       });
 
+      test('different priority means not equal', () {
+        final a = EventModel(id: '1', title: 'A', date: sampleDate, priority: EventPriority.low);
+        final b = EventModel(id: '1', title: 'A', date: sampleDate, priority: EventPriority.high);
+
+        expect(a, isNot(b));
+      });
+
       test('not equal to non-EventModel', () {
         final event = EventModel(id: '1', title: 'Test', date: sampleDate);
         // ignore: unrelated_type_equality_checks
@@ -152,6 +195,27 @@ void main() {
       });
     });
 
+    group('EventPriority', () {
+      test('fromString returns correct priority', () {
+        expect(EventPriority.fromString('low'), EventPriority.low);
+        expect(EventPriority.fromString('medium'), EventPriority.medium);
+        expect(EventPriority.fromString('high'), EventPriority.high);
+        expect(EventPriority.fromString('urgent'), EventPriority.urgent);
+      });
+
+      test('fromString defaults to medium for unknown', () {
+        expect(EventPriority.fromString('unknown'), EventPriority.medium);
+        expect(EventPriority.fromString(''), EventPriority.medium);
+      });
+
+      test('label returns human-readable string', () {
+        expect(EventPriority.low.label, 'Low');
+        expect(EventPriority.medium.label, 'Medium');
+        expect(EventPriority.high.label, 'High');
+        expect(EventPriority.urgent.label, 'Urgent');
+      });
+    });
+
     group('toString', () {
       test('returns descriptive string', () {
         final event = EventModel(id: '1', title: 'Test', date: sampleDate);
@@ -160,6 +224,7 @@ void main() {
         expect(str, contains('EventModel'));
         expect(str, contains('1'));
         expect(str, contains('Test'));
+        expect(str, contains('Medium'));
       });
     });
   });

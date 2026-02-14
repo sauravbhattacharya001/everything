@@ -4,6 +4,8 @@ import '../../data/repositories/event_repository.dart';
 import '../../state/providers/event_provider.dart';
 import '../../models/event_model.dart';
 import '../widgets/event_card.dart';
+import '../widgets/event_form_dialog.dart';
+import 'event_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -41,19 +43,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addEvent() async {
-    final eventProvider = Provider.of<EventProvider>(context, listen: false);
-    final event = EventModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: 'New Event',
-      date: DateTime.now(),
-    );
-    eventProvider.addEvent(event);
-    // Persist to local storage so events survive app restart
-    try {
-      await _eventRepository.saveEvent(event.toJson());
-    } catch (e) {
-      debugPrint('Failed to persist event: $e');
+    final event = await EventFormDialog.show(context);
+    if (event != null && mounted) {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      eventProvider.addEvent(event);
+      try {
+        await _eventRepository.saveEvent(event.toJson());
+      } catch (e) {
+        debugPrint('Failed to persist event: $e');
+      }
     }
+  }
+
+  Future<void> _editEvent(EventModel event) async {
+    final edited = await EventFormDialog.show(context, event: event);
+    if (edited != null && mounted) {
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      eventProvider.updateEvent(edited);
+      try {
+        await _eventRepository.updateEvent(edited.toJson());
+      } catch (e) {
+        debugPrint('Failed to persist edited event: $e');
+      }
+    }
+  }
+
+  void _viewEventDetail(EventModel event) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EventDetailScreen(event: event),
+      ),
+    );
   }
 
   @override
@@ -61,22 +81,43 @@ class _HomeScreenState extends State<HomeScreen> {
     final eventProvider = Provider.of<EventProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
+      appBar: AppBar(
+        title: const Text('My Events'),
+        elevation: 0,
+      ),
       body: eventProvider.events.isEmpty
-          ? const Center(
-              child: Text(
-                'No events yet.\nTap + to add one.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No events yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap + to create your first event',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                ],
               ),
             )
           : ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 80),
               itemCount: eventProvider.events.length,
               itemBuilder: (context, index) {
+                final event = eventProvider.events[index];
                 return EventCard(
-                  event: eventProvider.events[index],
+                  event: event,
+                  onTap: () => _viewEventDetail(event),
+                  onEdit: () => _editEvent(event),
                   onDelete: () async {
-                    final event = eventProvider.events[index];
                     eventProvider.removeEvent(event.id);
                     try {
                       await _eventRepository.deleteEvent(event.id);
@@ -87,9 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _addEvent,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New Event'),
       ),
     );
   }

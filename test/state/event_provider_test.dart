@@ -138,5 +138,51 @@ void main() {
         expect(notified, isTrue);
       });
     });
+
+    group('updateEvent', () {
+      test('updates existing event by id', () {
+        provider.addEvent(event1);
+        final updated = event1.copyWith(title: 'Updated Meeting');
+        provider.updateEvent(updated);
+
+        expect(provider.events.length, 1);
+        expect(provider.events.first.title, 'Updated Meeting');
+      });
+
+      test('no-op when id not found', () {
+        provider.addEvent(event1);
+        final stranger = EventModel(
+          id: 'unknown',
+          title: 'Ghost',
+          date: DateTime(2026, 1, 1),
+        );
+        provider.updateEvent(stranger);
+
+        expect(provider.events.length, 1);
+        expect(provider.events.first.title, 'Meeting');
+      });
+
+      test('notifies listeners on update', () {
+        provider.addEvent(event1);
+        var notified = false;
+        provider.addListener(() => notified = true);
+
+        provider.updateEvent(event1.copyWith(title: 'Changed'));
+
+        expect(notified, isTrue);
+      });
+
+      test('updates description and priority', () {
+        provider.addEvent(event1);
+        final updated = event1.copyWith(
+          description: 'Important',
+          priority: EventPriority.urgent,
+        );
+        provider.updateEvent(updated);
+
+        expect(provider.events.first.description, 'Important');
+        expect(provider.events.first.priority, EventPriority.urgent);
+      });
+    });
   });
 }
