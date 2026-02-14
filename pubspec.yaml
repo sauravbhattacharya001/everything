@@ -1,0 +1,26 @@
+name: everything
+description: A Flutter-based productivity app for managing communications, calendars, and events.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.0
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  http: ^1.2.0
+  firebase_auth: ^4.16.0
+  firebase_core: ^2.25.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
