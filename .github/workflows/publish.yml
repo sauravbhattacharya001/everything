@@ -1,0 +1,139 @@
+# Build & Publish Flutter Artifacts
+#
+# Builds Flutter web app and Android APK when a version tag is pushed.
+# Attaches build artifacts to the GitHub Release automatically.
+#
+# Usage: git tag v1.1.0 && git push origin v1.1.0
+# This triggers a build and attaches web.zip + app-release.apk to the release.
+
+name: Build & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-web:
+    name: Build Flutter Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web release
+        run: flutter build web --release --web-renderer canvaskit
+
+      - name: Package web build
+        run: |
+          cd build/web
+          zip -r ../../everything-web-${{ github.ref_name }}.zip .
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: everything-web-${{ github.ref_name }}.zip
+          retention-days: 30
+
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-build
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
+
+  publish-release:
+    name: Publish Release
+    needs: [build-web, build-apk]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-build
+          path: apk-artifacts/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | head -2 | tail -1)
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "${{ github.ref_name }}" ]; then
+            echo "body=Initial release" >> $GITHUB_OUTPUT
+          else
+            CHANGES=$(git log ${PREV_TAG}..${{ github.ref_name }} --pretty=format:"- %s (%h)" --no-merges)
+            if [ -z "$CHANGES" ]; then
+              CHANGES="- Bug fixes and improvements"
+            fi
+            # Write multiline output
+            echo "body<<EOF" >> $GITHUB_OUTPUT
+            echo "## What's Changed" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "$CHANGES" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "## Artifacts" >> $GITHUB_OUTPUT
+            echo "- **Web**: Download \`everything-web-${{ github.ref_name }}.zip\`, extract, and serve with any static file server" >> $GITHUB_OUTPUT
+            echo "- **Android**: Download the APK for your architecture (arm64-v8a recommended for modern devices)" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.body }}
+          files: |
+            everything-web-${{ github.ref_name }}.zip
+            apk-artifacts/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

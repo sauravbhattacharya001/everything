@@ -9,9 +9,9 @@ name: Security Analysis
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
   schedule:
     # Run weekly on Mondays at 06:00 UTC
     - cron: '0 6 * * 1'
