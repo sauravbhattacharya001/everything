@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../data/repositories/event_repository.dart';
+import '../../core/services/event_service.dart';
 import '../../models/event_model.dart';
 import '../../state/providers/event_provider.dart';
 import '../widgets/event_form_dialog.dart';
@@ -10,11 +10,19 @@ import '../widgets/event_form_dialog.dart';
 ///
 /// Displays the event's title, description, date/time, and priority
 /// with a colored header. Provides edit and delete actions.
+///
+/// Receives an [EventService] from the parent screen to ensure all
+/// mutations go through a single coordinated service layer rather
+/// than creating separate [EventRepository] instances.
 class EventDetailScreen extends StatelessWidget {
   final EventModel event;
-  final EventRepository _eventRepository = EventRepository();
+  final EventService eventService;
 
-  EventDetailScreen({required this.event, Key? key}) : super(key: key);
+  const EventDetailScreen({
+    required this.event,
+    required this.eventService,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -266,13 +274,7 @@ class EventDetailScreen extends StatelessWidget {
   Future<void> _editEvent(BuildContext context, EventModel event) async {
     final edited = await EventFormDialog.show(context, event: event);
     if (edited != null && context.mounted) {
-      final provider = Provider.of<EventProvider>(context, listen: false);
-      provider.updateEvent(edited);
-      try {
-        await _eventRepository.updateEvent(edited.toJson());
-      } catch (e) {
-        debugPrint('Failed to persist edited event: $e');
-      }
+      await eventService.updateEvent(edited);
     }
   }
 
@@ -297,13 +299,7 @@ class EventDetailScreen extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      final provider = Provider.of<EventProvider>(context, listen: false);
-      provider.removeEvent(event.id);
-      try {
-        await _eventRepository.deleteEvent(event.id);
-      } catch (e) {
-        debugPrint('Failed to delete persisted event: $e');
-      }
+      await eventService.deleteEvent(event.id);
       Navigator.of(context).pop();
     }
   }

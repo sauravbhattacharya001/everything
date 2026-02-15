@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../data/repositories/event_repository.dart';
+import '../../core/services/event_service.dart';
 import '../../state/providers/event_provider.dart';
 import '../../models/event_model.dart';
 import '../widgets/event_card.dart';
@@ -58,7 +58,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final EventRepository _eventRepository = EventRepository();
+  late final EventService _eventService;
   bool _loaded = false;
 
   // Search & filter state
@@ -92,24 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.didChangeDependencies();
     if (!_loaded) {
       _loaded = true;
-      _loadPersistedEvents();
-    }
-  }
-
-  /// Loads events from local SQLite storage and populates the provider.
-  /// Without this, events saved via EventRepository are lost on app restart.
-  Future<void> _loadPersistedEvents() async {
-    try {
-      final rows = await _eventRepository.getEvents();
-      final events = rows.map((row) => EventModel.fromJson(row)).toList();
-      if (mounted) {
-        final provider = Provider.of<EventProvider>(context, listen: false);
-        if (provider.events.isEmpty) {
-          provider.setEvents(events);
-        }
-      }
-    } catch (e) {
-      debugPrint('Failed to load persisted events: $e');
+      _eventService = EventService(
+        provider: Provider.of<EventProvider>(context, listen: false),
+      );
+      _eventService.loadEvents();
     }
   }
 
@@ -168,33 +154,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addEvent() async {
     final event = await EventFormDialog.show(context);
     if (event != null && mounted) {
-      final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      eventProvider.addEvent(event);
-      try {
-        await _eventRepository.saveEvent(event.toJson());
-      } catch (e) {
-        debugPrint('Failed to persist event: $e');
-      }
+      await _eventService.addEvent(event);
     }
   }
 
   Future<void> _editEvent(EventModel event) async {
     final edited = await EventFormDialog.show(context, event: event);
     if (edited != null && mounted) {
-      final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      eventProvider.updateEvent(edited);
-      try {
-        await _eventRepository.updateEvent(edited.toJson());
-      } catch (e) {
-        debugPrint('Failed to persist edited event: $e');
-      }
+      await _eventService.updateEvent(edited);
     }
   }
 
   void _viewEventDetail(EventModel event) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => EventDetailScreen(event: event),
+        builder: (_) => EventDetailScreen(
+          event: event,
+          eventService: _eventService,
+        ),
       ),
     );
   }
@@ -365,15 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             event: event,
                             onTap: () => _viewEventDetail(event),
                             onEdit: () => _editEvent(event),
-                            onDelete: () async {
-                              eventProvider.removeEvent(event.id);
-                              try {
-                                await _eventRepository.deleteEvent(event.id);
-                              } catch (e) {
-                                debugPrint(
-                                    'Failed to delete persisted event: $e');
-                              }
-                            },
+                            onDelete: () => _eventService.deleteEvent(event.id),
                           );
                         },
                       ),
