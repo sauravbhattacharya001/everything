@@ -6,6 +6,7 @@ import '../../models/event_model.dart';
 import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
 import 'event_detail_screen.dart';
+import 'stats_screen.dart';
 
 /// Sort criteria for the event list.
 enum EventSortBy {
@@ -271,6 +272,16 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('My Events'),
         elevation: 0,
         actions: [
+          // Analytics button
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StatsScreen()),
+              );
+            },
+            tooltip: 'Event analytics',
+          ),
           // Sort button
           IconButton(
             icon: const Icon(Icons.sort),
