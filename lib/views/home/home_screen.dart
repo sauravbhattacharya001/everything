@@ -68,6 +68,15 @@ class _HomeScreenState extends State<HomeScreen> {
   EventSortBy _currentSort = EventSortBy.dateDesc;
   bool _showFilters = false;
 
+  // Cached filtered results to avoid re-sorting on every build.
+  // Invalidated when the event list identity, search query, filters,
+  // or sort order change.
+  List<EventModel>? _filteredCache;
+  int _cachedEventHash = 0;
+  String _cachedSearchQuery = '';
+  Set<EventPriority> _cachedPriorityFilters = {};
+  EventSortBy _cachedSort = EventSortBy.dateDesc;
+
   @override
   void initState() {
     super.initState();
@@ -100,7 +109,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// Applies search query, priority filters, and sort order to the event list.
+  ///
+  /// Results are cached and only recomputed when the event list (by hashCode),
+  /// search query, priority filters, or sort order change. This avoids an
+  /// O(n log n) sort on every frame rebuild when the user scrolls or the
+  /// widget tree rebuilds for unrelated reasons.
   List<EventModel> _getFilteredEvents(List<EventModel> events) {
+    final eventHash = Object.hashAll(events);
+    final filtersMatch = _cachedSearchQuery == _searchQuery &&
+        _cachedPriorityFilters.length == _activePriorityFilters.length &&
+        _cachedPriorityFilters.containsAll(_activePriorityFilters) &&
+        _cachedSort == _currentSort &&
+        _cachedEventHash == eventHash;
+
+    if (filtersMatch && _filteredCache != null) {
+      return _filteredCache!;
+    }
+
     var filtered = events.toList();
 
     // Apply search filter
@@ -135,6 +160,13 @@ class _HomeScreenState extends State<HomeScreen> {
           return b.title.toLowerCase().compareTo(a.title.toLowerCase());
       }
     });
+
+    // Cache results
+    _filteredCache = filtered;
+    _cachedEventHash = eventHash;
+    _cachedSearchQuery = _searchQuery;
+    _cachedPriorityFilters = Set.of(_activePriorityFilters);
+    _cachedSort = _currentSort;
 
     return filtered;
   }

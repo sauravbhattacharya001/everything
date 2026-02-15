@@ -26,12 +26,10 @@ class EventDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Watch provider to get the latest version of this event
+    // Watch provider to get the latest version of this event.
+    // Uses O(1) index lookup instead of O(n) linear scan.
     final eventProvider = Provider.of<EventProvider>(context);
-    final currentEvent = eventProvider.events.firstWhere(
-      (e) => e.id == event.id,
-      orElse: () => event,
-    );
+    final currentEvent = eventProvider.getEventById(event.id) ?? event;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
