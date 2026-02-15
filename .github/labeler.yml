@@ -1,0 +1,76 @@
+# Labels applied to PRs based on changed file paths
+# See: https://github.com/actions/labeler
+
+# Core application logic
+core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/core/**'
+
+# Data layer (repositories, local storage)
+data:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/data/**'
+
+# Models
+models:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/models/**'
+
+# State management (BLoC + Provider)
+state:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/state/**'
+
+# UI / Views
+ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/views/**'
+
+# Auth related
+auth:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/core/services/auth_service.dart'
+          - 'lib/views/login/**'
+
+# Tests
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'test/**'
+
+# CI / DevOps
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - 'Dockerfile'
+          - '.dockerignore'
+
+# Dependencies
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'pubspec.yaml'
+          - 'pubspec.lock'
+
+# Documentation
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+          - 'LICENSE'
+
+# Docker
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'Dockerfile'
+          - '.dockerignore'
+          - 'docker-compose*.yml'
