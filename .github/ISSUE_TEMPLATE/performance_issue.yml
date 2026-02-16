@@ -1,0 +1,75 @@
+name: Performance Issue
+description: Report slow performance, high memory usage, or janky animations
+title: "[Perf]: "
+labels: ["performance", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us keep Everything fast and smooth. Please provide as much detail as you can.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Performance Issue
+      description: What is slow or unresponsive?
+      placeholder: "The calendar view takes 5+ seconds to load when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce the performance problem?
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Measurements
+      description: |
+        Include any metrics you can gather:
+        - Timeline traces (from Flutter DevTools)
+        - Memory snapshots
+        - Frame rendering times
+        - Startup time measurements
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Issue Type
+      options:
+        - Slow startup
+        - Janky scrolling / animations
+        - High memory usage
+        - Excessive battery drain
+        - Slow data loading
+        - UI freeze / ANR
+        - Other
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter Version
+      placeholder: "e.g. Flutter 3.19.0"
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+        - macOS
+        - Windows
+        - Linux
+
+  - type: input
+    id: device
+    attributes:
+      label: Device / Emulator
+      placeholder: "e.g. Pixel 7 / iPhone 15 Simulator"
