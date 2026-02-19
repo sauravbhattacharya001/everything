@@ -45,7 +45,8 @@ class LocalStorage {
             title TEXT,
             description TEXT DEFAULT '',
             date TEXT,
-            priority TEXT DEFAULT 'medium'
+            priority TEXT DEFAULT 'medium',
+            tags TEXT DEFAULT '[]'
           )
           ''',
         );
@@ -58,8 +59,13 @@ class LocalStorage {
           await db.execute(
               "ALTER TABLE events ADD COLUMN priority TEXT DEFAULT 'medium'");
         }
+        if (oldVersion < 3) {
+          // Add tags column (JSON-encoded list of {name, colorIndex})
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN tags TEXT DEFAULT '[]'");
+        }
       },
-      version: 2,
+      version: 3,
     );
   }
 

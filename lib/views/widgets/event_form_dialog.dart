@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/event_model.dart';
+import '../../models/event_tag.dart';
 
 /// A bottom sheet dialog for creating or editing events.
 ///
@@ -37,6 +38,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late EventPriority _selectedPriority;
+  late List<EventTag> _selectedTags;
 
   bool get _isEditing => widget.existingEvent != null;
 
@@ -50,6 +52,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
     _selectedDate = event?.date ?? DateTime.now();
     _selectedTime = TimeOfDay.fromDateTime(event?.date ?? DateTime.now());
     _selectedPriority = event?.priority ?? EventPriority.medium;
+    _selectedTags = List.of(event?.tags ?? []);
   }
 
   @override
@@ -99,9 +102,196 @@ class _EventFormDialogState extends State<EventFormDialog> {
       description: _descriptionController.text.trim(),
       date: _combinedDateTime,
       priority: _selectedPriority,
+      tags: _selectedTags,
     );
 
     Navigator.of(context).pop(event);
+  }
+
+  void _showAddTagDialog() {
+    // Suggest presets that aren't already selected
+    final available = EventTag.presets
+        .where((preset) => !_selectedTags.contains(preset))
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final customController = TextEditingController();
+        int selectedColorIdx = 0;
+
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Add Tags',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    // Preset tags
+                    if (available.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Quick Add',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: available.map((tag) {
+                          return ActionChip(
+                            label: Text(
+                              tag.name,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: tag.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            backgroundColor: tag.color.withAlpha(25),
+                            onPressed: () {
+                              setState(() => _selectedTags.add(tag));
+                              Navigator.of(ctx).pop();
+                            },
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          );
+                        }).toList(),
+                      ),
+                    ],
+
+                    // Custom tag
+                    const SizedBox(height: 20),
+                    Text(
+                      'Custom Tag',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: customController,
+                            decoration: InputDecoration(
+                              hintText: 'Tag name',
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              isDense: true,
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                            maxLength: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            final name = customController.text.trim();
+                            if (name.isEmpty) return;
+                            final newTag = EventTag(
+                              name: name,
+                              colorIndex: selectedColorIdx,
+                            );
+                            if (!_selectedTags.contains(newTag)) {
+                              setState(() => _selectedTags.add(newTag));
+                            }
+                            Navigator.of(ctx).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Add'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Color picker
+                    Row(
+                      children: List.generate(EventTag.palette.length, (i) {
+                        final isSelected = selectedColorIdx == i;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: GestureDetector(
+                            onTap: () {
+                              setSheetState(() => selectedColorIdx = i);
+                            },
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: EventTag.palette[i],
+                                shape: BoxShape.circle,
+                                border: isSelected
+                                    ? Border.all(
+                                        color: Colors.black, width: 2.5)
+                                    : null,
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check,
+                                      color: Colors.white, size: 16)
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -286,6 +476,57 @@ class _EventFormDialogState extends State<EventFormDialog> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 20),
+
+              // Tags selector
+              const Text(
+                'Tags',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  // Show selected tags
+                  ..._selectedTags.map((tag) => Chip(
+                        label: Text(
+                          tag.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        backgroundColor: tag.color,
+                        deleteIconColor: Colors.white70,
+                        onDeleted: () {
+                          setState(() => _selectedTags.remove(tag));
+                        },
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      )),
+                  // Add tag button
+                  ActionChip(
+                    label: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, size: 16),
+                        SizedBox(width: 4),
+                        Text('Add Tag', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    onPressed: _showAddTagDialog,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 24),
 
               // Action buttons

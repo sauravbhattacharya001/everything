@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'event_tag.dart';
 
 /// Priority levels for events, each with an associated color and label.
 enum EventPriority {
@@ -64,6 +66,7 @@ class EventModel {
   final String description;
   final DateTime date;
   final EventPriority priority;
+  final List<EventTag> tags;
 
   EventModel({
     required this.id,
@@ -71,10 +74,28 @@ class EventModel {
     this.description = '',
     required this.date,
     this.priority = EventPriority.medium,
-  });
+    List<EventTag>? tags,
+  }) : tags = tags ?? const [];
 
   // Factory method to create an EventModel from JSON
   factory EventModel.fromJson(Map<String, dynamic> json) {
+    List<EventTag> parsedTags = const [];
+    final tagsRaw = json['tags'];
+    if (tagsRaw is String && tagsRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(tagsRaw) as List<dynamic>;
+        parsedTags = decoded
+            .map((t) => EventTag.fromJson(t as Map<String, dynamic>))
+            .toList();
+      } catch (_) {
+        // Ignore malformed tags JSON
+      }
+    } else if (tagsRaw is List) {
+      parsedTags = tagsRaw
+          .map((t) => EventTag.fromJson(t as Map<String, dynamic>))
+          .toList();
+    }
+
     return EventModel(
       id: json['id'] as String,
       title: json['title'] as String,
@@ -83,6 +104,7 @@ class EventModel {
       priority: EventPriority.fromString(
         (json['priority'] as String?) ?? 'medium',
       ),
+      tags: parsedTags,
     );
   }
 
@@ -94,6 +116,7 @@ class EventModel {
       'description': description,
       'date': date.toIso8601String(),
       'priority': priority.name,
+      'tags': jsonEncode(tags.map((t) => t.toJson()).toList()),
     };
   }
 
@@ -104,6 +127,7 @@ class EventModel {
     String? description,
     DateTime? date,
     EventPriority? priority,
+    List<EventTag>? tags,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -111,6 +135,7 @@ class EventModel {
       description: description ?? this.description,
       date: date ?? this.date,
       priority: priority ?? this.priority,
+      tags: tags ?? List.of(this.tags),
     );
   }
 
@@ -123,12 +148,21 @@ class EventModel {
           title == other.title &&
           description == other.description &&
           date == other.date &&
-          priority == other.priority;
+          priority == other.priority &&
+          _tagsEqual(tags, other.tags);
+
+  static bool _tagsEqual(List<EventTag> a, List<EventTag> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 
   @override
-  int get hashCode => Object.hash(id, title, description, date, priority);
+  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags));
 
   @override
   String toString() =>
-      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label})';
+      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}])';
 }

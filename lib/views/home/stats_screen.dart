@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/event_model.dart';
+import '../../models/event_tag.dart';
 import '../../state/providers/event_provider.dart';
 
 /// Analytics dashboard showing event statistics and scheduling insights.
@@ -38,6 +39,8 @@ class StatsScreen extends StatelessWidget {
                   _buildOverviewCards(events),
                   const SizedBox(height: 20),
                   _buildPriorityDistribution(events),
+                  const SizedBox(height: 20),
+                  _buildTagDistribution(events),
                   const SizedBox(height: 20),
                   _buildWeekdayChart(events),
                   const SizedBox(height: 20),
@@ -217,6 +220,147 @@ class StatsScreen extends StatelessWidget {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  // ───────────────── Tag Distribution ─────────────────
+
+  Widget _buildTagDistribution(List<EventModel> events) {
+    // Collect tag counts
+    final tagCounts = <String, int>{};
+    final tagObjects = <String, EventTag>{};
+    for (final event in events) {
+      for (final tag in event.tags) {
+        final key = tag.name.toLowerCase();
+        tagCounts[key] = (tagCounts[key] ?? 0) + 1;
+        tagObjects[key] = tag;
+      }
+    }
+
+    if (tagCounts.isEmpty) {
+      return _SectionCard(
+        title: 'Tag Distribution',
+        icon: Icons.label_outline,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'No tags yet — add tags to events to see distribution',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Sort by count descending
+    final sortedTags = tagCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxCount = sortedTags.first.value;
+    final taggedEvents =
+        events.where((e) => e.tags.isNotEmpty).length;
+    final taggedPercent = events.isNotEmpty
+        ? (taggedEvents / events.length * 100).round()
+        : 0;
+
+    return _SectionCard(
+      title: 'Tag Distribution',
+      icon: Icons.label_outline,
+      child: Column(
+        children: [
+          // Summary row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withAlpha(15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline,
+                    size: 16, color: Colors.blue),
+                const SizedBox(width: 6),
+                Text(
+                  '$taggedEvents of ${events.length} events tagged ($taggedPercent%)',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Tag bars
+          ...sortedTags.map((entry) {
+            final tag = tagObjects[entry.key]!;
+            final count = entry.value;
+            final fraction = maxCount > 0 ? count / maxCount : 0.0;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 80,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: tag.color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            tag.name,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: tag.color,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: fraction,
+                        minHeight: 18,
+                        backgroundColor: tag.color.withAlpha(25),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(tag.color),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

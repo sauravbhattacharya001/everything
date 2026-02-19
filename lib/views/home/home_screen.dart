@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/services/event_service.dart';
 import '../../state/providers/event_provider.dart';
 import '../../models/event_model.dart';
+import '../../models/event_tag.dart';
 import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
 import 'event_detail_screen.dart';
@@ -65,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final Set<EventPriority> _activePriorityFilters = {};
+  final Set<String> _activeTagFilters = {}; // Filter by tag names
   EventSortBy _currentSort = EventSortBy.dateDesc;
   bool _showFilters = false;
 
@@ -75,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _cachedEventHash = 0;
   String _cachedSearchQuery = '';
   Set<EventPriority> _cachedPriorityFilters = {};
+  Set<String> _cachedTagFilters = {};
   EventSortBy _cachedSort = EventSortBy.dateDesc;
 
   @override
@@ -119,6 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final filtersMatch = _cachedSearchQuery == _searchQuery &&
         _cachedPriorityFilters.length == _activePriorityFilters.length &&
         _cachedPriorityFilters.containsAll(_activePriorityFilters) &&
+        _cachedTagFilters.length == _activeTagFilters.length &&
+        _cachedTagFilters.containsAll(_activeTagFilters) &&
         _cachedSort == _currentSort &&
         _cachedEventHash == eventHash;
 
@@ -140,6 +145,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_activePriorityFilters.isNotEmpty) {
       filtered = filtered
           .where((event) => _activePriorityFilters.contains(event.priority))
+          .toList();
+    }
+
+    // Apply tag filters
+    if (_activeTagFilters.isNotEmpty) {
+      filtered = filtered
+          .where((event) => event.tags.any(
+              (tag) => _activeTagFilters.contains(tag.name.toLowerCase())))
           .toList();
     }
 
@@ -166,19 +179,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _cachedEventHash = eventHash;
     _cachedSearchQuery = _searchQuery;
     _cachedPriorityFilters = Set.of(_activePriorityFilters);
+    _cachedTagFilters = Set.of(_activeTagFilters);
     _cachedSort = _currentSort;
 
     return filtered;
   }
 
   bool get _hasActiveFilters =>
-      _searchQuery.isNotEmpty || _activePriorityFilters.isNotEmpty;
+      _searchQuery.isNotEmpty ||
+      _activePriorityFilters.isNotEmpty ||
+      _activeTagFilters.isNotEmpty;
 
   void _clearAllFilters() {
     setState(() {
       _searchController.clear();
       _searchQuery = '';
       _activePriorityFilters.clear();
+      _activeTagFilters.clear();
       _currentSort = EventSortBy.dateDesc;
     });
   }
@@ -397,6 +414,17 @@ class _HomeScreenState extends State<HomeScreen> {
           (priorityCounts[event.priority] ?? 0) + 1;
     }
 
+    // Collect all unique tags from events
+    final allTags = <String, EventTag>{};
+    final tagCounts = <String, int>{};
+    for (final event in allEvents) {
+      for (final tag in event.tags) {
+        final key = tag.name.toLowerCase();
+        allTags[key] = tag;
+        tagCounts[key] = (tagCounts[key] ?? 0) + 1;
+      }
+    }
+
     return Container(
       color: Colors.grey[50],
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -503,6 +531,80 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // Tag filter chips (only shown if events have tags)
+          if (allTags.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Text(
+                    'Tags:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ...allTags.entries.map((entry) {
+                    final tag = entry.value;
+                    final key = entry.key;
+                    final isSelected = _activeTagFilters.contains(key);
+                    final count = tagCounts[key] ?? 0;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.white
+                                    : tag.color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${tag.name} ($count)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected
+                                    ? Colors.white
+                                    : tag.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        selected: isSelected,
+                        selectedColor: tag.color,
+                        backgroundColor: tag.color.withAlpha(20),
+                        checkmarkColor: Colors.white,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _activeTagFilters.add(key);
+                            } else {
+                              _activeTagFilters.remove(key);
+                            }
+                          });
+                        },
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
