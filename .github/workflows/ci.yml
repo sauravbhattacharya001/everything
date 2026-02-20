@@ -61,15 +61,7 @@ jobs:
         run: flutter pub get
 
       - name: Run unit tests
-        run: flutter test --coverage --reporter expanded
-
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: coverage-report
-          path: coverage/lcov.info
-          retention-days: 14
+        run: flutter test --reporter expanded
 
   build:
     name: Build Web

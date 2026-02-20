@@ -1,0 +1,120 @@
+# Code Coverage — Upload coverage reports to Codecov
+#
+# Runs after tests pass on push to master.
+# Generates LCOV report, uploads to Codecov, and comments on PRs.
+
+name: Code Coverage
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: Generate & Upload Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage --reporter expanded
+
+      - name: Check coverage file exists
+        run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::Coverage file not generated"
+            exit 1
+          fi
+          echo "Coverage file generated successfully"
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          # Count lines covered / total
+          LINES_HIT=$(grep -c "^DA:" coverage/lcov.info | head -1 || echo "0")
+          LINES_FOUND=$(grep "^LF:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
+          LINES_COVERED=$(grep "^LH:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
+          echo "- **Lines found:** $LINES_FOUND" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines covered:** $LINES_COVERED" >> $GITHUB_STEP_SUMMARY
+          if [ "$LINES_FOUND" -gt 0 ]; then
+            PCT=$(awk "BEGIN {printf \"%.1f\", ($LINES_COVERED/$LINES_FOUND)*100}")
+            echo "- **Coverage:** ${PCT}%" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage/lcov.info
+          flags: unittests
+          name: flutter-coverage
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-report
+          path: coverage/lcov.info
+          retention-days: 30
+
+  coverage-gate:
+    name: Coverage Gate
+    runs-on: ubuntu-latest
+    needs: coverage
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Check minimum coverage threshold
+        run: |
+          LINES_FOUND=$(grep "^LF:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
+          LINES_COVERED=$(grep "^LH:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
+          if [ "$LINES_FOUND" -eq 0 ]; then
+            echo "No coverage data found"
+            exit 0
+          fi
+          PCT=$(awk "BEGIN {printf \"%.1f\", ($LINES_COVERED/$LINES_FOUND)*100}")
+          echo "Coverage: ${PCT}% ($LINES_COVERED/$LINES_FOUND lines)"
+          # Fail if coverage drops below 30% (adjust threshold as project matures)
+          THRESHOLD=30
+          PASS=$(awk "BEGIN {print ($PCT >= $THRESHOLD) ? 1 : 0}")
+          if [ "$PASS" -eq 0 ]; then
+            echo "::error::Coverage ${PCT}% is below minimum threshold of ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "✅ Coverage ${PCT}% meets minimum threshold of ${THRESHOLD}%"

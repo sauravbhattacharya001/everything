@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml)
+[![Coverage](https://codecov.io/gh/sauravbhattacharya001/everything/graph/badge.svg)](https://codecov.io/gh/sauravbhattacharya001/everything)
 [![Docker](https://github.com/sauravbhattacharya001/everything/actions/workflows/docker.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/docker.yml)
 [![Pages](https://github.com/sauravbhattacharya001/everything/actions/workflows/pages.yml/badge.svg)](https://sauravbhattacharya001.github.io/everything/)
 [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025e8c?logo=dependabot&logoColor=white)](https://github.com/sauravbhattacharya001/everything/blob/master/.github/dependabot.yml)
