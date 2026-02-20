@@ -6,6 +6,7 @@ import '../../models/event_model.dart';
 import '../../models/event_tag.dart';
 import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
+import 'calendar_screen.dart';
 import 'event_detail_screen.dart';
 import 'stats_screen.dart';
 
@@ -298,6 +299,16 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('My Events'),
         elevation: 0,
         actions: [
+          // Calendar view button
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+              );
+            },
+            tooltip: 'Calendar view',
+          ),
           // Analytics button
           IconButton(
             icon: const Icon(Icons.bar_chart),
