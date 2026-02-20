@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/secure_storage_service.dart';
+import '../../data/repositories/user_repository.dart';
 import '../../models/user_model.dart';
 import '../../state/providers/user_provider.dart';
 
@@ -13,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  final UserRepository _userRepository = UserRepository();
   bool _isLoading = false;
 
   @override
@@ -54,15 +57,24 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final firebaseUser = await _authService.loginWithEmail(email, password);
       if (firebaseUser != null) {
+        final user = UserModel(
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName ?? email.split('@').first,
+          email: firebaseUser.email ?? email,
+        );
+
         final userProvider =
             Provider.of<UserProvider>(context, listen: false);
-        userProvider.setUser(
-          UserModel(
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName ?? email.split('@').first,
-            email: firebaseUser.email ?? email,
-          ),
-        );
+        userProvider.setUser(user);
+
+        // Persist user profile to local storage so it survives restarts
+        // and Firebase token refresh edge cases.
+        await _userRepository.saveUser(user.toJson());
+
+        // Store the user ID in secure storage for quick session checks.
+        await SecureStorageService.write(
+            SecureStorageService.keyUserId, firebaseUser.uid);
+
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
