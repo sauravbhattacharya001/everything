@@ -43,7 +43,7 @@ jobs:
           zip -r ../../everything-web-${{ github.ref_name }}.zip .
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: web-build
           path: everything-web-${{ github.ref_name }}.zip
@@ -76,7 +76,7 @@ jobs:
         run: flutter build apk --release --split-per-abi
 
       - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: apk-build
           path: build/app/outputs/flutter-apk/*.apk
