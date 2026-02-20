@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/event_service.dart';
 import '../../models/event_model.dart';
+import '../../models/recurrence_rule.dart';
 import '../../state/providers/event_provider.dart';
 import '../widgets/event_form_dialog.dart';
 
@@ -269,6 +270,72 @@ class EventDetailScreen extends StatelessWidget {
               ),
             ],
 
+            // Recurrence card (only if recurring)
+            if (currentEvent.isRecurring) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.repeat,
+                                size: 18, color: Colors.grey[600]),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Recurrence',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[600],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withAlpha(15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.repeat,
+                                  size: 16, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  currentEvent.recurrence!.summary,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Next 3 occurrences preview
+                        _buildNextOccurrences(currentEvent),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             // Time until/since event
             const SizedBox(height: 12),
             Padding(
@@ -314,6 +381,59 @@ class EventDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNextOccurrences(EventModel event) {
+    final occurrences = event.generateOccurrences(maxOccurrences: 4);
+    if (occurrences.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Show at most the next 3 occurrences
+    final previewOccurrences = occurrences.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Next occurrences',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 6),
+        ...previewOccurrences.map((occ) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Icon(Icons.circle, size: 6, color: Colors.blue[300]),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('EEE, MMM dd, yyyy – h:mm a')
+                        .format(occ.date),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            )),
+        if (occurrences.length < (event.recurrence!.endDate != null ? 100 : 4))
+          const SizedBox.shrink()
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '…and more',
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[500],
+              ),
+            ),
+          ),
+      ],
     );
   }
 

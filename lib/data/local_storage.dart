@@ -46,7 +46,8 @@ class LocalStorage {
             description TEXT DEFAULT '',
             date TEXT,
             priority TEXT DEFAULT 'medium',
-            tags TEXT DEFAULT '[]'
+            tags TEXT DEFAULT '[]',
+            recurrence TEXT
           )
           ''',
         );
@@ -64,8 +65,13 @@ class LocalStorage {
           await db.execute(
               "ALTER TABLE events ADD COLUMN tags TEXT DEFAULT '[]'");
         }
+        if (oldVersion < 4) {
+          // Add recurrence column (JSON-encoded RecurrenceRule or null)
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN recurrence TEXT");
+        }
       },
-      version: 3,
+      version: 4,
     );
   }
 

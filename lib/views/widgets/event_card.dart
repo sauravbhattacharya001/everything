@@ -120,6 +120,34 @@ class EventCard extends StatelessWidget {
                             color: Colors.grey[500],
                           ),
                         ),
+                        // Recurrence indicator
+                        if (event.isRecurring) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withAlpha(20),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.repeat,
+                                    size: 11, color: Colors.blue),
+                                const SizedBox(width: 3),
+                                Text(
+                                  event.recurrence!.frequency.label,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     // Tag chips

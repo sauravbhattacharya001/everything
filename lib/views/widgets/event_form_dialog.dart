@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/event_model.dart';
 import '../../models/event_tag.dart';
+import '../../models/recurrence_rule.dart';
 
 /// A bottom sheet dialog for creating or editing events.
 ///
@@ -39,6 +40,10 @@ class _EventFormDialogState extends State<EventFormDialog> {
   late TimeOfDay _selectedTime;
   late EventPriority _selectedPriority;
   late List<EventTag> _selectedTags;
+  bool _isRecurring = false;
+  RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.weekly;
+  int _recurrenceInterval = 1;
+  DateTime? _recurrenceEndDate;
 
   bool get _isEditing => widget.existingEvent != null;
 
@@ -53,6 +58,12 @@ class _EventFormDialogState extends State<EventFormDialog> {
     _selectedTime = TimeOfDay.fromDateTime(event?.date ?? DateTime.now());
     _selectedPriority = event?.priority ?? EventPriority.medium;
     _selectedTags = List.of(event?.tags ?? []);
+    _isRecurring = event?.recurrence != null;
+    if (event?.recurrence != null) {
+      _recurrenceFrequency = event!.recurrence!.frequency;
+      _recurrenceInterval = event.recurrence!.interval;
+      _recurrenceEndDate = event.recurrence!.endDate;
+    }
   }
 
   @override
@@ -95,6 +106,14 @@ class _EventFormDialogState extends State<EventFormDialog> {
   void _save() {
     if (!_formKey.currentState!.validate()) return;
 
+    final recurrence = _isRecurring
+        ? RecurrenceRule(
+            frequency: _recurrenceFrequency,
+            interval: _recurrenceInterval,
+            endDate: _recurrenceEndDate,
+          )
+        : null;
+
     final event = EventModel(
       id: widget.existingEvent?.id ??
           DateTime.now().millisecondsSinceEpoch.toString(),
@@ -103,6 +122,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       date: _combinedDateTime,
       priority: _selectedPriority,
       tags: _selectedTags,
+      recurrence: recurrence,
     );
 
     Navigator.of(context).pop(event);
@@ -292,6 +312,238 @@ class _EventFormDialogState extends State<EventFormDialog> {
         );
       },
     );
+  }
+
+  Future<void> _pickRecurrenceEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _recurrenceEndDate ?? _selectedDate.add(const Duration(days: 90)),
+      firstDate: _selectedDate,
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() => _recurrenceEndDate = picked);
+    }
+  }
+
+  Widget _buildRecurrenceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Toggle
+        Row(
+          children: [
+            Icon(Icons.repeat, size: 18, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            const Text(
+              'Repeat',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            const Spacer(),
+            Switch(
+              value: _isRecurring,
+              onChanged: (val) => setState(() => _isRecurring = val),
+            ),
+          ],
+        ),
+
+        // Recurrence settings (shown when toggled on)
+        if (_isRecurring) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withAlpha(10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.withAlpha(40)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Frequency selector
+                Row(
+                  children: [
+                    Text(
+                      'Every',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Interval dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _recurrenceInterval,
+                          isDense: true,
+                          items: List.generate(12, (i) => i + 1)
+                              .map((v) => DropdownMenuItem(
+                                    value: v,
+                                    child: Text('$v'),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _recurrenceInterval = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Frequency dropdown
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<RecurrenceFrequency>(
+                            value: _recurrenceFrequency,
+                            isDense: true,
+                            isExpanded: true,
+                            items: RecurrenceFrequency.values
+                                .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        _recurrenceInterval == 1
+                                            ? f.label
+                                            : _frequencyPluralLabel(f),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ))
+                                .toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _recurrenceFrequency = val);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // End date
+                Row(
+                  children: [
+                    Icon(Icons.event_busy, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Ends:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (_recurrenceEndDate == null)
+                      TextButton(
+                        onPressed: _pickRecurrenceEndDate,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('Never (tap to set)',
+                            style: TextStyle(fontSize: 13)),
+                      )
+                    else ...[
+                      GestureDetector(
+                        onTap: _pickRecurrenceEndDate,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Text(
+                            DateFormat('MMM dd, yyyy')
+                                .format(_recurrenceEndDate!),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _recurrenceEndDate = null),
+                        child: Icon(Icons.clear,
+                            size: 18, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Summary
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withAlpha(15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          size: 14, color: Colors.blue),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          RecurrenceRule(
+                            frequency: _recurrenceFrequency,
+                            interval: _recurrenceInterval,
+                            endDate: _recurrenceEndDate,
+                          ).summary,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _frequencyPluralLabel(RecurrenceFrequency freq) {
+    switch (freq) {
+      case RecurrenceFrequency.daily:
+        return 'Days';
+      case RecurrenceFrequency.weekly:
+        return 'Weeks';
+      case RecurrenceFrequency.monthly:
+        return 'Months';
+      case RecurrenceFrequency.yearly:
+        return 'Years';
+    }
   }
 
   @override
@@ -527,9 +779,12 @@ class _EventFormDialogState extends State<EventFormDialog> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Action buttons
+              // Recurrence toggle & settings
+              _buildRecurrenceSection(),
+
+              const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
