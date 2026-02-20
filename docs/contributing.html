@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contributing — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link active">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> Guides <span>/</span> Contributing</div>
+    <h1>Contributing Guide</h1>
+    <p class="subtitle">How to contribute to the Everything App — from setup to pull request.</p>
+
+    <h2 id="setup">Development Setup</h2>
+    <ol>
+      <li><strong>Fork</strong> the repository on GitHub</li>
+      <li><strong>Clone</strong> your fork:
+        <div class="code-block">
+git clone https://github.com/YOUR_USERNAME/everything.git
+cd everything
+        </div>
+      </li>
+      <li><strong>Install dependencies:</strong>
+        <div class="code-block">flutter pub get</div>
+      </li>
+      <li><strong>Run tests</strong> to verify setup:
+        <div class="code-block">flutter test</div>
+      </li>
+    </ol>
+
+    <h2 id="workflow">Development Workflow</h2>
+    <ol>
+      <li>Create a feature branch from <code>master</code>:
+        <div class="code-block">git checkout -b feature/your-feature-name</div>
+      </li>
+      <li>Make your changes following the <a href="#conventions">code conventions</a></li>
+      <li>Write or update tests for your changes</li>
+      <li>Run the full test suite:
+        <div class="code-block">flutter test</div>
+      </li>
+      <li>Commit with a clear message:
+        <div class="code-block">git commit -m "feat: add event export to CSV"</div>
+      </li>
+      <li>Push and open a Pull Request</li>
+    </ol>
+
+    <h2 id="conventions">Code Conventions</h2>
+
+    <h3>Architecture Rules</h3>
+    <ul>
+      <li><strong>Models</strong> — Pure Dart, no Flutter imports. Immutable with <code>copyWith()</code>.</li>
+      <li><strong>Services</strong> — No UI imports. Coordinate between state and data layers.</li>
+      <li><strong>Providers</strong> — Expose <code>UnmodifiableListView</code>. All mutations through named methods.</li>
+      <li><strong>Views</strong> — No business logic. Delegate to services/providers.</li>
+    </ul>
+
+    <h3>Commit Messages</h3>
+    <p>Use <a href="https://www.conventionalcommits.org/">Conventional Commits</a>:</p>
+    <table>
+      <tr><th>Prefix</th><th>Use For</th></tr>
+      <tr><td><code>feat:</code></td><td>New features</td></tr>
+      <tr><td><code>fix:</code></td><td>Bug fixes</td></tr>
+      <tr><td><code>refactor:</code></td><td>Code restructuring (no behavior change)</td></tr>
+      <tr><td><code>docs:</code></td><td>Documentation changes</td></tr>
+      <tr><td><code>test:</code></td><td>Adding or updating tests</td></tr>
+      <tr><td><code>chore:</code></td><td>Build, CI, tooling changes</td></tr>
+    </table>
+
+    <h3>Dart Style</h3>
+    <ul>
+      <li>Follow <a href="https://dart.dev/effective-dart">Effective Dart</a> guidelines</li>
+      <li>Use <code>dart format</code> before committing</li>
+      <li>Add doc comments (<code>///</code>) to all public APIs</li>
+      <li>Use meaningful variable names — no single-letter names except loop counters</li>
+    </ul>
+
+    <h2 id="testing-requirements">Testing Requirements</h2>
+    <ul>
+      <li>All new models must have serialization round-trip tests</li>
+      <li>All new services must have unit tests with mocked dependencies</li>
+      <li>State changes (providers/blocs) must have tests verifying correct emissions</li>
+      <li>Edge cases: empty inputs, null fields, malformed data, boundary values</li>
+    </ul>
+
+    <h2 id="pull-requests">Pull Request Guidelines</h2>
+    <ul>
+      <li>Fill out the PR template (auto-generated from <code>.github/PULL_REQUEST_TEMPLATE.md</code>)</li>
+      <li>Link related issues with <code>Fixes #123</code> or <code>Closes #456</code></li>
+      <li>Keep PRs focused — one feature/fix per PR</li>
+      <li>Ensure CI passes (lint + tests + coverage)</li>
+      <li>Add screenshots for visual changes</li>
+    </ul>
+
+    <h2 id="issues">Filing Issues</h2>
+    <p>Use the appropriate <a href="https://github.com/sauravbhattacharya001/everything/issues/new/choose">issue template</a>:</p>
+    <div class="card-grid">
+      <div class="card">
+        <h4>🐛 Bug Report</h4>
+        <p>Steps to reproduce, expected vs actual behavior, environment details.</p>
+      </div>
+      <div class="card">
+        <h4>✨ Feature Request</h4>
+        <p>Use case, proposed solution, alternatives considered.</p>
+      </div>
+      <div class="card">
+        <h4>⚡ Performance Issue</h4>
+        <p>What's slow, profiling data if available, device info.</p>
+      </div>
+      <div class="card">
+        <h4>❓ Question</h4>
+        <p>Architecture questions, usage help, design discussions.</p>
+      </div>
+    </div>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link active">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> Guides <span>/</span> Security</div>
+    <h1>Security Guide</h1>
+    <p class="subtitle">Defense-in-depth protections built into the Everything App.</p>
+
+    <h2 id="overview">Security Architecture</h2>
+    <p>The Everything App implements multiple layers of security to protect against common attack vectors in mobile/web applications.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>🛡️ SSRF Prevention</h4>
+        <p>URL scheme allowlisting and trusted host validation prevent server-side request forgery via malicious API responses.</p>
+      </div>
+      <div class="card">
+        <h4>💉 SQL Injection Prevention</h4>
+        <p>All database queries use parameterized bindings (<code>whereArgs</code>). No string interpolation in SQL.</p>
+      </div>
+      <div class="card">
+        <h4>🔑 Credential Security</h4>
+        <p>API keys loaded from environment variables via <code>--dart-define</code>. Never hardcoded in source.</p>
+      </div>
+      <div class="card">
+        <h4>🔐 Secure Storage</h4>
+        <p>Sensitive data stored via <code>flutter_secure_storage</code> (Keychain on iOS, EncryptedSharedPreferences on Android).</p>
+      </div>
+    </div>
+
+    <h2 id="ssrf">SSRF Protection</h2>
+    <p>Server-Side Request Forgery (SSRF) is a critical vulnerability where an attacker tricks the application into making requests to unintended URLs. This is particularly relevant when following pagination links from external APIs.</p>
+
+    <h3>The Attack Vector</h3>
+    <p>When fetching calendar events from Microsoft Graph, the API returns <code>@odata.nextLink</code> for pagination. A malicious or compromised API could set this to an internal URL:</p>
+
+    <div class="code-block">
+<span class="comment">// Malicious response</span>
+{
+  <span class="string">"value"</span>: [...],
+  <span class="string">"@odata.nextLink"</span>: <span class="string">"http://169.254.169.254/latest/meta-data/"</span>  <span class="comment">// ← Cloud metadata!</span>
+}
+    </div>
+
+    <h3>Our Defenses</h3>
+
+    <h4>1. Scheme Allowlist</h4>
+    <p><code>HttpUtils._validateUrl()</code> rejects any URL not using <code>https</code>:</p>
+    <div class="code-block">
+<span class="comment">// AppConstants.allowedSchemes = ['https']</span>
+<span class="comment">// Blocks: http://, file://, ftp://, gopher://, etc.</span>
+    </div>
+
+    <h4>2. Trusted Host Validation</h4>
+    <p>Pagination URLs are validated against <code>AppConstants.trustedApiHosts</code>:</p>
+    <div class="code-block">
+<span class="comment">// Only these hosts are trusted for pagination:</span>
+<span class="keyword">static const</span> trustedApiHosts = [
+  <span class="string">'graph.microsoft.com'</span>,
+  <span class="string">'api.example.com'</span>,
+];
+
+<span class="comment">// First request: our own URL (trusted by construction)</span>
+<span class="comment">// Subsequent requests: validated against trustedApiHosts</span>
+<span class="fn">HttpUtils.getRequest</span>(nextUrl, requireTrustedHost: page > 0);
+    </div>
+
+    <h4>3. Pagination Limit</h4>
+    <p><code>GraphService._maxPages = 50</code> prevents infinite pagination loops from malformed responses.</p>
+
+    <h2 id="sql-injection">SQL Injection Prevention</h2>
+    <p>All database operations use sqflite's parameterized query API:</p>
+
+    <div class="code-block">
+<span class="comment">// ✅ Safe — parameterized binding</span>
+db.<span class="fn">delete</span>(<span class="string">'events'</span>, where: <span class="string">'id = ?'</span>, whereArgs: [id]);
+
+<span class="comment">// ❌ Vulnerable — never do this</span>
+db.<span class="fn">rawDelete</span>(<span class="string">"DELETE FROM events WHERE id = '$id'"</span>);
+    </div>
+
+    <h2 id="auth-security">Authentication Security</h2>
+    <ul>
+      <li><strong>Firebase Auth</strong> handles credential storage, token refresh, and session management</li>
+      <li><strong>AuthGate</strong> uses <code>StreamBuilder</code> on <code>authStateChanges</code> — state is always derived from Firebase, not from local variables</li>
+      <li><strong>Error mapping</strong> — Firebase error codes are mapped to structured exceptions, preventing raw error messages from leaking to the UI</li>
+      <li><strong>Password reset</strong> — uses Firebase's server-side email flow (no client-side token handling)</li>
+    </ul>
+
+    <h2 id="dependency-security">Dependency Security</h2>
+    <ul>
+      <li><strong>Dependabot</strong> monitors dependencies for known vulnerabilities (daily checks)</li>
+      <li><strong>CodeQL</strong> scans Dart code for security patterns on every push</li>
+      <li><strong>Minimal dependencies</strong> — only essential packages are included to reduce attack surface</li>
+    </ul>
+
+    <h2 id="reporting">Reporting Vulnerabilities</h2>
+    <p>If you discover a security vulnerability, please report it responsibly:</p>
+    <ol>
+      <li><strong>Do not</strong> open a public GitHub issue</li>
+      <li>Email the maintainer or use GitHub's private vulnerability reporting</li>
+      <li>Include: description, reproduction steps, impact assessment</li>
+      <li>Allow reasonable time for a fix before disclosure</li>
+    </ol>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

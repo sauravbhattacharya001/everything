@@ -3,46 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Everything App — Flutter Productivity Suite</title>
-    <meta name="description" content="A Flutter-based productivity app for managing communications, calendars, and events with a clean, modular architecture.">
+    <title>Everything App — Documentation</title>
+    <meta name="description" content="Documentation for the Everything App — a Flutter-based productivity suite for managing events, calendars, and communications.">
+    <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --primary: #6C63FF;
-            --primary-dark: #5A52D5;
-            --bg: #0D1117;
-            --surface: #161B22;
-            --border: #30363D;
-            --text: #E6EDF3;
-            --text-muted: #8B949E;
-            --accent: #58A6FF;
-            --green: #3FB950;
-            --orange: #D29922;
+        /* Landing page overrides */
+        .landing-content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
-
-        /* Hero */
         .hero {
             text-align: center;
             padding: 80px 0 60px;
             background: linear-gradient(135deg, rgba(108,99,255,0.1) 0%, rgba(88,166,255,0.05) 100%);
             border-bottom: 1px solid var(--border);
         }
-
-        .hero-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
+        .hero-icon { font-size: 64px; margin-bottom: 16px; }
         .hero h1 {
             font-size: 48px;
             font-weight: 700;
@@ -52,19 +29,15 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .hero .tagline {
             font-size: 20px;
             color: var(--text-muted);
             max-width: 600px;
             margin: 0 auto 32px;
         }
-
         .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
         .badges img { height: 22px; }
-
         .cta-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
         .btn {
             display: inline-flex;
             align-items: center;
@@ -76,85 +49,63 @@
             text-decoration: none;
             transition: all 0.2s;
         }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); text-decoration: none; }
+        .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--text-muted); transform: translateY(-1px); text-decoration: none; }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 60px 0;
         }
-        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-
-        .btn-secondary {
+        .docs-card {
             background: var(--surface);
-            color: var(--text);
             border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            transition: border-color 0.2s, transform 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
         }
-        .btn-secondary:hover { border-color: var(--text-muted); transform: translateY(-1px); }
-
-        /* Features */
-        .features {
-            padding: 80px 0;
-        }
+        .docs-card:hover { border-color: var(--primary); transform: translateY(-2px); text-decoration: none; }
+        .docs-card .icon { font-size: 32px; margin-bottom: 12px; }
+        .docs-card h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+        .docs-card p { color: var(--text-muted); font-size: 14px; margin: 0; }
 
         .section-title {
             font-size: 32px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 48px;
+            color: var(--text);
         }
 
+        .features-section { padding: 60px 0; border-top: 1px solid var(--border); }
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 24px;
+            margin-top: 40px;
         }
-
         .feature-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 28px;
-            transition: border-color 0.2s;
         }
-        .feature-card:hover { border-color: var(--primary); }
-
-        .feature-icon { font-size: 32px; margin-bottom: 12px; }
+        .feature-card .icon { font-size: 32px; margin-bottom: 12px; }
         .feature-card h3 { font-size: 18px; margin-bottom: 8px; }
-        .feature-card p { color: var(--text-muted); font-size: 14px; }
+        .feature-card p { color: var(--text-muted); font-size: 14px; margin: 0; }
 
-        /* Architecture */
-        .architecture {
-            padding: 60px 0;
-            border-top: 1px solid var(--border);
-        }
-
-        .arch-block {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            margin-top: 32px;
-        }
-
-        .arch-block pre {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 14px;
-            color: var(--text-muted);
-            overflow-x: auto;
-        }
-
-        /* Tech Stack */
-        .tech-stack {
-            padding: 60px 0;
-            border-top: 1px solid var(--border);
-        }
-
+        .tech-section { padding: 60px 0; border-top: 1px solid var(--border); }
         .tech-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-top: 32px;
         }
-
         .tech-item {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -166,30 +117,6 @@
         .tech-item .name { font-weight: 600; }
         .tech-item .desc { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 
-        /* Quick Start */
-        .quickstart {
-            padding: 60px 0;
-            border-top: 1px solid var(--border);
-        }
-
-        .code-block {
-            background: #0D1117;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 24px;
-            margin-top: 24px;
-            overflow-x: auto;
-        }
-
-        .code-block code {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 14px;
-            color: var(--green);
-        }
-
-        .code-block .comment { color: var(--text-muted); }
-
-        /* Footer */
         footer {
             padding: 40px 0;
             border-top: 1px solid var(--border);
@@ -197,160 +124,160 @@
             color: var(--text-muted);
             font-size: 14px;
         }
-
         footer a { color: var(--accent); text-decoration: none; }
         footer a:hover { text-decoration: underline; }
 
         @media (max-width: 640px) {
             .hero h1 { font-size: 32px; }
             .hero .tagline { font-size: 16px; }
-            .feature-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
 <section class="hero">
-    <div class="container">
+    <div class="landing-content">
         <div class="hero-icon">📱</div>
         <h1>Everything App</h1>
         <p class="tagline">A Flutter-based productivity suite for managing communications, calendars, and events — built with clean, modular architecture.</p>
         <div class="badges">
+            <img src="https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml/badge.svg" alt="CI">
+            <img src="https://codecov.io/gh/sauravbhattacharya001/everything/graph/badge.svg" alt="Coverage">
             <img src="https://img.shields.io/github/v/release/sauravbhattacharya001/everything?style=flat-square&color=6C63FF" alt="Release">
             <img src="https://img.shields.io/github/license/sauravbhattacharya001/everything?style=flat-square" alt="License">
-            <img src="https://img.shields.io/github/languages/top/sauravbhattacharya001/everything?style=flat-square&color=0175C2" alt="Language">
-            <img src="https://img.shields.io/github/last-commit/sauravbhattacharya001/everything?style=flat-square" alt="Last Commit">
+            <img src="https://img.shields.io/badge/Dart-%3E%3D3.0-0175C2?logo=dart&logoColor=white" alt="Dart">
+            <img src="https://img.shields.io/badge/Flutter-%3E%3D3.10-02569B?logo=flutter&logoColor=white" alt="Flutter">
         </div>
         <div class="cta-group">
-            <a href="https://github.com/sauravbhattacharya001/everything" class="btn btn-primary">
-                ⭐ View on GitHub
-            </a>
-            <a href="https://github.com/sauravbhattacharya001/everything/releases" class="btn btn-secondary">
-                📦 Releases
-            </a>
+            <a href="getting-started.html" class="btn btn-primary">📖 Get Started</a>
+            <a href="https://github.com/sauravbhattacharya001/everything" class="btn btn-secondary">⭐ GitHub</a>
         </div>
     </div>
 </section>
 
-<section class="features">
-    <div class="container">
+<section class="landing-content">
+    <h2 class="section-title" style="margin-top: 60px;">Documentation</h2>
+    <div class="docs-grid">
+        <a href="getting-started.html" class="docs-card">
+            <div class="icon">🚀</div>
+            <h3>Getting Started</h3>
+            <p>Prerequisites, installation, Firebase setup, Docker, and project structure walkthrough.</p>
+        </a>
+        <a href="architecture.html" class="docs-card">
+            <div class="icon">🏗️</div>
+            <h3>Architecture</h3>
+            <p>Layered design, data flow diagrams, key patterns (singleton DB, O(1) index, fire-and-forget persistence).</p>
+        </a>
+        <a href="api-models.html" class="docs-card">
+            <div class="icon">📋</div>
+            <h3>Models API</h3>
+            <p>EventModel, EventPriority, EventTag, RecurrenceRule, UserModel — constructors, properties, methods.</p>
+        </a>
+        <a href="api-services.html" class="docs-card">
+            <div class="icon">⚙️</div>
+            <h3>Services API</h3>
+            <p>EventService, AuthService, GraphService, HttpUtils — business logic and API integration.</p>
+        </a>
+        <a href="api-state.html" class="docs-card">
+            <div class="icon">🔄</div>
+            <h3>State Management</h3>
+            <p>EventProvider (ChangeNotifier), EventBloc (Cubit), UserProvider — when to use which.</p>
+        </a>
+        <a href="api-data.html" class="docs-card">
+            <div class="icon">💾</div>
+            <h3>Data Layer</h3>
+            <p>LocalStorage (SQLite), schema migrations v1–v4, EventRepository, UserRepository.</p>
+        </a>
+        <a href="security.html" class="docs-card">
+            <div class="icon">🛡️</div>
+            <h3>Security</h3>
+            <p>SSRF prevention, SQL injection protection, credential security, secure storage, vulnerability reporting.</p>
+        </a>
+        <a href="testing.html" class="docs-card">
+            <div class="icon">🧪</div>
+            <h3>Testing</h3>
+            <p>Test structure, coverage strategy, writing conventions, example patterns for models, services, and state.</p>
+        </a>
+        <a href="contributing.html" class="docs-card">
+            <div class="icon">🤝</div>
+            <h3>Contributing</h3>
+            <p>Development setup, workflow, code conventions, commit messages, PR guidelines, issue templates.</p>
+        </a>
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="landing-content">
         <h2 class="section-title">Features</h2>
         <div class="feature-grid">
             <div class="feature-card">
-                <div class="feature-icon">🔐</div>
+                <div class="icon">🔐</div>
                 <h3>User Authentication</h3>
-                <p>Email-based login with sign up, password reset, and typed exceptions via Firebase Auth. Secure and extensible.</p>
+                <p>Email-based login with sign up, password reset, and typed exceptions via Firebase Auth.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📅</div>
+                <div class="icon">📅</div>
                 <h3>Event Management</h3>
-                <p>Create, list, and manage events with a reactive UI. Immutable data models with copyWith support.</p>
+                <p>Create, list, and manage events with priority tracking, tags, and recurring schedules.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>State Management</h3>
-                <p>Provider-based global state with BLoC pattern support. EventBloc manages its own state independently.</p>
+                <div class="icon">⚡</div>
+                <h3>Dual State Management</h3>
+                <p>Provider-based global state with BLoC pattern support. Choose the approach that fits your needs.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">💾</div>
-                <h3>Local Storage</h3>
-                <p>SQLite persistence via singleton database connection. Reliable offline-first data handling.</p>
+                <div class="icon">💾</div>
+                <h3>Local Persistence</h3>
+                <p>SQLite persistence via singleton database connection with versioned schema migrations.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🌐</div>
-                <h3>API Integration</h3>
-                <p>Microsoft Graph service layer with pagination, error handling, and structured HTTP exceptions.</p>
+                <div class="icon">🌐</div>
+                <h3>Microsoft Graph Sync</h3>
+                <p>Calendar synchronization with SSRF-protected pagination and structured error handling.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🏗️</div>
+                <div class="icon">🏗️</div>
                 <h3>Clean Architecture</h3>
-                <p>Modular structure — core, data, models, state, views. Built for scalability and maintainability.</p>
+                <p>Modular layers — core, data, models, state, views — built for scalability and testability.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="architecture">
-    <div class="container">
-        <h2 class="section-title">Project Architecture</h2>
-        <div class="arch-block">
-            <pre>
-lib/
-├── main.dart                  # App entry point
-├── core/
-│   ├── constants/             # App-wide constants
-│   ├── services/              # Auth, Graph API, Storage
-│   └── utils/                 # HTTP, date formatting helpers
-├── data/
-│   ├── local_storage.dart     # SQLite singleton
-│   └── repositories/          # Event & User repositories
-├── models/
-│   ├── event_model.dart       # Immutable with copyWith
-│   └── user_model.dart
-├── state/
-│   ├── blocs/                 # EventBloc (self-managing state)
-│   └── providers/             # Event & User providers
-└── views/
-    ├── home/                  # Home screen
-    ├── login/                 # Login (StatefulWidget)
-    └── widgets/               # Reusable components
-            </pre>
-        </div>
-    </div>
-</section>
-
-<section class="tech-stack">
-    <div class="container">
+<section class="tech-section">
+    <div class="landing-content">
         <h2 class="section-title">Tech Stack</h2>
         <div class="tech-grid">
             <div class="tech-item">
                 <div class="icon">🎯</div>
                 <div class="name">Dart / Flutter</div>
-                <div class="desc">SDK ≥3.0.0 · Cross-platform</div>
+                <div class="desc">SDK ≥3.0 · Cross-platform</div>
             </div>
             <div class="tech-item">
                 <div class="icon">🔄</div>
-                <div class="name">Provider</div>
-                <div class="desc">^6.1.0 · State management</div>
+                <div class="name">Provider + BLoC</div>
+                <div class="desc">Dual state management</div>
             </div>
             <div class="tech-item">
                 <div class="icon">🗄️</div>
                 <div class="name">sqflite</div>
-                <div class="desc">^2.3.0 · Local SQLite DB</div>
+                <div class="desc">Local SQLite persistence</div>
             </div>
             <div class="tech-item">
                 <div class="icon">🔥</div>
                 <div class="name">Firebase Auth</div>
-                <div class="desc">^4.16.0 · Authentication</div>
+                <div class="desc">Authentication provider</div>
             </div>
-        </div>
-    </div>
-</section>
-
-<section class="quickstart">
-    <div class="container">
-        <h2 class="section-title">Quick Start</h2>
-        <div class="code-block">
-            <code>
-<span class="comment"># Clone the repository</span>
-git clone https://github.com/sauravbhattacharya001/everything.git
-cd everything
-
-<span class="comment"># Install dependencies</span>
-flutter pub get
-
-<span class="comment"># Run the app</span>
-flutter run
-            </code>
         </div>
     </div>
 </section>
 
 <footer>
-    <div class="container">
+    <div class="landing-content">
         <p>
-            Built by <a href="https://github.com/sauravbhattacharya001">Saurav Bhattacharya</a> · 
-            Licensed under <a href="https://github.com/sauravbhattacharya001/everything/blob/main/LICENSE">MIT</a>
+            Built by <a href="https://github.com/sauravbhattacharya001">Saurav Bhattacharya</a> ·
+            Licensed under <a href="https://github.com/sauravbhattacharya001/everything/blob/master/LICENSE">MIT</a> ·
+            <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a>
         </p>
     </div>
 </footer>

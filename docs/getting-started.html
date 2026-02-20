@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link active">Installation &amp; Setup</a>
+      <a href="getting-started.html#prerequisites" class="sidebar-link">Prerequisites</a>
+      <a href="getting-started.html#firebase" class="sidebar-link">Firebase Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+      <a href="architecture.html#layers" class="sidebar-link">Layer Responsibilities</a>
+      <a href="architecture.html#data-flow" class="sidebar-link">Data Flow</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> Getting Started</div>
+    <h1>Getting Started</h1>
+    <p class="subtitle">Set up the Everything App for local development in under 5 minutes.</p>
+
+    <h2 id="prerequisites">Prerequisites</h2>
+    <table>
+      <tr><th>Tool</th><th>Version</th><th>Notes</th></tr>
+      <tr><td>Flutter SDK</td><td>≥ 3.10.0</td><td>Includes Dart ≥ 3.0.0</td></tr>
+      <tr><td>Android Studio / Xcode</td><td>Latest</td><td>For device emulators</td></tr>
+      <tr><td>Git</td><td>Any recent</td><td>For cloning the repo</td></tr>
+      <tr><td>Firebase CLI</td><td>Latest</td><td>Optional — for Firebase features</td></tr>
+    </table>
+
+    <h2 id="install">Installation</h2>
+    <h3>1. Clone the Repository</h3>
+    <div class="code-block">
+<span class="comment"># Clone</span>
+git clone https://github.com/sauravbhattacharya001/everything.git
+cd everything
+    </div>
+
+    <h3>2. Install Dependencies</h3>
+    <div class="code-block">
+flutter pub get
+    </div>
+
+    <h3>3. Run the App</h3>
+    <div class="code-block">
+<span class="comment"># Run on connected device or emulator</span>
+flutter run
+
+<span class="comment"># Run on web</span>
+flutter run -d chrome
+
+<span class="comment"># Run on specific device</span>
+flutter devices          <span class="comment"># List available devices</span>
+flutter run -d &lt;device&gt;
+    </div>
+
+    <div class="callout callout-info">
+      <strong>💡 Non-Firebase mode</strong>
+      The app works without Firebase configured — auth features will be unavailable, but event management and local storage still function.
+    </div>
+
+    <h2 id="firebase">Firebase Setup (Optional)</h2>
+    <p>To enable authentication features:</p>
+    <ol>
+      <li>Create a project in the <a href="https://console.firebase.google.com/">Firebase Console</a></li>
+      <li>Enable <strong>Email/Password</strong> authentication in the Authentication section</li>
+      <li>Register your app (Android: add <code>google-services.json</code>, iOS: add <code>GoogleService-Info.plist</code>)</li>
+      <li>For web: add Firebase config in <code>web/index.html</code></li>
+    </ol>
+
+    <h3>Environment Variables</h3>
+    <p>API keys should never be hardcoded. Use Dart's <code>--dart-define</code> mechanism:</p>
+    <div class="code-block">
+<span class="comment"># Run with API key</span>
+flutter run --dart-define=GOOGLE_API_KEY=your_key_here
+
+<span class="comment"># Or create a .env file (requires flutter_dotenv)</span>
+GOOGLE_API_KEY=your_key_here
+    </div>
+
+    <h2 id="docker">Running with Docker</h2>
+    <p>The repo includes a Dockerfile for containerized builds:</p>
+    <div class="code-block">
+<span class="comment"># Build the Docker image</span>
+docker build -t everything-app .
+
+<span class="comment"># Run it</span>
+docker run -p 8080:80 everything-app
+
+<span class="comment"># Or pull from GHCR</span>
+docker pull ghcr.io/sauravbhattacharya001/everything:latest
+    </div>
+
+    <h2 id="project-structure">Project Structure</h2>
+    <div class="arch-diagram">
+      <pre>
+everything/
+├── lib/
+│   ├── main.dart                  # App entry + AuthGate widget
+│   ├── core/
+│   │   ├── constants/             # AppConstants (URLs, schemes, hosts)
+│   │   ├── services/              # AuthService, EventService, GraphService
+│   │   └── utils/                 # HttpUtils (SSRF-safe), DateUtils
+│   ├── data/
+│   │   ├── local_storage.dart     # SQLite singleton (v4 schema)
+│   │   └── repositories/         # EventRepository, UserRepository
+│   ├── models/
+│   │   ├── event_model.dart       # EventModel + EventPriority enum
+│   │   ├── event_tag.dart         # EventTag with color palette
+│   │   ├── recurrence_rule.dart   # RecurrenceRule + frequency enum
+│   │   └── user_model.dart        # UserModel
+│   ├── state/
+│   │   ├── blocs/                 # EventBloc (Cubit-based)
+│   │   └── providers/             # EventProvider, UserProvider
+│   └── views/
+│       ├── home/                  # HomeScreen, EventDetailScreen, StatsScreen
+│       ├── login/                 # LoginScreen
+│       └── widgets/               # EventCard, EventFormDialog, UserAvatar
+├── test/                          # Unit & widget tests
+├── docs/                          # Documentation site (GitHub Pages)
+├── .github/                       # CI, CodeQL, Docker, Pages workflows
+├── pubspec.yaml                   # Dependencies
+├── Dockerfile                     # Container build
+└── CONTRIBUTING.md                # Contributor guide
+      </pre>
+    </div>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

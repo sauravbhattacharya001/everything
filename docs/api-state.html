@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>State Management API — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link active">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> State Management</div>
+    <h1>State Management API</h1>
+    <p class="subtitle">Provider-based reactive state with an optional BLoC alternative.</p>
+
+    <h2 id="event-provider">EventProvider</h2>
+    <p><code>lib/state/providers/event_provider.dart</code></p>
+    <p>The primary state holder for events. Extends <code>ChangeNotifier</code> and provides an <strong>O(1) indexed</strong> event list.</p>
+
+    <h3>Key Design Decisions</h3>
+    <ul>
+      <li><strong>Unmodifiable list exposure</strong> — <code>events</code> returns <code>UnmodifiableListView</code> to prevent external mutation</li>
+      <li><strong>O(1) lookups</strong> — internal <code>_idIndex</code> map enables constant-time <code>getEventById()</code>, <code>removeEvent()</code>, and <code>updateEvent()</code></li>
+      <li><strong>Index rebuild strategy</strong> — bulk ops (<code>setEvents</code>, <code>clearEvents</code>) rebuild the index; single-item ops maintain it incrementally</li>
+    </ul>
+
+    <h3>Properties</h3>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>events</code></td><td><code>UnmodifiableListView&lt;EventModel&gt;</code></td><td>Read-only view of all events</td></tr>
+      <tr><td><code>eventCount</code></td><td><code>int</code></td><td>Number of events</td></tr>
+      <tr><td><code>isEmpty</code></td><td><code>bool</code></td><td>Whether event list is empty</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>setEvents</code></td><td><code>(List&lt;EventModel&gt;) → void</code></td><td>Replace entire list + rebuild index. Used during initial load.</td></tr>
+      <tr><td><code>addEvent</code></td><td><code>(EventModel) → void</code></td><td>Append event, update index incrementally.</td></tr>
+      <tr><td><code>removeEvent</code></td><td><code>(String id) → void</code></td><td>Remove by ID using O(1) index lookup. Rebuilds index after removal (indices shift).</td></tr>
+      <tr><td><code>updateEvent</code></td><td><code>(EventModel) → void</code></td><td>Replace event at its indexed position. O(1).</td></tr>
+      <tr><td><code>getEventById</code></td><td><code>(String id) → EventModel?</code></td><td>O(1) lookup via index map.</td></tr>
+      <tr><td><code>clearEvents</code></td><td><code>() → void</code></td><td>Remove all events and clear index.</td></tr>
+    </table>
+
+    <h3>Usage</h3>
+    <div class="code-block">
+<span class="comment">// In a widget</span>
+<span class="keyword">final</span> provider = context.watch&lt;<span class="type">EventProvider</span>&gt;();
+
+<span class="comment">// Read events (reactive — triggers rebuild on change)</span>
+<span class="keyword">for</span> (<span class="keyword">final</span> event <span class="keyword">in</span> provider.events) {
+  <span class="fn">print</span>(event.title);
+}
+
+<span class="comment">// Look up specific event</span>
+<span class="keyword">final</span> event = provider.<span class="fn">getEventById</span>(<span class="string">'uuid-123'</span>);
+
+<span class="comment">// Mutate (triggers notifyListeners → widget rebuild)</span>
+context.read&lt;<span class="type">EventProvider</span>&gt;().<span class="fn">addEvent</span>(newEvent);
+    </div>
+
+    <h2 id="user-provider">UserProvider</h2>
+    <p><code>lib/state/providers/user_provider.dart</code></p>
+    <p>Manages the current user session. Set by <code>AuthGate</code> on successful authentication.</p>
+
+    <h3>Properties &amp; Methods</h3>
+    <table>
+      <tr><th>Member</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>currentUser</code></td><td><code>UserModel?</code></td><td>Currently authenticated user (null if logged out)</td></tr>
+      <tr><td><code>setUser(user)</code></td><td><code>void</code></td><td>Set the current user and notify listeners</td></tr>
+      <tr><td><code>clearUser()</code></td><td><code>void</code></td><td>Clear user session</td></tr>
+    </table>
+
+    <h2 id="event-bloc">EventBloc</h2>
+    <p><code>lib/state/blocs/event_bloc.dart</code></p>
+    <p>Alternative state management using the <strong>BLoC pattern</strong> via <code>Cubit</code>. Provides a state machine approach that can coexist with the Provider-based approach.</p>
+
+    <h3>States</h3>
+    <table>
+      <tr><th>State</th><th>Description</th></tr>
+      <tr><td><code>EventInitial</code></td><td>Before any events have been loaded</td></tr>
+      <tr><td><code>EventLoaded</code></td><td>Contains the current list of events</td></tr>
+      <tr><td><code>EventError</code></td><td>Error state with message (reserved for future use)</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Description</th></tr>
+      <tr><td><code>loadEvents(List&lt;EventModel&gt;)</code></td><td>Transition to <code>EventLoaded</code> with the given events</td></tr>
+      <tr><td><code>addEvent(EventModel)</code></td><td>Append event (only in <code>EventLoaded</code> state, no-op otherwise)</td></tr>
+      <tr><td><code>removeEvent(String id)</code></td><td>Remove event by ID (only in <code>EventLoaded</code> state)</td></tr>
+    </table>
+
+    <h3>State Transitions</h3>
+    <div class="arch-diagram">
+      <pre>
+EventInitial ─── loadEvents() ──→ EventLoaded
+                                     ↕ addEvent() / removeEvent()
+                                  EventLoaded (new list)
+      </pre>
+    </div>
+
+    <h3>When to Use Which?</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>✅ Use EventProvider when…</h4>
+        <ul>
+          <li>You need O(1) ID-based lookups</li>
+          <li>You're in a standard widget tree</li>
+          <li>You want simple reactive updates</li>
+          <li>You're pairing with EventService for persistence</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>✅ Use EventBloc when…</h4>
+        <ul>
+          <li>You prefer explicit state transitions</li>
+          <li>You want to use BlocBuilder/BlocListener</li>
+          <li>You need testable state machines</li>
+          <li>You're integrating with complex async flows</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

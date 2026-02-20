@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Layer API — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link active">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Data Layer</div>
+    <h1>Data Layer API</h1>
+    <p class="subtitle">SQLite persistence with versioned schema migrations and parameterized queries.</p>
+
+    <h2 id="local-storage">LocalStorage</h2>
+    <p><code>lib/data/local_storage.dart</code></p>
+    <p>Singleton SQLite database manager using <code>sqflite</code>. Provides a shared <code>Database</code> instance with lazy initialization.</p>
+
+    <h3>Database Schema (v4)</h3>
+
+    <h4>users</h4>
+    <table>
+      <tr><th>Column</th><th>Type</th><th>Constraint</th></tr>
+      <tr><td><code>id</code></td><td>TEXT</td><td>PRIMARY KEY</td></tr>
+      <tr><td><code>name</code></td><td>TEXT</td><td>—</td></tr>
+      <tr><td><code>email</code></td><td>TEXT</td><td>—</td></tr>
+    </table>
+
+    <h4>events</h4>
+    <table>
+      <tr><th>Column</th><th>Type</th><th>Default</th><th>Added in</th></tr>
+      <tr><td><code>id</code></td><td>TEXT</td><td>PRIMARY KEY</td><td>v1</td></tr>
+      <tr><td><code>title</code></td><td>TEXT</td><td>—</td><td>v1</td></tr>
+      <tr><td><code>description</code></td><td>TEXT</td><td><code>''</code></td><td>v2</td></tr>
+      <tr><td><code>date</code></td><td>TEXT</td><td>—</td><td>v1</td></tr>
+      <tr><td><code>priority</code></td><td>TEXT</td><td><code>'medium'</code></td><td>v2</td></tr>
+      <tr><td><code>tags</code></td><td>TEXT</td><td><code>'[]'</code></td><td>v3</td></tr>
+      <tr><td><code>recurrence</code></td><td>TEXT</td><td><code>null</code></td><td>v4</td></tr>
+    </table>
+
+    <div class="callout callout-info">
+      <strong>Schema Migrations</strong>
+      Migrations run incrementally via <code>onUpgrade</code>. Each version check is independent — upgrading from v1→v4 runs all three ALTER TABLE statements. This ensures any prior version upgrades correctly.
+    </div>
+
+    <h3>Static Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>database</code></td><td><code>Future&lt;Database&gt;</code> (getter)</td><td>Returns cached DB instance; creates on first access</td></tr>
+      <tr><td><code>insert</code></td><td><code>(String table, Map data) → Future&lt;void&gt;</code></td><td>Insert/upsert row with <code>ConflictAlgorithm.replace</code></td></tr>
+      <tr><td><code>getAll</code></td><td><code>(String table) → Future&lt;List&lt;Map&gt;&gt;</code></td><td>Query all rows from a table</td></tr>
+      <tr><td><code>delete</code></td><td><code>(String table, String id) → Future&lt;void&gt;</code></td><td>Delete row by ID (parameterized query)</td></tr>
+      <tr><td><code>close</code></td><td><code>() → Future&lt;void&gt;</code></td><td>Close DB connection and clear cache. Next access re-opens.</td></tr>
+    </table>
+
+    <div class="callout callout-danger">
+      <strong>SQL Injection Prevention</strong>
+      All queries use parameterized <code>whereArgs</code> — never string interpolation. The <code>delete</code> method uses <code>where: 'id = ?', whereArgs: [id]</code>.
+    </div>
+
+    <h2 id="event-repository">EventRepository</h2>
+    <p><code>lib/data/repositories/event_repository.dart</code></p>
+    <p>Thin wrapper around <code>LocalStorage</code> providing domain-specific event operations.</p>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>getEvents()</code></td><td><code>Future&lt;List&lt;Map&gt;&gt;</code></td><td>Fetch all events from the <code>events</code> table</td></tr>
+      <tr><td><code>saveEvent(json)</code></td><td><code>Future&lt;void&gt;</code></td><td>Insert/upsert an event</td></tr>
+      <tr><td><code>updateEvent(json)</code></td><td><code>Future&lt;void&gt;</code></td><td>Update an existing event (uses upsert)</td></tr>
+      <tr><td><code>deleteEvent(id)</code></td><td><code>Future&lt;void&gt;</code></td><td>Delete event by ID</td></tr>
+    </table>
+
+    <h2 id="user-repository">UserRepository</h2>
+    <p><code>lib/data/repositories/user_repository.dart</code></p>
+    <p>Persists user profiles for session restoration.</p>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>saveUser(json)</code></td><td><code>Future&lt;void&gt;</code></td><td>Persist user profile</td></tr>
+      <tr><td><code>getUser(id)</code></td><td><code>Future&lt;Map?&gt;</code></td><td>Retrieve user by ID</td></tr>
+    </table>
+
+    <h2 id="data-flow">Persistence Flow</h2>
+    <div class="arch-diagram">
+      <pre>
+Widget Action
+  │
+  ▼
+EventService
+  ├─→ EventProvider.addEvent()     ← instant UI update
+  └─→ EventRepository.saveEvent() ← async disk write
+        └─→ LocalStorage.insert('events', json)
+              └─→ sqflite INSERT OR REPLACE
+      </pre>
+    </div>
+
+    <h3>Why This Pattern?</h3>
+    <ul>
+      <li><strong>Responsiveness</strong> — UI updates instantly (in-memory first)</li>
+      <li><strong>Resilience</strong> — Disk failures don't crash the app</li>
+      <li><strong>Consistency</strong> — Single service coordinates both stores</li>
+      <li><strong>Testability</strong> — Repository can be mocked in EventService tests</li>
+    </ul>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

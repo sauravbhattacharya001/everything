@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link active">Overview</a>
+      <a href="architecture.html#layers" class="sidebar-link">Layer Responsibilities</a>
+      <a href="architecture.html#data-flow" class="sidebar-link">Data Flow</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> Architecture</div>
+    <h1>Architecture</h1>
+    <p class="subtitle">Clean, layered Flutter architecture with clear separation of concerns.</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Everything App follows a <strong>layered architecture</strong> pattern that separates the codebase into distinct responsibilities. Each layer depends only on the layer below it, preventing circular dependencies and making the code testable in isolation.</p>
+
+    <div class="arch-diagram">
+      <pre>
+┌──────────────────────────────────────────────────────┐
+│                    Views Layer                        │
+│  HomeScreen · LoginScreen · StatsScreen · Widgets     │
+│  (StatelessWidget / StatefulWidget — UI only)         │
+├──────────────────────────────────────────────────────┤
+│                   State Layer                         │
+│    EventProvider (ChangeNotifier) — primary state      │
+│    EventBloc (Cubit) — alternative BLoC pattern        │
+│    UserProvider (ChangeNotifier) — user session         │
+├──────────────────────────────────────────────────────┤
+│                  Services Layer                        │
+│  EventService — coordinates persistence + state        │
+│  AuthService — Firebase Auth wrapper                   │
+│  GraphService — Microsoft Graph API client             │
+├──────────────────────────────────────────────────────┤
+│                   Data Layer                           │
+│  LocalStorage — SQLite singleton (sqflite)             │
+│  EventRepository · UserRepository — CRUD operations    │
+├──────────────────────────────────────────────────────┤
+│                  Models Layer                          │
+│  EventModel · EventTag · RecurrenceRule · UserModel    │
+│  (Immutable, with copyWith, fromJson/toJson)           │
+└──────────────────────────────────────────────────────┘
+      </pre>
+    </div>
+
+    <h2 id="layers">Layer Responsibilities</h2>
+
+    <h3>Models</h3>
+    <p>Pure Dart classes with no Flutter dependencies. All models are designed to be:</p>
+    <ul>
+      <li><strong>Immutable</strong> — fields are <code>final</code>, mutations use <code>copyWith()</code></li>
+      <li><strong>Serializable</strong> — <code>fromJson()</code> / <code>toJson()</code> for SQLite and API</li>
+      <li><strong>Value-equatable</strong> — overridden <code>==</code> and <code>hashCode</code></li>
+    </ul>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>📋 EventModel</h4>
+        <p>Core event with id, title, description, date, priority, tags, and recurrence. Generates recurring occurrences via <code>generateOccurrences()</code>.</p>
+      </div>
+      <div class="card">
+        <h4>🏷️ EventTag</h4>
+        <p>Color-coded categorization with 8 preset colors and common tag presets (Work, Personal, Meeting, etc.).</p>
+      </div>
+      <div class="card">
+        <h4>🔄 RecurrenceRule</h4>
+        <p>Daily/weekly/monthly/yearly recurrence with configurable intervals and optional end dates. Handles month-length clamping (Jan 31 + 1 month = Feb 28).</p>
+      </div>
+      <div class="card">
+        <h4>👤 UserModel</h4>
+        <p>User identity with id, name, and email. Persisted to local storage for session restoration.</p>
+      </div>
+    </div>
+
+    <h3>Data Layer</h3>
+    <p>The data layer handles all persistence through two components:</p>
+    <ul>
+      <li><strong>LocalStorage</strong> — Singleton SQLite manager with versioned schema migrations (v1→v4). All queries use parameterized bindings to prevent SQL injection.</li>
+      <li><strong>Repositories</strong> — Thin wrappers around LocalStorage that provide domain-specific CRUD operations (<code>EventRepository</code>, <code>UserRepository</code>).</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <strong>Schema Versions</strong>
+      v1: Basic users + events tables. v2: Added description + priority. v3: Added tags (JSON). v4: Added recurrence (JSON). Each migration is applied incrementally via <code>onUpgrade</code>.
+    </div>
+
+    <h3>Services Layer</h3>
+    <p>Services coordinate between the data layer and state layer:</p>
+    <ul>
+      <li><strong>EventService</strong> — The single point of coordination for all event mutations. Updates in-memory state first (for responsiveness), then persists to disk asynchronously. Persistence errors are logged but don't crash the UI.</li>
+      <li><strong>AuthService</strong> — Wraps Firebase Auth with typed <code>AuthException</code> errors. Maps Firebase error codes to human-readable identifiers.</li>
+      <li><strong>GraphService</strong> — Microsoft Graph API client with paginated event fetching. Includes SSRF protection — pagination links are validated against trusted hosts.</li>
+    </ul>
+
+    <h3>State Layer</h3>
+    <p>Two state management approaches coexist:</p>
+    <table>
+      <tr><th>Pattern</th><th>Implementation</th><th>Use Case</th></tr>
+      <tr><td>Provider</td><td><code>EventProvider</code>, <code>UserProvider</code></td><td>Primary UI state — O(1) indexed lookups, unmodifiable list exposure</td></tr>
+      <tr><td>BLoC</td><td><code>EventBloc</code> (Cubit)</td><td>Alternative pattern — state machine with <code>EventInitial</code>, <code>EventLoaded</code>, <code>EventError</code> states</td></tr>
+    </table>
+
+    <h3>Views Layer</h3>
+    <p>Flutter widgets that consume state and render UI. No business logic lives here — widgets delegate all mutations to services/providers.</p>
+
+    <h2 id="data-flow">Data Flow</h2>
+
+    <h3>Authentication Flow</h3>
+    <div class="arch-diagram">
+      <pre>
+App Start → Firebase.initializeApp()
+         → AuthGate (StreamBuilder on authStateChanges)
+            ├─ User exists → restore UserProvider → HomeScreen
+            └─ No user → LoginScreen
+                          → AuthService.loginWithEmail()
+                          → Firebase Auth
+                          → UserProvider.setUser() + UserRepository.saveUser()
+                          → Navigate to HomeScreen
+      </pre>
+    </div>
+
+    <h3>Event CRUD Flow</h3>
+    <div class="arch-diagram">
+      <pre>
+UI Action (e.g., "Add Event")
+  → EventService.addEvent(event)
+    → EventProvider.addEvent()     ← in-memory (instant UI update)
+    → EventRepository.saveEvent()  ← async persistence (fire-and-forget)
+  → UI rebuilds via ChangeNotifier
+      </pre>
+    </div>
+
+    <h3>Microsoft Graph Sync Flow</h3>
+    <div class="arch-diagram">
+      <pre>
+User triggers sync
+  → GraphService.fetchCalendarEvents(accessToken)
+    → GET /me/events?$top=50
+    → Follow @odata.nextLink (validated against trustedApiHosts)
+    → Collect all pages (max 50 pages safety limit)
+  → Map to EventModel list
+  → EventService.setEvents() / merge
+      </pre>
+    </div>
+
+    <h2 id="key-patterns">Key Design Patterns</h2>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>🏭 Singleton Database</h4>
+        <p><code>LocalStorage._db</code> ensures only one database connection exists. Lazy-initialized on first access.</p>
+      </div>
+      <div class="card">
+        <h4>📇 O(1) Index Map</h4>
+        <p><code>EventProvider._idIndex</code> maps event IDs to list indices, enabling constant-time lookups, updates, and deletions.</p>
+      </div>
+      <div class="card">
+        <h4>🔥 Fire-and-Forget Persistence</h4>
+        <p>EventService updates in-memory state first for instant UI response, then persists asynchronously. Disk errors are logged, not surfaced.</p>
+      </div>
+      <div class="card">
+        <h4>🛡️ Typed Exceptions</h4>
+        <p><code>AuthException</code>, <code>HttpException</code>, <code>HttpSecurityException</code>, <code>GraphServiceException</code> — each error type carries structured context for proper handling.</p>
+      </div>
+    </div>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

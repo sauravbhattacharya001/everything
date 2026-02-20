@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Models API — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link active">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Models</div>
+    <h1>Models API Reference</h1>
+    <p class="subtitle">Immutable data models with serialization, equality, and domain logic.</p>
+
+    <h2 id="event-model">EventModel</h2>
+    <p><code>lib/models/event_model.dart</code></p>
+    <p>The core domain object representing a calendar event. Immutable with <code>copyWith()</code> for derived copies.</p>
+
+    <h3>Constructor</h3>
+    <div class="code-block">
+<span class="type">EventModel</span>({
+  <span class="keyword">required</span> <span class="type">String</span> id,
+  <span class="keyword">required</span> <span class="type">String</span> title,
+  <span class="type">String</span> description = <span class="string">''</span>,
+  <span class="keyword">required</span> <span class="type">DateTime</span> date,
+  <span class="type">EventPriority</span> priority = <span class="type">EventPriority</span>.medium,
+  <span class="type">List</span>&lt;<span class="type">EventTag</span>&gt;? tags,
+  <span class="type">RecurrenceRule</span>? recurrence,
+})
+    </div>
+
+    <h3>Properties</h3>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>id</code></td><td><code>String</code></td><td>Unique identifier</td></tr>
+      <tr><td><code>title</code></td><td><code>String</code></td><td>Event title</td></tr>
+      <tr><td><code>description</code></td><td><code>String</code></td><td>Event description (default: empty)</td></tr>
+      <tr><td><code>date</code></td><td><code>DateTime</code></td><td>Event date/time</td></tr>
+      <tr><td><code>priority</code></td><td><code>EventPriority</code></td><td>Priority level (low, medium, high, urgent)</td></tr>
+      <tr><td><code>tags</code></td><td><code>List&lt;EventTag&gt;</code></td><td>Category tags (default: empty)</td></tr>
+      <tr><td><code>recurrence</code></td><td><code>RecurrenceRule?</code></td><td>Recurrence rule (null = non-recurring)</td></tr>
+      <tr><td><code>isRecurring</code></td><td><code>bool</code></td><td>Computed: whether event has a recurrence rule</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>copyWith({...})</code></td><td><code>EventModel</code></td><td>Creates a copy with specified fields replaced. Use <code>clearRecurrence: true</code> to remove recurrence.</td></tr>
+      <tr><td><code>generateOccurrences({maxOccurrences})</code></td><td><code>List&lt;EventModel&gt;</code></td><td>Generates future recurring instances with derived IDs (<code>originalId_N</code>). Returns empty if not recurring.</td></tr>
+      <tr><td><code>fromJson(Map)</code></td><td><code>EventModel</code></td><td>Factory: deserializes from JSON/SQLite row. Handles both String and List tag formats.</td></tr>
+      <tr><td><code>toJson()</code></td><td><code>Map&lt;String, dynamic&gt;</code></td><td>Serializes for SQLite storage. Tags are JSON-encoded as a string.</td></tr>
+    </table>
+
+    <h2 id="event-priority">EventPriority</h2>
+    <p>Enum with four levels, each carrying display metadata:</p>
+    <table>
+      <tr><th>Value</th><th>Label</th><th>Color</th><th>Icon</th></tr>
+      <tr><td><code>low</code></td><td>Low</td><td>🟢 Green</td><td>↓ arrow_downward</td></tr>
+      <tr><td><code>medium</code></td><td>Medium</td><td>🟠 Orange</td><td>— remove</td></tr>
+      <tr><td><code>high</code></td><td>High</td><td>🔴 Deep Orange</td><td>↑ arrow_upward</td></tr>
+      <tr><td><code>urgent</code></td><td>Urgent</td><td>🔴 Red</td><td>❗ priority_high</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Description</th></tr>
+      <tr><td><code>label</code></td><td>Human-readable display string</td></tr>
+      <tr><td><code>color</code></td><td>Associated Material Color</td></tr>
+      <tr><td><code>icon</code></td><td>Associated Material IconData</td></tr>
+      <tr><td><code>fromString(String)</code></td><td>Parse from stored name. Falls back to <code>medium</code>.</td></tr>
+    </table>
+
+    <h2 id="event-tag">EventTag</h2>
+    <p><code>lib/models/event_tag.dart</code></p>
+    <p>Color-coded categorization for events. Equality is based on name (case-insensitive).</p>
+
+    <h3>Constructor</h3>
+    <div class="code-block">
+<span class="type">EventTag</span>({
+  <span class="keyword">required</span> <span class="type">String</span> name,
+  <span class="type">int</span> colorIndex = <span class="string">0</span>,
+})
+    </div>
+
+    <h3>Color Palette</h3>
+    <table>
+      <tr><th>Index</th><th>Color</th><th>Name</th></tr>
+      <tr><td>0</td><td>🔵</td><td>Blue</td></tr>
+      <tr><td>1</td><td>🟢</td><td>Green</td></tr>
+      <tr><td>2</td><td>🟠</td><td>Orange</td></tr>
+      <tr><td>3</td><td>🟣</td><td>Purple</td></tr>
+      <tr><td>4</td><td>💗</td><td>Pink</td></tr>
+      <tr><td>5</td><td>🩵</td><td>Cyan</td></tr>
+      <tr><td>6</td><td>🟤</td><td>Brown</td></tr>
+      <tr><td>7</td><td>⬜</td><td>Blue Grey</td></tr>
+    </table>
+
+    <h3>Preset Tags</h3>
+    <p>Static list of common tags: Work (blue), Personal (green), Meeting (orange), Birthday (purple), Health (pink), Travel (cyan), Finance (brown), Social (grey).</p>
+
+    <h2 id="recurrence-rule">RecurrenceRule</h2>
+    <p><code>lib/models/recurrence_rule.dart</code></p>
+    <p>Defines how an event repeats. Generates occurrence dates with smart month-length clamping.</p>
+
+    <h3>Constructor</h3>
+    <div class="code-block">
+<span class="type">RecurrenceRule</span>({
+  <span class="keyword">required</span> <span class="type">RecurrenceFrequency</span> frequency,
+  <span class="type">int</span> interval = <span class="string">1</span>,
+  <span class="type">DateTime</span>? endDate,
+})
+    </div>
+
+    <h3>Properties</h3>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>frequency</code></td><td><code>RecurrenceFrequency</code></td><td>daily, weekly, monthly, yearly</td></tr>
+      <tr><td><code>interval</code></td><td><code>int</code></td><td>Repeat every N periods (default: 1)</td></tr>
+      <tr><td><code>endDate</code></td><td><code>DateTime?</code></td><td>Optional end date (null = infinite)</td></tr>
+      <tr><td><code>summary</code></td><td><code>String</code></td><td>Computed: "Every 2 weeks until Mar 15, 2026"</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Description</th></tr>
+      <tr><td><code>generateOccurrences(startDate, {maxOccurrences: 52})</code></td><td>Returns list of DateTimes. Stops at endDate or max count.</td></tr>
+      <tr><td><code>fromJson(Map) / toJson()</code></td><td>Standard JSON serialization</td></tr>
+      <tr><td><code>fromJsonString(String?) / toJsonString()</code></td><td>String-based serialization for SQLite TEXT columns</td></tr>
+    </table>
+
+    <div class="callout callout-info">
+      <strong>Month Clamping</strong>
+      Adding months respects varying month lengths. For example, Jan 31 + 1 month = Feb 28 (or 29 in leap years). This prevents <code>DateTime</code> overflow errors.
+    </div>
+
+    <h2 id="user-model">UserModel</h2>
+    <p><code>lib/models/user_model.dart</code></p>
+    <p>Simple user identity model with JSON serialization. Persisted to the <code>users</code> SQLite table for session restoration.</p>
+
+    <h3>Fields</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>id</code></td><td><code>String</code></td><td>Firebase UID</td></tr>
+      <tr><td><code>name</code></td><td><code>String</code></td><td>Display name</td></tr>
+      <tr><td><code>email</code></td><td><code>String</code></td><td>Email address</td></tr>
+    </table>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link active">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> Guides <span>/</span> Testing</div>
+    <h1>Testing Guide</h1>
+    <p class="subtitle">Comprehensive unit and state tests for models, services, and state management.</p>
+
+    <h2 id="running">Running Tests</h2>
+
+    <div class="code-block">
+<span class="comment"># Run all tests</span>
+flutter test
+
+<span class="comment"># Run with verbose output</span>
+flutter test --reporter expanded
+
+<span class="comment"># Run specific test file</span>
+flutter test test/models/event_model_test.dart
+
+<span class="comment"># Run with coverage</span>
+flutter test --coverage
+lcov -r coverage/lcov.info 'lib/views/*' -o coverage/filtered.info
+genhtml coverage/filtered.info -o coverage/html
+    </div>
+
+    <h2 id="structure">Test Structure</h2>
+    <div class="arch-diagram">
+      <pre>
+test/
+├── core/
+│   ├── event_service_test.dart        # EventService coordination tests
+│   └── http_utils_test.dart           # SSRF protection, scheme validation
+├── models/
+│   ├── event_model_test.dart          # Serialization, equality, copyWith
+│   ├── event_model_tags_test.dart     # Tag handling in fromJson/toJson
+│   ├── event_model_recurrence_test.dart  # Recurrence generation
+│   ├── event_tag_test.dart            # Tag equality, preset validation
+│   ├── recurrence_rule_test.dart      # Frequency, intervals, month clamping
+│   └── user_model_test.dart           # User serialization
+└── state/
+    ├── event_bloc_test.dart           # BLoC state transitions
+    ├── event_provider_test.dart       # O(1) index, CRUD operations
+    └── user_provider_test.dart        # User session management
+      </pre>
+    </div>
+
+    <h2 id="test-categories">Test Categories</h2>
+
+    <h3>Model Tests</h3>
+    <p>Verify serialization round-trips, value equality, and domain logic:</p>
+    <ul>
+      <li><strong>EventModel</strong> — <code>fromJson</code>/<code>toJson</code> round-trip, <code>copyWith</code> (including <code>clearRecurrence</code>), <code>==</code> and <code>hashCode</code>, default values</li>
+      <li><strong>EventTag</strong> — Case-insensitive equality, color palette bounds clamping, preset validation</li>
+      <li><strong>RecurrenceRule</strong> — Occurrence generation for all frequencies, month clamping (Jan 31 + 1mo = Feb 28), end date cutoff, <code>summary</code> formatting, JSON string round-trip</li>
+    </ul>
+
+    <div class="code-block">
+<span class="comment">// Example: RecurrenceRule month clamping test</span>
+<span class="fn">test</span>(<span class="string">'monthly recurrence clamps day to valid range'</span>, () {
+  <span class="keyword">final</span> rule = <span class="type">RecurrenceRule</span>(
+    frequency: <span class="type">RecurrenceFrequency</span>.monthly,
+  );
+  <span class="keyword">final</span> start = <span class="type">DateTime</span>(2026, 1, 31); <span class="comment">// Jan 31</span>
+  <span class="keyword">final</span> dates = rule.<span class="fn">generateOccurrences</span>(start, maxOccurrences: 3);
+  
+  <span class="fn">expect</span>(dates[1].day, 28); <span class="comment">// Feb 28 (not 31!)</span>
+  <span class="fn">expect</span>(dates[2].day, 31); <span class="comment">// Mar 31</span>
+});
+    </div>
+
+    <h3>Service Tests</h3>
+    <p>Verify coordination between state and persistence:</p>
+    <ul>
+      <li><strong>EventService</strong> — add/update/delete coordination, load-once guard (doesn't overwrite non-empty provider), persistence error handling (logged, not thrown)</li>
+      <li><strong>HttpUtils</strong> — scheme blocking (<code>http</code>, <code>file</code>, <code>ftp</code>), trusted host validation, timeout enforcement</li>
+    </ul>
+
+    <h3>State Tests</h3>
+    <p>Verify reactive state management behavior:</p>
+    <ul>
+      <li><strong>EventProvider</strong> — O(1) <code>getEventById</code>, <code>removeEvent</code> index rebuild, <code>UnmodifiableListView</code> enforcement, <code>notifyListeners</code> calls</li>
+      <li><strong>EventBloc</strong> — State machine transitions (<code>EventInitial</code> → <code>EventLoaded</code>), no-op behavior in wrong state, list immutability between emissions</li>
+    </ul>
+
+    <h2 id="coverage">Coverage</h2>
+    <p>Coverage is tracked via <a href="https://codecov.io/gh/sauravbhattacharya001/everything">Codecov</a> and runs automatically in CI.</p>
+
+    <div class="callout callout-info">
+      <strong>Coverage Strategy</strong>
+      The project focuses coverage on models, services, and state — the testable business logic. View tests (widget tests) are encouraged but not mandated, as they require more infrastructure and are harder to maintain.
+    </div>
+
+    <h2 id="writing">Writing New Tests</h2>
+    <h3>Conventions</h3>
+    <ul>
+      <li>One test file per source file, mirroring the <code>lib/</code> structure</li>
+      <li>Use descriptive <code>group()</code> blocks for related tests</li>
+      <li>Test edge cases: empty inputs, null fields, malformed JSON, boundary values</li>
+      <li>Mock external dependencies (repositories, Firebase) — don't hit real services</li>
+    </ul>
+
+    <h3>Example Pattern</h3>
+    <div class="code-block">
+<span class="keyword">import</span> <span class="string">'package:flutter_test/flutter_test.dart'</span>;
+<span class="keyword">import</span> <span class="string">'package:everything/models/event_model.dart'</span>;
+
+<span class="fn">void</span> main() {
+  <span class="fn">group</span>(<span class="string">'EventModel'</span>, () {
+    <span class="fn">test</span>(<span class="string">'round-trips through JSON'</span>, () {
+      <span class="keyword">final</span> original = <span class="type">EventModel</span>(
+        id: <span class="string">'1'</span>,
+        title: <span class="string">'Test'</span>,
+        date: <span class="type">DateTime</span>(2026, 1, 15),
+      );
+      <span class="keyword">final</span> json = original.<span class="fn">toJson</span>();
+      <span class="keyword">final</span> restored = <span class="type">EventModel</span>.<span class="fn">fromJson</span>(json);
+      <span class="fn">expect</span>(restored, equals(original));
+    });
+  });
+}
+    </div>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

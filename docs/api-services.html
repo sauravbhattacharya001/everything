@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Services API — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link active">Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Services</div>
+    <h1>Services API Reference</h1>
+    <p class="subtitle">Business logic coordinators for auth, events, API integration, and HTTP.</p>
+
+    <h2 id="event-service">EventService</h2>
+    <p><code>lib/core/services/event_service.dart</code></p>
+    <p>The central coordination point for all event mutations. Eliminates the duplicated "update provider + persist to repository" pattern by providing a single API that handles both.</p>
+
+    <h3>Constructor</h3>
+    <div class="code-block">
+<span class="type">EventService</span>({
+  <span class="keyword">required</span> <span class="type">EventProvider</span> provider,
+  <span class="type">EventRepository</span>? repository,   <span class="comment">// defaults to EventRepository()</span>
+})
+    </div>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>loadEvents()</code></td><td><code>Future&lt;void&gt;</code></td><td>Loads persisted events from SQLite into the provider. Only populates if provider is empty (avoids overwriting session data).</td></tr>
+      <tr><td><code>addEvent(event)</code></td><td><code>Future&lt;void&gt;</code></td><td>Adds to provider (instant), then persists to SQLite (async).</td></tr>
+      <tr><td><code>updateEvent(event)</code></td><td><code>Future&lt;void&gt;</code></td><td>Updates in provider (instant), then persists (async).</td></tr>
+      <tr><td><code>deleteEvent(id)</code></td><td><code>Future&lt;void&gt;</code></td><td>Removes from provider (instant), then deletes from SQLite (async).</td></tr>
+    </table>
+
+    <div class="callout callout-success">
+      <strong>Fire-and-Forget Pattern</strong>
+      All persistence operations are wrapped in try/catch. The in-memory state is always updated first, so the UI stays responsive even if disk I/O fails. Errors are logged via <code>debugPrint</code>.
+    </div>
+
+    <h3>Usage Example</h3>
+    <div class="code-block">
+<span class="keyword">final</span> service = <span class="type">EventService</span>(
+  provider: context.read&lt;<span class="type">EventProvider</span>&gt;(),
+);
+
+<span class="comment">// Load persisted events on app start</span>
+<span class="keyword">await</span> service.<span class="fn">loadEvents</span>();
+
+<span class="comment">// Add a new event</span>
+<span class="keyword">await</span> service.<span class="fn">addEvent</span>(<span class="type">EventModel</span>(
+  id: <span class="string">'uuid-123'</span>,
+  title: <span class="string">'Team Standup'</span>,
+  date: <span class="type">DateTime</span>.now(),
+  priority: <span class="type">EventPriority</span>.high,
+));
+
+<span class="comment">// Delete an event</span>
+<span class="keyword">await</span> service.<span class="fn">deleteEvent</span>(<span class="string">'uuid-123'</span>);
+    </div>
+
+    <h2 id="auth-service">AuthService</h2>
+    <p><code>lib/core/services/auth_service.dart</code></p>
+    <p>Wraps Firebase Auth with typed exception handling. All Firebase error codes are mapped to structured <code>AuthException</code> instances.</p>
+
+    <h3>Properties</h3>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>currentUser</code></td><td><code>User?</code></td><td>Currently signed-in Firebase user</td></tr>
+      <tr><td><code>authStateChanges</code></td><td><code>Stream&lt;User?&gt;</code></td><td>Stream of auth state changes (used by AuthGate)</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>loginWithEmail</code></td><td><code>(String email, String password) → Future&lt;User?&gt;</code></td><td>Sign in with email/password</td></tr>
+      <tr><td><code>signUpWithEmail</code></td><td><code>(String email, String password) → Future&lt;User?&gt;</code></td><td>Create new account</td></tr>
+      <tr><td><code>resetPassword</code></td><td><code>(String email) → Future&lt;void&gt;</code></td><td>Send password reset email</td></tr>
+      <tr><td><code>logout</code></td><td><code>() → Future&lt;void&gt;</code></td><td>Sign out</td></tr>
+    </table>
+
+    <h3>Error Handling</h3>
+    <p>All methods throw <code>AuthException</code> with mapped error codes:</p>
+    <table>
+      <tr><th>Firebase Code</th><th>Mapped Code</th></tr>
+      <tr><td><code>user-not-found</code></td><td><code>user-not-found</code></td></tr>
+      <tr><td><code>wrong-password</code></td><td><code>wrong-password</code></td></tr>
+      <tr><td><code>email-already-in-use</code></td><td><code>email-already-in-use</code></td></tr>
+      <tr><td><code>weak-password</code></td><td><code>weak-password</code></td></tr>
+      <tr><td><code>invalid-email</code></td><td><code>invalid-email</code></td></tr>
+      <tr><td>Others</td><td>Original Firebase code</td></tr>
+    </table>
+
+    <h2 id="graph-service">GraphService</h2>
+    <p><code>lib/core/services/graph_service.dart</code></p>
+    <p>Microsoft Graph API client for calendar event synchronization. Handles pagination with SSRF protection.</p>
+
+    <h3>Constructor</h3>
+    <div class="code-block">
+<span class="type">GraphService</span>(<span class="type">String</span> accessToken)
+    </div>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>fetchCalendarEvents()</code></td><td><code>Future&lt;List&lt;Map&lt;String, dynamic&gt;&gt;&gt;</code></td><td>Fetches all calendar events with automatic pagination (up to 50 pages). Validates pagination URLs against trusted hosts.</td></tr>
+    </table>
+
+    <div class="callout callout-warning">
+      <strong>SSRF Protection</strong>
+      The first API request URL is constructed internally. Subsequent pagination URLs from <code>@odata.nextLink</code> are validated against <code>AppConstants.trustedApiHosts</code> to prevent server-side request forgery. See the <a href="security.html">Security Guide</a> for details.
+    </div>
+
+    <h3>Error Handling</h3>
+    <p>Throws <code>GraphServiceException</code> when:</p>
+    <ul>
+      <li>Response contains an <code>error</code> field (API error)</li>
+      <li>Response is missing the expected <code>value</code> field</li>
+      <li>Pagination URL fails trusted host validation</li>
+    </ul>
+
+    <h2 id="http-utils">HttpUtils</h2>
+    <p><code>lib/core/utils/http_utils.dart</code></p>
+    <p>Static HTTP utility class with built-in security validation.</p>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Description</th></tr>
+      <tr><td><code>getRequest(url, {headers, timeout, requireTrustedHost})</code></td><td>HTTPS GET with scheme validation and optional trusted-host enforcement</td></tr>
+      <tr><td><code>postRequest(url, body, {headers, timeout})</code></td><td>HTTPS POST with JSON encoding and scheme validation</td></tr>
+    </table>
+
+    <h3>Security Features</h3>
+    <ul>
+      <li><strong>Scheme allowlist</strong> — only <code>https</code> permitted (no <code>http</code>, <code>file</code>, <code>ftp</code>)</li>
+      <li><strong>Trusted host validation</strong> — optional enforcement for pagination/redirect URLs</li>
+      <li><strong>30-second default timeout</strong> — prevents hanging connections</li>
+    </ul>
+
+    <h3>Exception Types</h3>
+    <table>
+      <tr><th>Exception</th><th>Fields</th><th>When Thrown</th></tr>
+      <tr><td><code>HttpException</code></td><td><code>statusCode</code>, <code>responseBody</code></td><td>Non-200 HTTP response</td></tr>
+      <tr><td><code>HttpSecurityException</code></td><td><code>message</code></td><td>Blocked scheme or untrusted host</td></tr>
+    </table>
+
+    <div class="docs-footer">
+      <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>
