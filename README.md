@@ -7,11 +7,18 @@
 [![CI](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml)
 [![Docker](https://github.com/sauravbhattacharya001/everything/actions/workflows/docker.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/docker.yml)
+[![Pages](https://github.com/sauravbhattacharya001/everything/actions/workflows/pages.yml/badge.svg)](https://sauravbhattacharya001.github.io/everything/)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025e8c?logo=dependabot&logoColor=white)](https://github.com/sauravbhattacharya001/everything/blob/master/.github/dependabot.yml)
 [![Dart](https://img.shields.io/badge/Dart-%3E%3D3.0-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.10-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Web-brightgreen?logo=android&logoColor=white)](https://flutter.dev/multi-platform)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub release](https://img.shields.io/github/v/release/sauravbhattacharya001/everything?include_prereleases)](https://github.com/sauravbhattacharya001/everything/releases)
+[![GitHub issues](https://img.shields.io/github/issues/sauravbhattacharya001/everything)](https://github.com/sauravbhattacharya001/everything/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/sauravbhattacharya001/everything)](https://github.com/sauravbhattacharya001/everything/commits/master)
 [![GitHub repo size](https://img.shields.io/github/repo-size/sauravbhattacharya001/everything)](https://github.com/sauravbhattacharya001/everything)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/sauravbhattacharya001/everything/blob/master/CONTRIBUTING.md)
 
 <br />
 
