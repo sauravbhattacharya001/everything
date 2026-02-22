@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:everything/models/event_model.dart';
+import 'package:everything/models/reminder_settings.dart';
 
 void main() {
   group('EventModel', () {
@@ -225,6 +226,134 @@ void main() {
         expect(str, contains('1'));
         expect(str, contains('Test'));
         expect(str, contains('Medium'));
+      });
+    });
+
+    group('reminders', () {
+      test('defaults to empty reminders', () {
+        final event = EventModel(id: '1', title: 'Test', date: sampleDate);
+        expect(event.reminders.hasReminders, isFalse);
+      });
+
+      test('accepts reminder settings', () {
+        final event = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+          reminders: ReminderSettings.defaultReminder,
+        );
+        expect(event.reminders.hasReminders, isTrue);
+        expect(event.reminders.count, 1);
+      });
+
+      test('reminders serialize in toJson', () {
+        final event = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+          reminders: ReminderSettings(
+              offsets: [ReminderOffset.fiveMinutes, ReminderOffset.oneHour]),
+        );
+        final json = event.toJson();
+        expect(json['reminders'], isNotNull);
+        expect(json['reminders'], contains('fiveMinutes'));
+        expect(json['reminders'], contains('oneHour'));
+      });
+
+      test('reminders deserialize from JSON', () {
+        final json = {
+          'id': 'evt-r1',
+          'title': 'Reminder Test',
+          'date': '2026-03-15T09:00:00.000',
+          'reminders': '["fifteenMinutes","oneDay"]',
+        };
+        final event = EventModel.fromJson(json);
+        expect(event.reminders.count, 2);
+        expect(event.reminders.offsets, contains(ReminderOffset.fifteenMinutes));
+        expect(event.reminders.offsets, contains(ReminderOffset.oneDay));
+      });
+
+      test('null reminders JSON defaults to empty', () {
+        final json = {
+          'id': 'evt-r2',
+          'title': 'No Reminders',
+          'date': '2026-03-15T09:00:00.000',
+        };
+        final event = EventModel.fromJson(json);
+        expect(event.reminders.hasReminders, isFalse);
+      });
+
+      test('copyWith preserves reminders', () {
+        final event = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+          reminders: ReminderSettings.defaultReminder,
+        );
+        final copy = event.copyWith(title: 'Updated');
+        expect(copy.reminders.hasReminders, isTrue);
+        expect(copy.title, 'Updated');
+      });
+
+      test('copyWith can change reminders', () {
+        final event = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+        );
+        final copy = event.copyWith(
+          reminders: ReminderSettings(
+              offsets: [ReminderOffset.oneWeek]),
+        );
+        expect(copy.reminders.count, 1);
+        expect(copy.reminders.offsets.first, ReminderOffset.oneWeek);
+      });
+
+      test('empty reminders omitted from toJson', () {
+        final event = EventModel(id: '1', title: 'Test', date: sampleDate);
+        final json = event.toJson();
+        expect(json['reminders'], isNull);
+      });
+
+      test('reminders round-trip through JSON', () {
+        final original = EventModel(
+          id: 'rt1',
+          title: 'Round Trip',
+          date: sampleDate,
+          reminders: ReminderSettings(offsets: [
+            ReminderOffset.thirtyMinutes,
+            ReminderOffset.twoHours,
+          ]),
+        );
+        final json = original.toJson();
+        final restored = EventModel.fromJson(json);
+        expect(restored.reminders.count, 2);
+        expect(restored.reminders.offsets,
+            contains(ReminderOffset.thirtyMinutes));
+        expect(
+            restored.reminders.offsets, contains(ReminderOffset.twoHours));
+      });
+
+      test('equality includes reminders', () {
+        final a = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+          reminders: ReminderSettings.defaultReminder,
+        );
+        final b = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+          reminders: ReminderSettings.defaultReminder,
+        );
+        final c = EventModel(
+          id: '1',
+          title: 'Test',
+          date: sampleDate,
+        );
+        expect(a, equals(b));
+        expect(a, isNot(equals(c)));
       });
     });
   });

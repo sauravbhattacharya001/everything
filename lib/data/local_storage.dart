@@ -47,7 +47,8 @@ class LocalStorage {
             date TEXT,
             priority TEXT DEFAULT 'medium',
             tags TEXT DEFAULT '[]',
-            recurrence TEXT
+            recurrence TEXT,
+            reminders TEXT
           )
           ''',
         );
@@ -70,8 +71,13 @@ class LocalStorage {
           await db.execute(
               "ALTER TABLE events ADD COLUMN recurrence TEXT");
         }
+        if (oldVersion < 5) {
+          // Add reminders column (JSON-encoded list of ReminderOffset names)
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN reminders TEXT");
+        }
       },
-      version: 4,
+      version: 5,
     );
   }
 

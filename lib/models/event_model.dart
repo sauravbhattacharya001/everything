@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'event_tag.dart';
 import 'recurrence_rule.dart';
+import 'reminder_settings.dart';
 
 /// Priority levels for events, each with an associated color and label.
 enum EventPriority {
@@ -69,6 +70,7 @@ class EventModel {
   final EventPriority priority;
   final List<EventTag> tags;
   final RecurrenceRule? recurrence;
+  final ReminderSettings reminders;
 
   EventModel({
     required this.id,
@@ -78,7 +80,9 @@ class EventModel {
     this.priority = EventPriority.medium,
     List<EventTag>? tags,
     this.recurrence,
-  }) : tags = tags ?? const [];
+    ReminderSettings? reminders,
+  })  : tags = tags ?? const [],
+        reminders = reminders ?? const ReminderSettings();
 
   /// Whether this event has a recurrence rule.
   bool get isRecurring => recurrence != null;
@@ -136,6 +140,9 @@ class EventModel {
       ),
       tags: parsedTags,
       recurrence: parsedRecurrence,
+      reminders: ReminderSettings.fromJsonString(
+        json['reminders'] as String?,
+      ),
     );
   }
 
@@ -149,6 +156,7 @@ class EventModel {
       'priority': priority.name,
       'tags': jsonEncode(tags.map((t) => t.toJson()).toList()),
       'recurrence': recurrence?.toJsonString(),
+      'reminders': reminders.hasReminders ? reminders.toJsonString() : null,
     };
   }
 
@@ -162,6 +170,7 @@ class EventModel {
     List<EventTag>? tags,
     RecurrenceRule? recurrence,
     bool clearRecurrence = false,
+    ReminderSettings? reminders,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -171,6 +180,7 @@ class EventModel {
       priority: priority ?? this.priority,
       tags: tags ?? List.of(this.tags),
       recurrence: clearRecurrence ? null : (recurrence ?? this.recurrence),
+      reminders: reminders ?? this.reminders,
     );
   }
 
@@ -185,7 +195,8 @@ class EventModel {
           date == other.date &&
           priority == other.priority &&
           _tagsEqual(tags, other.tags) &&
-          recurrence == other.recurrence;
+          recurrence == other.recurrence &&
+          reminders == other.reminders;
 
   static bool _tagsEqual(List<EventTag> a, List<EventTag> b) {
     if (a.length != b.length) return false;
@@ -196,9 +207,9 @@ class EventModel {
   }
 
   @override
-  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags), recurrence);
+  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags), recurrence, reminders);
 
   @override
   String toString() =>
-      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence)';
+      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders)';
 }
