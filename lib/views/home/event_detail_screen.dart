@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/services/event_service.dart';
+import '../../core/services/ics_export_service.dart';
 import '../../models/event_model.dart';
 import '../../models/recurrence_rule.dart';
 import '../../state/providers/event_provider.dart';
@@ -40,6 +44,11 @@ class EventDetailScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => _exportEvent(context, currentEvent),
+            tooltip: 'Export as calendar event',
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () => _editEvent(context, currentEvent),
@@ -465,6 +474,35 @@ class EventDetailScreen extends StatelessWidget {
       return 'In ${diff.inHours} hour${diff.inHours == 1 ? '' : 's'}';
     }
     return 'In ${diff.inMinutes} minute${diff.inMinutes == 1 ? '' : 's'}';
+  }
+
+  Future<void> _exportEvent(BuildContext context, EventModel event) async {
+    try {
+      final icsService = IcsExportService();
+      final icsContent = icsService.exportEvent(event);
+      final filename = icsService.generateFilename(event);
+
+      // Write to temp directory for sharing
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsString(icsContent);
+
+      // Share via platform share sheet
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: IcsExportService.mimeType)],
+        subject: event.title,
+        text: 'Event: ${event.title}',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _editEvent(BuildContext context, EventModel event) async {
