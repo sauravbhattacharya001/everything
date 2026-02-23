@@ -169,24 +169,46 @@ class IcsExportService {
 
   /// Folds long lines per RFC 5545 §3.1.
   ///
-  /// Lines longer than 75 octets are broken with a CRLF followed by
-  /// a single whitespace character (linear whitespace folding).
+  /// Lines longer than 75 **octets** (UTF-8 bytes) are broken with a
+  /// CRLF followed by a single whitespace character (linear whitespace
+  /// folding).  Multi-byte characters are never split mid-sequence.
   String _foldLine(String line) {
-    if (line.length <= _maxLineLength) return line;
+    final lineBytes = utf8.encode(line);
+    if (lineBytes.length <= _maxLineLength) return line;
 
     final buf = StringBuffer();
-    var offset = 0;
-    while (offset < line.length) {
-      final end = (offset == 0)
-          ? _maxLineLength
-          : offset + _maxLineLength - 1; // -1 for the leading space
-      if (end >= line.length) {
-        buf.write(line.substring(offset));
-        break;
+    var charOffset = 0;
+    var isFirst = true;
+
+    while (charOffset < line.length) {
+      // First segment: up to 75 bytes. Continuation: up to 74 bytes
+      // (the leading space takes 1 byte).
+      final maxBytes = isFirst ? _maxLineLength : _maxLineLength - 1;
+      var segmentBytes = 0;
+      var segmentEnd = charOffset;
+
+      while (segmentEnd < line.length) {
+        final charBytes = utf8.encode(line[segmentEnd]).length;
+        if (segmentBytes + charBytes > maxBytes) break;
+        segmentBytes += charBytes;
+        segmentEnd++;
       }
-      buf.writeln(line.substring(offset, end));
-      buf.write(' '); // continuation line starts with space
-      offset = end;
+
+      // Avoid zero-length segments (single char > maxBytes, e.g. emoji)
+      if (segmentEnd == charOffset && charOffset < line.length) {
+        segmentEnd++;
+      }
+
+      if (!isFirst) {
+        buf.write(' ');
+      }
+      buf.write(line.substring(charOffset, segmentEnd));
+
+      charOffset = segmentEnd;
+      if (charOffset < line.length) {
+        buf.writeln(); // CRLF before continuation
+      }
+      isFirst = false;
     }
     return buf.toString();
   }

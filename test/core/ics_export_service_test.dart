@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:everything/core/services/ics_export_service.dart';
 import 'package:everything/models/event_model.dart';
@@ -352,20 +353,19 @@ void main() {
   });
 
   group('IcsExportService - Line Folding', () {
-    test('folds long lines at 75 characters', () {
+    test('folds long lines at 75 octets', () {
       final longTitle = 'A' * 200;
       final event = _makeEvent(title: longTitle);
       final ics = service.exportEvent(event);
 
-      // Each line should be <= 75 chars (after folding, continuation lines
-      // start with a space which doesn't count as a new property)
+      // Each physical line should be <= 75 bytes (UTF-8 octets)
       final lines = ics.split('\n');
       for (final line in lines) {
         final trimmed = line.replaceAll('\r', '');
-        // Lines starting with space are continuation lines
         if (trimmed.isNotEmpty) {
-          expect(trimmed.length, lessThanOrEqualTo(76),
-              reason: 'Line too long: "$trimmed" (${trimmed.length} chars)');
+          final byteLen = utf8.encode(trimmed).length;
+          expect(byteLen, lessThanOrEqualTo(76),
+              reason: 'Line too long: $byteLen bytes');
         }
       }
     });
@@ -375,6 +375,73 @@ void main() {
       final ics = service.exportEvent(event);
       // SUMMARY:Short should be on one line, no continuation
       expect(ics, contains('SUMMARY:Short'));
+    });
+
+    test('folds lines with multi-byte characters by octet count', () {
+      // Each CJK character is 3 bytes in UTF-8
+      // 20 CJK chars = 60 bytes of content + 'SUMMARY:' (8 bytes) = 68 bytes
+      // 25 CJK chars = 75 bytes + 8 = 83 bytes -> must fold
+      final cjkTitle = '\u4e16' * 25; // 25 x U+4E16 (世)
+      final event = _makeEvent(title: cjkTitle);
+      final ics = service.exportEvent(event);
+
+      // The SUMMARY line should be folded since 'SUMMARY:' + 25*3 = 83 bytes
+      final lines = ics.split('\n');
+      for (final line in lines) {
+        final trimmed = line.replaceAll('\r', '');
+        if (trimmed.isNotEmpty) {
+          final byteLen = utf8.encode(trimmed).length;
+          expect(byteLen, lessThanOrEqualTo(76),
+              reason: 'Line "$trimmed" is $byteLen bytes (max 75+1)');
+        }
+      }
+    });
+
+    test('does not split multi-byte characters across fold boundary', () {
+      // Use emoji (4 bytes each) to test boundary handling
+      // 'SUMMARY:' = 8 bytes, then fill to near 75 with ASCII + emoji at boundary
+      final mixedTitle = 'A' * 60 + '\u{1F600}' * 5; // 60 ASCII + 5 emoji
+      final event = _makeEvent(title: mixedTitle);
+      final ics = service.exportEvent(event);
+
+      // After unfolding, we should get back the original title
+      final summaryLine = _extractUnfoldedProperty(ics, 'SUMMARY:');
+      expect(summaryLine, isNotNull);
+      expect(summaryLine, contains('A' * 60));
+    });
+
+    test('folded content can be unfolded to original', () {
+      final longTitle = 'B' * 200;
+      final event = _makeEvent(title: longTitle);
+      final ics = service.exportEvent(event);
+
+      final unfolded = _extractUnfoldedProperty(ics, 'SUMMARY:');
+      expect(unfolded, equals(longTitle));
+    });
+
+    test('continuation lines start with single space', () {
+      final longTitle = 'C' * 200;
+      final event = _makeEvent(title: longTitle);
+      final ics = service.exportEvent(event);
+
+      final lines = ics.split('\n');
+      bool foundSummary = false;
+      for (final line in lines) {
+        final trimmed = line.replaceAll('\r', '');
+        if (trimmed.startsWith('SUMMARY:')) {
+          foundSummary = true;
+          continue;
+        }
+        if (foundSummary && trimmed.startsWith(' ')) {
+          // Continuation line — should start with exactly one space
+          expect(trimmed[0], equals(' '));
+          continue;
+        }
+        if (foundSummary && !trimmed.startsWith(' ')) {
+          break; // End of folded property
+        }
+      }
+      expect(foundSummary, isTrue, reason: 'Should find SUMMARY line');
     });
   });
 
@@ -421,4 +488,30 @@ void main() {
       expect(ics, contains('END:VCALENDAR'));
     });
   });
+}
+
+/// Extracts and unfolds a property from ICS text.
+///
+/// RFC 5545 folding: continuation lines start with a space or tab.
+/// This function finds the line starting with [prefix] and joins
+/// all continuation lines.
+String? _extractUnfoldedProperty(String ics, String prefix) {
+  final lines = ics.split('\n').map((l) => l.replaceAll('\r', '')).toList();
+  String? result;
+
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(prefix)) {
+      result = lines[i].substring(prefix.length);
+      // Collect continuation lines
+      for (var j = i + 1; j < lines.length; j++) {
+        if (lines[j].startsWith(' ') || lines[j].startsWith('\t')) {
+          result = result! + lines[j].substring(1); // strip leading space
+        } else {
+          break;
+        }
+      }
+      break;
+    }
+  }
+  return result;
 }
