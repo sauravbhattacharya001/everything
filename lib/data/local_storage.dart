@@ -48,7 +48,8 @@ class LocalStorage {
             priority TEXT DEFAULT 'medium',
             tags TEXT DEFAULT '[]',
             recurrence TEXT,
-            reminders TEXT
+            reminders TEXT,
+            checklist TEXT
           )
           ''',
         );
@@ -76,8 +77,13 @@ class LocalStorage {
           await db.execute(
               "ALTER TABLE events ADD COLUMN reminders TEXT");
         }
+        if (oldVersion < 6) {
+          // Add checklist column (JSON-encoded list of checklist items)
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN checklist TEXT");
+        }
       },
-      version: 5,
+      version: 6,
     );
   }
 
