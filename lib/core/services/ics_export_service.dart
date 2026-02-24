@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../models/event_model.dart';
 import '../models/recurrence_rule.dart';
+import '../models/reminder_settings.dart';
 
 /// Service for generating iCalendar (ICS/RFC 5545) content from events.
 ///
@@ -74,6 +75,11 @@ class IcsExportService {
       buf.writeln(_buildRRule(event.recurrence!));
     }
 
+    // VALARM — reminders
+    if (event.reminders.hasReminders) {
+      buf.write(_buildVAlarms(event.reminders));
+    }
+
     buf.write('END:VEVENT');
     return buf.toString();
   }
@@ -108,6 +114,47 @@ class IcsExportService {
     }
 
     return parts.join(';');
+  }
+
+  /// Builds VALARM components for event reminders (RFC 5545 §3.6.6).
+  String _buildVAlarms(ReminderSettings reminders) {
+    final buf = StringBuffer();
+    for (final offset in reminders.offsets) {
+      buf.writeln('BEGIN:VALARM');
+      buf.writeln('ACTION:DISPLAY');
+      buf.writeln(_foldLine('DESCRIPTION:Reminder'));
+      buf.writeln('TRIGGER:${_formatTriggerDuration(offset.duration)}');
+      buf.writeln('END:VALARM');
+    }
+    return buf.toString();
+  }
+
+  /// Formats a Duration as an RFC 5545 TRIGGER value.
+  /// E.g., Duration(minutes: 15) → "-PT15M"
+  ///       Duration(hours: 2) → "-PT2H"
+  ///       Duration(days: 1) → "-P1D"
+  ///       Duration.zero → "PT0S" (at event time)
+  String _formatTriggerDuration(Duration duration) {
+    if (duration == Duration.zero) {
+      return 'PT0S';
+    }
+
+    final totalMinutes = duration.inMinutes;
+    final days = totalMinutes ~/ (24 * 60);
+    final remainingMinutes = totalMinutes % (24 * 60);
+    final hours = remainingMinutes ~/ 60;
+    final minutes = remainingMinutes % 60;
+
+    final buf = StringBuffer('-P');
+    if (days > 0) {
+      buf.write('${days}D');
+    }
+    if (hours > 0 || minutes > 0) {
+      buf.write('T');
+      if (hours > 0) buf.write('${hours}H');
+      if (minutes > 0) buf.write('${minutes}M');
+    }
+    return buf.toString();
   }
 
   /// Maps [RecurrenceFrequency] to ICS FREQ value.
