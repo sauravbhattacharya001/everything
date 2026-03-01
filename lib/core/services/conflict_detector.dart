@@ -207,6 +207,10 @@ class ConflictDetector {
 
   /// Analyze a list of events for conflicts.
   /// Events are compared pairwise; recurring events are expanded first.
+  ///
+  /// Two events conflict when their time spans overlap or their start
+  /// times are within [window]. An event's span runs from [date] to
+  /// [endDate] (or is treated as a point-in-time when [endDate] is null).
   ConflictReport analyze(
     List<EventModel> events, {
     bool expandRecurring = true,
@@ -229,8 +233,7 @@ class ConflictDetector {
     final conflicts = <EventConflict>[];
     for (var i = 0; i < allEvents.length; i++) {
       for (var j = i + 1; j < allEvents.length; j++) {
-        final gap = allEvents[j].date.difference(allEvents[i].date).abs();
-        // Since sorted, if gap exceeds window we can skip remaining for this i
+        final gap = _computeGap(allEvents[i], allEvents[j]);
         if (gap > window) break;
         final conflict = _createConflict(allEvents[i], allEvents[j], gap);
         conflicts.add(conflict);
@@ -245,8 +248,11 @@ class ConflictDetector {
   }
 
   /// Check if two specific events conflict.
+  ///
+  /// Returns a conflict if the events' time spans overlap or their
+  /// proximity is within [window]. Returns null otherwise.
   EventConflict? checkPair(EventModel a, EventModel b) {
-    final gap = a.date.difference(b.date).abs();
+    final gap = _computeGap(a, b);
     if (gap <= window) {
       return _createConflict(a, b, gap);
     }
@@ -272,7 +278,7 @@ class ConflictDetector {
   /// Quick check: does adding this event create any conflicts?
   bool wouldConflict(EventModel newEvent, List<EventModel> existing) {
     for (final event in existing) {
-      final gap = newEvent.date.difference(event.date).abs();
+      final gap = _computeGap(newEvent, event);
       if (gap <= window) return true;
     }
     return false;
@@ -321,5 +327,33 @@ class ConflictDetector {
       gap: gap,
       severity: severityFromGap(gap),
     );
+  }
+
+  /// Computes the effective gap between two events, accounting for
+  /// time ranges ([endDate]).
+  ///
+  /// If either event has an [endDate] that extends past the other's
+  /// start, the events overlap and the gap is [Duration.zero].
+  /// Otherwise, the gap is the distance between the end of the earlier
+  /// event and the start of the later one. When an event has no
+  /// [endDate], its start time is used for both start and end
+  /// (point-in-time event).
+  static Duration _computeGap(EventModel a, EventModel b) {
+    final aStart = a.date;
+    final aEnd = a.endDate ?? a.date;
+    final bStart = b.date;
+    final bEnd = b.endDate ?? b.date;
+
+    // If spans overlap, gap is zero
+    if (aStart.compareTo(bEnd) <= 0 && bStart.compareTo(aEnd) <= 0) {
+      return Duration.zero;
+    }
+
+    // No overlap — gap is distance between the end of the earlier
+    // event and the start of the later one
+    if (aEnd.isBefore(bStart)) {
+      return bStart.difference(aEnd);
+    }
+    return aStart.difference(bEnd);
   }
 }

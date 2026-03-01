@@ -8,11 +8,13 @@ EventModel _event(
   DateTime date, {
   String title = 'Event',
   EventPriority priority = EventPriority.medium,
+  DateTime? endDate,
 }) {
   return EventModel(
     id: id,
     title: title.isEmpty ? 'Event $id' : title,
     date: date,
+    endDate: endDate,
     priority: priority,
   );
 }
@@ -868,6 +870,157 @@ void main() {
       );
       expect(conflict.description, contains('1 hour'));
       expect(conflict.description, contains('30 minutes'));
+    });
+  });
+
+  // ============================================================
+  // Time Range (endDate) Overlap Tests
+  // ============================================================
+
+  group('Time range (endDate) overlap detection', () {
+    final detector = const ConflictDetector();
+    final base = DateTime(2026, 3, 1, 10, 0);
+
+    test('overlapping ranges detected as exact conflict', () {
+      // Event A: 10:00–12:00, Event B: 11:00–13:00
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 2)));
+      final b = _event('2', base.add(const Duration(hours: 1)),
+          endDate: base.add(const Duration(hours: 3)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.exact);
+    });
+
+    test('long event overlaps later short event beyond window', () {
+      // Event A: 10:00–14:00 (4h), Event B: 13:00–13:30
+      // Start gap = 3h (missed by old logic), but ranges overlap
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 4)));
+      final b = _event('2', base.add(const Duration(hours: 3)),
+          endDate: base.add(const Duration(hours: 3, minutes: 30)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.exact);
+    });
+
+    test('non-overlapping ranges with gap within window', () {
+      // Event A: 10:00–10:30, Event B: 11:00–11:30 (30 min gap)
+      final a = _event('1', base,
+          endDate: base.add(const Duration(minutes: 30)));
+      final b = _event('2', base.add(const Duration(hours: 1)),
+          endDate: base.add(const Duration(hours: 1, minutes: 30)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.moderate);
+    });
+
+    test('non-overlapping ranges with gap beyond window', () {
+      // Event A: 10:00–10:30, Event B: 12:00–12:30 (1.5h gap)
+      final a = _event('1', base,
+          endDate: base.add(const Duration(minutes: 30)));
+      final b = _event('2', base.add(const Duration(hours: 2)),
+          endDate: base.add(const Duration(hours: 2, minutes: 30)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNull);
+    });
+
+    test('event B starts exactly when A ends (adjacent)', () {
+      // Event A: 10:00–11:00, Event B: 11:00–12:00 (boundary overlap)
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 1)));
+      final b = _event('2', base.add(const Duration(hours: 1)),
+          endDate: base.add(const Duration(hours: 2)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.exact);
+    });
+
+    test('event B completely contained within A', () {
+      // Event A: 10:00–14:00, Event B: 11:00–12:00
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 4)));
+      final b = _event('2', base.add(const Duration(hours: 1)),
+          endDate: base.add(const Duration(hours: 2)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.exact);
+    });
+
+    test('point event within a range event', () {
+      // Event A: 10:00–14:00, Event B: 12:00 (no endDate)
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 4)));
+      final b = _event('2', base.add(const Duration(hours: 2)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.exact);
+    });
+
+    test('point event after range ends with gap in window', () {
+      // Event A: 10:00–11:00, Event B: 11:30 (point, 30 min gap)
+      final a = _event('1', base,
+          endDate: base.add(const Duration(hours: 1)));
+      final b = _event('2', base.add(const Duration(hours: 1, minutes: 30)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.moderate);
+    });
+
+    test('analyze detects overlap in sorted events', () {
+      // A: 10:00–14:00, B: 13:00–15:00, C: 16:00–17:00
+      final events = [
+        _event('A', base,
+            endDate: base.add(const Duration(hours: 4))),
+        _event('B', base.add(const Duration(hours: 3)),
+            endDate: base.add(const Duration(hours: 5))),
+        _event('C', base.add(const Duration(hours: 6)),
+            endDate: base.add(const Duration(hours: 7))),
+      ];
+      final report = detector.analyze(events);
+      expect(report.conflictCount, 2); // A-B overlap, B-C within window
+    });
+
+    test('wouldConflict with time ranges', () {
+      final existing = [
+        _event('1', base,
+            endDate: base.add(const Duration(hours: 4))),
+      ];
+      final newEvent = _event('new', base.add(const Duration(hours: 3)));
+      expect(detector.wouldConflict(newEvent, existing), true);
+    });
+
+    test('wouldConflict with time ranges no overlap', () {
+      final existing = [
+        _event('1', base,
+            endDate: base.add(const Duration(hours: 1))),
+      ];
+      final newEvent = _event('new', base.add(const Duration(hours: 3)));
+      expect(detector.wouldConflict(newEvent, existing), false);
+    });
+
+    test('findConflictsFor with time ranges', () {
+      final target = _event('t', base.add(const Duration(hours: 2)),
+          endDate: base.add(const Duration(hours: 4)));
+      final others = [
+        _event('A', base,
+            endDate: base.add(const Duration(hours: 2, minutes: 30))),
+        _event('B', base.add(const Duration(hours: 5)),
+            endDate: base.add(const Duration(hours: 6))),
+        _event('C', base.add(const Duration(hours: 7)),
+            endDate: base.add(const Duration(hours: 8))),
+      ];
+      final conflicts = detector.findConflictsFor(target, others);
+      expect(conflicts.length, 2); // A (overlap) and B (within window)
+    });
+
+    test('backward compatibility: point events behave identically', () {
+      final a = _event('1', base);
+      final b = _event('2', base.add(const Duration(minutes: 30)));
+      final conflict = detector.checkPair(a, b);
+      expect(conflict, isNotNull);
+      expect(conflict!.severity, ConflictSeverity.moderate);
+      expect(conflict.gap, const Duration(minutes: 30));
     });
   });
 }
