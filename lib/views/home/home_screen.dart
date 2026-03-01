@@ -8,6 +8,7 @@ import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
 import 'calendar_screen.dart';
 import 'event_detail_screen.dart';
+import 'heatmap_screen.dart';
 import 'stats_screen.dart';
 
 /// Sort criteria for the event list.
@@ -319,6 +320,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Event analytics',
+          ),
+          // Heatmap button
+          IconButton(
+            icon: const Icon(Icons.grid_view),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const HeatmapScreen()),
+              );
+            },
+            tooltip: 'Activity heatmap',
           ),
           // Sort button
           IconButton(
