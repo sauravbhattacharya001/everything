@@ -87,16 +87,41 @@ class LocalStorage {
     );
   }
 
+  // Allowed table names — prevents SQL injection via table name parameter.
+  // Table names cannot be parameterized in SQL, so we validate against
+  // a whitelist of known tables rather than trying to sanitize.
+  static const Set<String> _allowedTables = {'users', 'events'};
+
+  /// Validates that [table] is an allowed table name.
+  ///
+  /// SQL table names cannot be parameterized (they're identifiers, not
+  /// values), so `sqflite` interpolates them directly into queries.
+  /// An attacker who controls the table name could inject arbitrary SQL.
+  /// This whitelist prevents that.
+  static void _validateTable(String table) {
+    if (!_allowedTables.contains(table)) {
+      throw ArgumentError(
+        'Invalid table name: "$table". '
+        'Allowed tables: ${_allowedTables.join(", ")}',
+      );
+    }
+  }
+
   /// Inserts or replaces a row in [table].
   ///
   /// Uses [ConflictAlgorithm.replace] so upserting is automatic.
+  /// Throws [ArgumentError] if [table] is not a recognized table name.
   static Future<void> insert(String table, Map<String, dynamic> data) async {
+    _validateTable(table);
     final db = await database;
     await db.insert(table, data, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   /// Returns all rows from [table] as a list of JSON-compatible maps.
+  ///
+  /// Throws [ArgumentError] if [table] is not a recognized table name.
   static Future<List<Map<String, dynamic>>> getAll(String table) async {
+    _validateTable(table);
     final db = await database;
     return db.query(table);
   }
@@ -104,7 +129,9 @@ class LocalStorage {
   /// Deletes the row with the given [id] from [table].
   ///
   /// Uses parameterized queries (`whereArgs`) to prevent SQL injection.
+  /// Throws [ArgumentError] if [table] is not a recognized table name.
   static Future<void> delete(String table, String id) async {
+    _validateTable(table);
     final db = await database;
     await db.delete(table, where: 'id = ?', whereArgs: [id]);
   }
