@@ -245,7 +245,11 @@ class StreakTracker {
     );
   }
 
-  /// Get just the current streak length (lighter than full analyze).
+  /// Get just the current streak length (lighter than full [analyze]).
+  ///
+  /// Walks backward from the most recent active day. The streak is only
+  /// "current" if today or yesterday is active; otherwise returns 0.
+  /// Prefer this over [analyze] when only the current streak count is needed.
   int currentStreakLength(List<EventModel> events, {bool includeRecurring = true}) {
     final allEvents = _expandEvents(events, includeRecurring: includeRecurring);
     final activeDays = _getActiveDays(allEvents);
@@ -272,6 +276,10 @@ class StreakTracker {
   }
 
   /// Get the longest streak length from events.
+  ///
+  /// Scans all active days and finds the maximum run of consecutive days.
+  /// Returns 0 if no events exist. Lighter than [analyze] when only the
+  /// record length is needed.
   int longestStreakLength(List<EventModel> events, {bool includeRecurring = true}) {
     final allEvents = _expandEvents(events, includeRecurring: includeRecurring);
     final activeDays = _getActiveDays(allEvents);
@@ -295,7 +303,10 @@ class StreakTracker {
   }
 
   /// Get dates that would extend the current streak if an event were added.
-  /// Returns a list of dates the user should add events to keep the streak.
+  ///
+  /// Suggests today (if not yet active) plus upcoming days that keep the
+  /// streak going. Returns up to [count] dates in chronological order.
+  /// Useful for gamification prompts ("Add an event today to keep your streak!").
   List<DateTime> suggestDates(List<EventModel> events, {int count = 3, bool includeRecurring = true}) {
     final allEvents = _expandEvents(events, includeRecurring: includeRecurring);
     final activeDays = _getActiveDays(allEvents);
@@ -319,6 +330,11 @@ class StreakTracker {
 
   // ─── Private helpers ──────────────────────────────────────────
 
+  /// Expands recurring events into individual occurrences.
+  ///
+  /// When [includeRecurring] is true, each recurring event generates
+  /// its occurrences via [EventModel.generateOccurrences]. Non-recurring
+  /// events are always included.
   List<EventModel> _expandEvents(List<EventModel> events, {required bool includeRecurring}) {
     if (!includeRecurring) return events;
     final expanded = <EventModel>[];
@@ -331,10 +347,16 @@ class StreakTracker {
     return expanded;
   }
 
+  /// Extracts the set of unique calendar days that have at least one event.
   Set<DateTime> _getActiveDays(List<EventModel> events) {
     return events.map((e) => _dateOnly(e.date)).toSet();
   }
 
+  /// Identifies consecutive-day runs from a set of active dates.
+  ///
+  /// Sorts dates chronologically and groups them into [Streak] objects
+  /// wherever consecutive days form an unbroken chain. A gap of 2+ days
+  /// ends the current streak and starts a new one.
   List<Streak> _computeStreaks(Set<DateTime> activeDays) {
     if (activeDays.isEmpty) return [];
 
@@ -367,6 +389,11 @@ class StreakTracker {
     return streaks;
   }
 
+  /// Computes aggregate activity statistics from events and active days.
+  ///
+  /// Calculates active-day ratio, events-per-active-day average, and
+  /// weekday distribution. The analysis window spans from [since] to
+  /// today (inclusive).
   ActivityStats _computeStats(
     List<EventModel> events,
     Set<DateTime> activeDays,
@@ -406,8 +433,10 @@ class StreakTracker {
 
 // ─── Utilities ──────────────────────────────────────────────────
 
+/// Strips the time component from a [DateTime], returning midnight on that day.
 DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
+/// Formats a date as "Mon DD" (e.g., "Jan 15").
 String _formatDate(DateTime dt) {
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
