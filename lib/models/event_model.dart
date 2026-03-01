@@ -84,8 +84,17 @@ class EventModel {
   /// Optional longer description with event details.
   final String description;
 
-  /// The date (and optional time) when this event occurs.
+  /// The date (and optional time) when this event starts.
   final DateTime date;
+
+  /// Optional end date/time. When null the event is a point-in-time.
+  final DateTime? endDate;
+
+  /// Computed duration between [date] and [endDate], or null if no end date.
+  Duration? get duration => endDate != null ? endDate!.difference(date) : null;
+
+  /// Whether this event spans a time range (has both start and end).
+  bool get hasTimeRange => endDate != null;
 
   /// Importance level affecting display color and sort order.
   final EventPriority priority;
@@ -115,6 +124,7 @@ class EventModel {
     required this.title,
     this.description = '',
     required this.date,
+    this.endDate,
     this.priority = EventPriority.medium,
     List<EventTag>? tags,
     this.recurrence,
@@ -138,9 +148,11 @@ class EventModel {
     final dates = recurrence!.generateOccurrences(date, maxOccurrences: maxOccurrences);
     // Skip the first date (it's the original event)
     return dates.skip(1).toList().asMap().entries.map((entry) {
+      final shift = entry.value.difference(date);
       return copyWith(
         id: '${id}_${entry.key + 1}',
         date: entry.value,
+        endDate: endDate?.add(shift),
       );
     }).toList();
   }
@@ -181,6 +193,9 @@ class EventModel {
       title: json['title'] as String,
       description: (json['description'] as String?) ?? '',
       date: DateTime.parse(json['date'] as String),
+      endDate: json['end_date'] != null
+          ? DateTime.parse(json['end_date'] as String)
+          : null,
       priority: EventPriority.fromString(
         (json['priority'] as String?) ?? 'medium',
       ),
@@ -209,6 +224,7 @@ class EventModel {
       'title': title,
       'description': description,
       'date': date.toIso8601String(),
+      'end_date': endDate?.toIso8601String(),
       'priority': priority.name,
       'tags': jsonEncode(tags.map((t) => t.toJson()).toList()),
       'recurrence': recurrence?.toJsonString(),
@@ -224,6 +240,8 @@ class EventModel {
     String? title,
     String? description,
     DateTime? date,
+    DateTime? endDate,
+    bool clearEndDate = false,
     EventPriority? priority,
     List<EventTag>? tags,
     RecurrenceRule? recurrence,
@@ -237,6 +255,7 @@ class EventModel {
       title: title ?? this.title,
       description: description ?? this.description,
       date: date ?? this.date,
+      endDate: clearEndDate ? null : (endDate ?? this.endDate),
       priority: priority ?? this.priority,
       tags: tags ?? List.of(this.tags),
       recurrence: clearRecurrence ? null : (recurrence ?? this.recurrence),
@@ -255,6 +274,7 @@ class EventModel {
           title == other.title &&
           description == other.description &&
           date == other.date &&
+          endDate == other.endDate &&
           priority == other.priority &&
           _tagsEqual(tags, other.tags) &&
           recurrence == other.recurrence &&
@@ -271,9 +291,9 @@ class EventModel {
   }
 
   @override
-  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags), recurrence, reminders, checklist, attachments);
+  int get hashCode => Object.hash(id, title, description, date, endDate, priority, Object.hashAll(tags), recurrence, reminders, checklist, attachments);
 
   @override
   String toString() =>
-      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist, attachments: $attachments)';
+      'EventModel(id: $id, title: $title, description: $description, date: $date, endDate: $endDate, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist, attachments: $attachments)';
 }

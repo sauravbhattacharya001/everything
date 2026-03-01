@@ -38,6 +38,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
   late TextEditingController _descriptionController;
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
+  TimeOfDay? _selectedEndTime;
   late EventPriority _selectedPriority;
   late List<EventTag> _selectedTags;
   bool _isRecurring = false;
@@ -56,6 +57,9 @@ class _EventFormDialogState extends State<EventFormDialog> {
         TextEditingController(text: event?.description ?? '');
     _selectedDate = event?.date ?? DateTime.now();
     _selectedTime = TimeOfDay.fromDateTime(event?.date ?? DateTime.now());
+    _selectedEndTime = event?.endDate != null
+        ? TimeOfDay.fromDateTime(event!.endDate!)
+        : null;
     _selectedPriority = event?.priority ?? EventPriority.medium;
     _selectedTags = List.of(event?.tags ?? []);
     _isRecurring = event?.recurrence != null;
@@ -95,6 +99,19 @@ class _EventFormDialogState extends State<EventFormDialog> {
     }
   }
 
+  Future<void> _pickEndTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedEndTime ?? TimeOfDay(
+        hour: (_selectedTime.hour + 1) % 24,
+        minute: _selectedTime.minute,
+      ),
+    );
+    if (picked != null) {
+      setState(() => _selectedEndTime = picked);
+    }
+  }
+
   DateTime get _combinedDateTime => DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -103,8 +120,30 @@ class _EventFormDialogState extends State<EventFormDialog> {
         _selectedTime.minute,
       );
 
+  DateTime? get _combinedEndDateTime {
+    if (_selectedEndTime == null) return null;
+    return DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedEndTime!.hour,
+      _selectedEndTime!.minute,
+    );
+  }
+
   void _save() {
     if (!_formKey.currentState!.validate()) return;
+
+    final endDt = _combinedEndDateTime;
+    final startDt = _combinedDateTime;
+
+    // Validate end time is after start time
+    if (endDt != null && !endDt.isAfter(startDt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End time must be after start time')),
+      );
+      return;
+    }
 
     final recurrence = _isRecurring
         ? RecurrenceRule(
@@ -119,7 +158,8 @@ class _EventFormDialogState extends State<EventFormDialog> {
           DateTime.now().millisecondsSinceEpoch.toString(),
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
-      date: _combinedDateTime,
+      date: startDt,
+      endDate: endDt,
       priority: _selectedPriority,
       tags: _selectedTags,
       recurrence: recurrence,
@@ -661,7 +701,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
                       borderRadius: BorderRadius.circular(12),
                       child: InputDecorator(
                         decoration: InputDecoration(
-                          labelText: 'Time',
+                          labelText: 'Start Time',
                           prefixIcon: const Icon(Icons.access_time),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -671,6 +711,45 @@ class _EventFormDialogState extends State<EventFormDialog> {
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // End time row
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: _pickEndTime,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'End Time (optional)',
+                          prefixIcon: const Icon(Icons.access_time_filled),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          _selectedEndTime?.format(context) ?? 'Not set',
+                          style: TextStyle(
+                            color: _selectedEndTime != null
+                                ? null
+                                : Colors.grey[500],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_selectedEndTime != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.clear, color: Colors.grey[500]),
+                      onPressed: () =>
+                          setState(() => _selectedEndTime = null),
+                      tooltip: 'Clear end time',
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 20),

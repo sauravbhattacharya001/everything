@@ -40,8 +40,8 @@ class IcsExportService {
     // DTSTART — event start time
     buf.writeln('DTSTART:${_formatDateTime(event.date)}');
 
-    // DTEND — event end time (default 1 hour duration)
-    final endDate = event.date.add(const Duration(hours: 1));
+    // DTEND — event end time (use endDate if set, otherwise default 1 hour)
+    final endDate = event.endDate ?? event.date.add(const Duration(hours: 1));
     buf.writeln('DTEND:${_formatDateTime(endDate)}');
 
     // SUMMARY — event title
