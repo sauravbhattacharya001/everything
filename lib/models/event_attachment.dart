@@ -79,6 +79,40 @@ class EventAttachment {
   /// Maximum allowed URI length.
   static const int maxUriLength = 2048;
 
+  /// URI schemes allowed for link attachments.
+  ///
+  /// Only safe, navigable schemes are permitted. Dangerous schemes like
+  /// `javascript:`, `data:`, `file:`, and `vbscript:` are blocked to
+  /// prevent XSS, data exfiltration, and local filesystem access.
+  static const Set<String> allowedLinkSchemes = {
+    'http', 'https', 'mailto', 'tel',
+  };
+
+  /// Validates that a URI uses an allowed scheme for link attachments.
+  ///
+  /// Returns true if the URI starts with one of [allowedLinkSchemes]
+  /// followed by `:`. Case-insensitive comparison.
+  ///
+  /// URIs without an explicit scheme (e.g., `example.com`) are allowed
+  /// and treated as relative — the app can prepend `https://` at display
+  /// time.
+  static bool isAllowedLinkUri(String uri) {
+    final trimmed = uri.trim().toLowerCase();
+    if (trimmed.isEmpty) return false;
+
+    // Find scheme separator
+    final colonIdx = trimmed.indexOf(':');
+    if (colonIdx < 0) return true; // no scheme → relative URI, allowed
+
+    final scheme = trimmed.substring(0, colonIdx);
+    // Scheme must be alphabetic (per RFC 3986 §3.1)
+    if (!RegExp(r'^[a-z][a-z0-9+\-.]*$').hasMatch(scheme)) {
+      return true; // not a valid scheme prefix → treat as relative
+    }
+
+    return allowedLinkSchemes.contains(scheme);
+  }
+
   /// Maximum number of attachments per event.
   static const int maxAttachments = 20;
 
@@ -127,10 +161,21 @@ class EventAttachment {
   }
 
   /// Creates a new link attachment.
+  ///
+  /// Validates the URI scheme against [allowedLinkSchemes] to prevent
+  /// dangerous schemes like `javascript:` or `data:`.
+  ///
+  /// Throws [ArgumentError] if the URI uses a disallowed scheme.
   factory EventAttachment.link({
     required String name,
     required String uri,
   }) {
+    if (!isAllowedLinkUri(uri)) {
+      throw ArgumentError(
+        'URI scheme not allowed for link attachments. '
+        'Allowed schemes: ${allowedLinkSchemes.join(", ")}',
+      );
+    }
     return EventAttachment(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       type: AttachmentType.link,
@@ -213,12 +258,25 @@ class EventAttachment {
   }
 
   /// Creates an attachment from a JSON map.
+  ///
+  /// For link attachments deserialized from storage, URIs with
+  /// disallowed schemes are replaced with an empty string to prevent
+  /// rendering dangerous links from corrupted or tampered data.
   factory EventAttachment.fromJson(Map<String, dynamic> json) {
+    final type = AttachmentType.fromString(json['type'] as String? ?? 'file');
+    var uri = json['uri'] as String? ?? '';
+
+    // Sanitize link URIs from persisted data — a corrupted database
+    // or manual edit could inject dangerous schemes.
+    if (type == AttachmentType.link && !isAllowedLinkUri(uri)) {
+      uri = '';
+    }
+
     return EventAttachment(
       id: json['id'] as String? ?? DateTime.now().microsecondsSinceEpoch.toString(),
-      type: AttachmentType.fromString(json['type'] as String? ?? 'file'),
+      type: type,
       name: json['name'] as String? ?? '',
-      uri: json['uri'] as String? ?? '',
+      uri: uri,
       mimeType: json['mimeType'] as String?,
       sizeBytes: json['sizeBytes'] as int?,
       addedAt: json['addedAt'] != null

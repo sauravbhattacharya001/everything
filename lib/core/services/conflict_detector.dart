@@ -285,6 +285,9 @@ class ConflictDetector {
   }
 
   /// Suggest alternative times that avoid conflicts (next free slots).
+  ///
+  /// Shifts both [date] and [endDate] by the same offset so the event's
+  /// full duration is preserved when checking for overlaps.
   List<DateTime> suggestAlternatives(
     EventModel event,
     List<EventModel> existing, {
@@ -294,16 +297,23 @@ class ConflictDetector {
     final alternatives = <DateTime>[];
     // Try shifting forward and backward alternately
     for (var i = 1; alternatives.length < count && i <= 1000; i++) {
-      // Forward
-      final forward = event.date.add(step * i);
-      final forwardEvent = event.copyWith(date: forward);
+      // Forward — shift both start and end to preserve duration
+      final forwardOffset = step * i;
+      final forward = event.date.add(forwardOffset);
+      final forwardEvent = event.copyWith(
+        date: forward,
+        endDate: event.endDate?.add(forwardOffset),
+      );
       if (!wouldConflict(forwardEvent, existing)) {
         alternatives.add(forward);
         if (alternatives.length >= count) break;
       }
-      // Backward
-      final backward = event.date.subtract(step * i);
-      final backwardEvent = event.copyWith(date: backward);
+      // Backward — shift both start and end to preserve duration
+      final backward = event.date.subtract(forwardOffset);
+      final backwardEvent = event.copyWith(
+        date: backward,
+        endDate: event.endDate?.subtract(forwardOffset),
+      );
       if (!wouldConflict(backwardEvent, existing)) {
         alternatives.add(backward);
       }
