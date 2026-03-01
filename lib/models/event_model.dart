@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'event_attachment.dart';
 import 'event_checklist.dart';
 import 'event_tag.dart';
 import 'recurrence_rule.dart';
@@ -73,6 +74,7 @@ class EventModel {
   final RecurrenceRule? recurrence;
   final ReminderSettings reminders;
   final EventChecklist checklist;
+  final EventAttachments attachments;
 
   EventModel({
     required this.id,
@@ -84,9 +86,11 @@ class EventModel {
     this.recurrence,
     ReminderSettings? reminders,
     EventChecklist? checklist,
+    EventAttachments? attachments,
   })  : tags = tags ?? const [],
         reminders = reminders ?? const ReminderSettings(),
-        checklist = checklist ?? const EventChecklist();
+        checklist = checklist ?? const EventChecklist(),
+        attachments = attachments ?? const EventAttachments();
 
   /// Whether this event has a recurrence rule.
   bool get isRecurring => recurrence != null;
@@ -150,6 +154,9 @@ class EventModel {
       checklist: EventChecklist.fromJsonString(
         json['checklist'] as String?,
       ),
+      attachments: EventAttachments.fromJsonString(
+        json['attachments'] as String?,
+      ),
     );
   }
 
@@ -165,6 +172,7 @@ class EventModel {
       'recurrence': recurrence?.toJsonString(),
       'reminders': reminders.hasReminders ? reminders.toJsonString() : null,
       'checklist': checklist.hasItems ? checklist.toJsonString() : null,
+      'attachments': attachments.hasAttachments ? attachments.toJsonString() : null,
     };
   }
 
@@ -180,6 +188,7 @@ class EventModel {
     bool clearRecurrence = false,
     ReminderSettings? reminders,
     EventChecklist? checklist,
+    EventAttachments? attachments,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -191,6 +200,7 @@ class EventModel {
       recurrence: clearRecurrence ? null : (recurrence ?? this.recurrence),
       reminders: reminders ?? this.reminders,
       checklist: checklist ?? this.checklist,
+      attachments: attachments ?? this.attachments,
     );
   }
 
@@ -207,7 +217,8 @@ class EventModel {
           _tagsEqual(tags, other.tags) &&
           recurrence == other.recurrence &&
           reminders == other.reminders &&
-          checklist == other.checklist;
+          checklist == other.checklist &&
+          attachments == other.attachments;
 
   static bool _tagsEqual(List<EventTag> a, List<EventTag> b) {
     if (a.length != b.length) return false;
@@ -218,9 +229,9 @@ class EventModel {
   }
 
   @override
-  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags), recurrence, reminders, checklist);
+  int get hashCode => Object.hash(id, title, description, date, priority, Object.hashAll(tags), recurrence, reminders, checklist, attachments);
 
   @override
   String toString() =>
-      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist)';
+      'EventModel(id: $id, title: $title, description: $description, date: $date, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist, attachments: $attachments)';
 }
