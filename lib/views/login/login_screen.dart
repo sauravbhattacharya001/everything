@@ -6,16 +6,34 @@ import '../../data/repositories/user_repository.dart';
 import '../../models/user_model.dart';
 import '../../state/providers/user_provider.dart';
 
+/// Login screen that authenticates users via Firebase email/password.
+///
+/// On successful login, the user profile is persisted to local storage
+/// (via [UserRepository]) and secure storage (via [SecureStorageService])
+/// for quick session restoration. The user is then set in [UserProvider]
+/// and navigated to the home screen.
+///
+/// Validates email format using a compiled regex pattern and displays
+/// user-friendly error messages without exposing internal details.
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  /// Controller for the email input field.
   final TextEditingController emailController = TextEditingController();
+
+  /// Controller for the password input field.
   final TextEditingController passwordController = TextEditingController();
+
   final AuthService _authService = AuthService();
   final UserRepository _userRepository = UserRepository();
+
+  /// Whether a login request is currently in progress.
+  ///
+  /// When true, the login button is disabled and shows a spinner
+  /// to prevent duplicate submissions.
   bool _isLoading = false;
 
   @override
@@ -25,10 +43,26 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Pre-compiled email validation regex.
+  ///
+  /// Matches standard email formats: local-part@domain.tld where the
+  /// local part allows alphanumeric characters plus `._%+-`, and the
+  /// domain requires at least a 2-character TLD.
   static final RegExp _emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
+  /// Validates inputs and attempts Firebase email/password authentication.
+  ///
+  /// On success:
+  /// 1. Creates a [UserModel] from the Firebase user
+  /// 2. Updates [UserProvider] for in-memory state
+  /// 3. Persists profile to [UserRepository] (survives restarts)
+  /// 4. Stores user ID in [SecureStorageService] (quick session checks)
+  /// 5. Navigates to `/home`, replacing the login route
+  ///
+  /// On failure, shows a snackbar with a safe, user-friendly message.
+  /// Internal error details (stack traces, service names) are never exposed.
   Future<void> _login(BuildContext context) async {
     final email = emailController.text.trim();
     final password = passwordController.text;
@@ -106,6 +140,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Builds the login form with email and password fields.
+  ///
+  /// The login button is disabled while [_isLoading] is true, showing
+  /// a [CircularProgressIndicator] instead of the button label.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
