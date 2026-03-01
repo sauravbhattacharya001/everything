@@ -138,7 +138,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((event) {
         return event.title.toLowerCase().contains(_searchQuery) ||
-            event.description.toLowerCase().contains(_searchQuery);
+            event.description.toLowerCase().contains(_searchQuery) ||
+            event.location.toLowerCase().contains(_searchQuery);
       }).toList();
     }
 

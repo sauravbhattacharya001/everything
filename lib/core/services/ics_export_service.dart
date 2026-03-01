@@ -47,6 +47,11 @@ class IcsExportService {
     // SUMMARY — event title
     buf.writeln(_foldLine('SUMMARY:${_escapeText(event.title)}'));
 
+    // LOCATION — event location/venue
+    if (event.location.isNotEmpty) {
+      buf.writeln(_foldLine('LOCATION:${_escapeText(event.location)}'));
+    }
+
     // DESCRIPTION — event description + metadata
     if (event.description.isNotEmpty || event.tags.isNotEmpty) {
       final descParts = <String>[];

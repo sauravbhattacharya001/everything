@@ -36,6 +36,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _locationController;
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   TimeOfDay? _selectedEndTime;
@@ -55,6 +56,8 @@ class _EventFormDialogState extends State<EventFormDialog> {
     _titleController = TextEditingController(text: event?.title ?? '');
     _descriptionController =
         TextEditingController(text: event?.description ?? '');
+    _locationController =
+        TextEditingController(text: event?.location ?? '');
     _selectedDate = event?.date ?? DateTime.now();
     _selectedTime = TimeOfDay.fromDateTime(event?.date ?? DateTime.now());
     _selectedEndTime = event?.endDate != null
@@ -74,6 +77,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -158,6 +162,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
           DateTime.now().millisecondsSinceEpoch.toString(),
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
+      location: _locationController.text.trim(),
       date: startDt,
       endDate: endDt,
       priority: _selectedPriority,
@@ -670,6 +675,22 @@ class _EventFormDialogState extends State<EventFormDialog> {
                 textCapitalization: TextCapitalization.sentences,
                 maxLines: 3,
                 maxLength: 500,
+              ),
+              const SizedBox(height: 16),
+
+              // Location field
+              TextFormField(
+                controller: _locationController,
+                decoration: InputDecoration(
+                  labelText: 'Location (optional)',
+                  hintText: 'Add a venue or address',
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                maxLength: 200,
               ),
               const SizedBox(height: 8),
 

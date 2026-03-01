@@ -84,6 +84,9 @@ class EventModel {
   /// Optional longer description with event details.
   final String description;
 
+  /// Optional location or venue for this event.
+  final String location;
+
   /// The date (and optional time) when this event starts.
   final DateTime date;
 
@@ -123,6 +126,7 @@ class EventModel {
     required this.id,
     required this.title,
     this.description = '',
+    this.location = '',
     required this.date,
     this.endDate,
     this.priority = EventPriority.medium,
@@ -192,6 +196,7 @@ class EventModel {
       id: json['id'] as String,
       title: json['title'] as String,
       description: (json['description'] as String?) ?? '',
+      location: (json['location'] as String?) ?? '',
       date: DateTime.parse(json['date'] as String),
       endDate: json['end_date'] != null
           ? DateTime.parse(json['end_date'] as String)
@@ -223,6 +228,7 @@ class EventModel {
       'id': id,
       'title': title,
       'description': description,
+      'location': location,
       'date': date.toIso8601String(),
       'end_date': endDate?.toIso8601String(),
       'priority': priority.name,
@@ -239,6 +245,7 @@ class EventModel {
     String? id,
     String? title,
     String? description,
+    String? location,
     DateTime? date,
     DateTime? endDate,
     bool clearEndDate = false,
@@ -254,6 +261,7 @@ class EventModel {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      location: location ?? this.location,
       date: date ?? this.date,
       endDate: clearEndDate ? null : (endDate ?? this.endDate),
       priority: priority ?? this.priority,
@@ -273,6 +281,7 @@ class EventModel {
           id == other.id &&
           title == other.title &&
           description == other.description &&
+          location == other.location &&
           date == other.date &&
           endDate == other.endDate &&
           priority == other.priority &&
@@ -291,9 +300,9 @@ class EventModel {
   }
 
   @override
-  int get hashCode => Object.hash(id, title, description, date, endDate, priority, Object.hashAll(tags), recurrence, reminders, checklist, attachments);
+  int get hashCode => Object.hash(id, title, description, location, date, endDate, priority, Object.hashAll(tags), recurrence, reminders, checklist, attachments);
 
   @override
   String toString() =>
-      'EventModel(id: $id, title: $title, description: $description, date: $date, endDate: $endDate, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist, attachments: $attachments)';
+      'EventModel(id: $id, title: $title, description: $description, location: $location, date: $date, endDate: $endDate, priority: ${priority.label}, tags: [${tags.map((t) => t.name).join(", ")}], recurrence: $recurrence, reminders: $reminders, checklist: $checklist, attachments: $attachments)';
 }

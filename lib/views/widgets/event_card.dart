@@ -132,6 +132,28 @@ class EventCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
+                    // Location preview
+                    if (event.location.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              size: 13, color: Colors.grey[500]),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              event.location,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     // Date/time
                     Row(
