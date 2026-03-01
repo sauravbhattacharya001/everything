@@ -1,7 +1,7 @@
 import 'dart:convert';
-import '../models/event_model.dart';
-import '../models/recurrence_rule.dart';
-import '../models/reminder_settings.dart';
+import '../../models/event_model.dart';
+import '../../models/recurrence_rule.dart';
+import '../../models/reminder_settings.dart';
 
 /// Service for generating iCalendar (ICS/RFC 5545) content from events.
 ///
