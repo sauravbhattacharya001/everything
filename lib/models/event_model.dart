@@ -64,18 +64,52 @@ enum EventPriority {
   }
 }
 
+/// Core domain model representing a calendar event.
+///
+/// An [EventModel] holds all data for a single event: title, date/time,
+/// priority, tags, recurrence rules, reminders, checklists, and attachments.
+/// Events are identified by a unique [id] string and support JSON
+/// serialization for SQLite persistence via [toJson] / [fromJson].
+///
+/// Recurring events use a [RecurrenceRule] to generate future occurrences
+/// via [generateOccurrences]; each generated occurrence receives a derived
+/// ID (`originalId_N`) and shifted date while sharing all other properties.
 class EventModel {
+  /// Unique identifier for this event (UUID or derived `parentId_N`).
   final String id;
+
+  /// Short display title shown in calendar views and cards.
   final String title;
+
+  /// Optional longer description with event details.
   final String description;
+
+  /// The date (and optional time) when this event occurs.
   final DateTime date;
+
+  /// Importance level affecting display color and sort order.
   final EventPriority priority;
+
+  /// User-defined categorical tags for filtering and grouping.
   final List<EventTag> tags;
+
+  /// Optional rule defining how this event repeats over time.
   final RecurrenceRule? recurrence;
+
+  /// Notification settings (before-event alerts, custom offsets).
   final ReminderSettings reminders;
+
+  /// Task checklist attached to this event for tracking sub-items.
   final EventChecklist checklist;
+
+  /// File or link attachments associated with this event.
   final EventAttachments attachments;
 
+  /// Creates a new event.
+  ///
+  /// [id] and [title] are required. All collection fields default to
+  /// empty instances when omitted, and [priority] defaults to
+  /// [EventPriority.medium].
   EventModel({
     required this.id,
     required this.title,
@@ -111,7 +145,11 @@ class EventModel {
     }).toList();
   }
 
-  // Factory method to create an EventModel from JSON
+  /// Deserializes an [EventModel] from a JSON map (typically from SQLite).
+  ///
+  /// Handles polymorphic tag/recurrence fields: values stored as JSON
+  /// strings are decoded, while raw [Map]/[List] values are used directly.
+  /// Invalid or missing optional fields fall back to safe defaults.
   factory EventModel.fromJson(Map<String, dynamic> json) {
     List<EventTag> parsedTags = const [];
     final tagsRaw = json['tags'];
@@ -160,7 +198,11 @@ class EventModel {
     );
   }
 
-  // Method to convert an EventModel to JSON
+  /// Serializes this event to a JSON-compatible map for SQLite storage.
+  ///
+  /// Collection fields (tags, reminders, checklist, attachments) are
+  /// encoded as JSON strings. Null/empty optional fields are stored as
+  /// `null` to minimize storage.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

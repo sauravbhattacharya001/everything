@@ -2,10 +2,36 @@ import 'package:flutter/material.dart';
 import '../../models/event_model.dart';
 import '../../core/utils/date_utils.dart';
 
+/// A Material card widget that displays a single calendar event.
+///
+/// Shows the event's title, description preview, date/time, priority badge,
+/// recurrence indicator, and tag chips in a compact, tappable card with a
+/// colored left strip indicating [EventPriority].
+///
+/// ## Layout
+/// ```
+/// ┌─────────────────────────────────────────────────┐
+/// │ ▐ Title                     [Priority badge]  ⋮ │
+/// │ ▐ Description preview...                      ⋮ │
+/// │ ▐ 🕐 2h ago  🔁 Weekly   [tag1] [tag2]       ⋮ │
+/// └─────────────────────────────────────────────────┘
+/// ```
+///
+/// Optional callbacks:
+/// - [onTap] — navigates to event detail screen
+/// - [onEdit] — opens the edit dialog
+/// - [onDelete] — shows a confirmation dialog before deleting
 class EventCard extends StatelessWidget {
+  /// The event data to display.
   final EventModel event;
+
+  /// Called when the user confirms deletion via the alert dialog.
   final VoidCallback? onDelete;
+
+  /// Called when the entire card is tapped (typically opens detail view).
   final VoidCallback? onTap;
+
+  /// Called when the edit icon is tapped.
   final VoidCallback? onEdit;
 
   const EventCard({
