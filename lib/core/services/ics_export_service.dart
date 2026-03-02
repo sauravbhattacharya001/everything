@@ -265,12 +265,22 @@ class IcsExportService {
     return buf.toString();
   }
 
-  /// Generates a filename for an event export.
+  /// Generates a safe filename for an event export.
+  ///
+  /// Sanitizes the event title by:
+  /// 1. Stripping non-alphanumeric/space/hyphen characters
+  /// 2. Replacing whitespace runs with a single underscore
+  /// 3. Stripping leading dots/underscores (prevents hidden files / path traversal)
+  /// 4. Truncating to 50 characters
+  /// 5. Falling back to "event" if the result is empty
   String generateFilename(EventModel event) {
-    final sanitized = event.title
+    var sanitized = event.title
         .replaceAll(RegExp(r'[^\w\s-]'), '')
         .replaceAll(RegExp(r'\s+'), '_')
         .toLowerCase();
+    // Strip leading dots and underscores to prevent hidden files or
+    // relative path components like ".." from surviving sanitization.
+    sanitized = sanitized.replaceAll(RegExp(r'^[._]+'), '');
     final truncated = sanitized.length > 50
         ? sanitized.substring(0, 50)
         : sanitized;

@@ -240,5 +240,106 @@ void main() {
       expect(str, contains('47.6'));
       expect(str, contains('-122.3'));
     });
+
+    group('validated factory', () {
+      test('accepts valid coordinates', () {
+        final loc = EventLocation.validated(
+          latitude: 47.6,
+          longitude: -122.3,
+          address: 'Seattle',
+          placeName: 'Home',
+        );
+        expect(loc.latitude, 47.6);
+        expect(loc.longitude, -122.3);
+        expect(loc.address, 'Seattle');
+        expect(loc.placeName, 'Home');
+      });
+
+      test('accepts boundary values', () {
+        expect(
+          () => EventLocation.validated(latitude: 90, longitude: 180),
+          returnsNormally,
+        );
+        expect(
+          () => EventLocation.validated(latitude: -90, longitude: -180),
+          returnsNormally,
+        );
+        expect(
+          () => EventLocation.validated(latitude: 0, longitude: 0),
+          returnsNormally,
+        );
+      });
+
+      test('rejects latitude > 90', () {
+        expect(
+          () => EventLocation.validated(latitude: 90.1, longitude: 0),
+          throwsArgumentError,
+        );
+      });
+
+      test('rejects latitude < -90', () {
+        expect(
+          () => EventLocation.validated(latitude: -90.1, longitude: 0),
+          throwsArgumentError,
+        );
+      });
+
+      test('rejects longitude > 180', () {
+        expect(
+          () => EventLocation.validated(latitude: 0, longitude: 180.1),
+          throwsArgumentError,
+        );
+      });
+
+      test('rejects longitude < -180', () {
+        expect(
+          () => EventLocation.validated(latitude: 0, longitude: -180.1),
+          throwsArgumentError,
+        );
+      });
+
+      test('rejects extreme values', () {
+        expect(
+          () => EventLocation.validated(latitude: 999, longitude: -500),
+          throwsArgumentError,
+        );
+      });
+    });
+
+    group('fromJson validation', () {
+      test('rejects out-of-range latitude in JSON', () {
+        expect(
+          () => EventLocation.fromJson({'latitude': 91, 'longitude': 0}),
+          throwsArgumentError,
+        );
+      });
+
+      test('rejects out-of-range longitude in JSON', () {
+        expect(
+          () => EventLocation.fromJson({'latitude': 0, 'longitude': 200}),
+          throwsArgumentError,
+        );
+      });
+
+      test('fromJsonString returns null for out-of-range coordinates', () {
+        expect(
+          EventLocation.fromJsonString('{"latitude": 91, "longitude": 0}'),
+          isNull,
+        );
+        expect(
+          EventLocation.fromJsonString('{"latitude": 0, "longitude": -181}'),
+          isNull,
+        );
+      });
+
+      test('fromJsonString accepts valid coordinates', () {
+        final loc = EventLocation.fromJsonString(
+          '{"latitude": 47.6, "longitude": -122.3, "place_name": "Seattle"}',
+        );
+        expect(loc, isNotNull);
+        expect(loc!.latitude, 47.6);
+        expect(loc.placeName, 'Seattle');
+      });
+    });
   });
 }
