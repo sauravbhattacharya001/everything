@@ -45,6 +45,11 @@ class EventDetailScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.copy),
+            onPressed: () => _duplicateEvent(context, currentEvent),
+            tooltip: 'Duplicate event',
+          ),
+          IconButton(
             icon: const Icon(Icons.ios_share),
             onPressed: () => _exportEvent(context, currentEvent),
             tooltip: 'Export as calendar event',
@@ -530,6 +535,72 @@ class EventDetailScreen extends StatelessWidget {
       return 'In ${diff.inHours} hour${diff.inHours == 1 ? '' : 's'}';
     }
     return 'In ${diff.inMinutes} minute${diff.inMinutes == 1 ? '' : 's'}';
+  }
+
+  Future<void> _duplicateEvent(BuildContext context, EventModel event) async {
+    // Let user pick a new date for the duplicated event
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: event.date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'Pick a date for the duplicate',
+    );
+    if (pickedDate == null || !context.mounted) return;
+
+    // Pick time
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(event.date),
+      helpText: 'Pick a time for the duplicate',
+    );
+    if (!context.mounted) return;
+
+    final newDate = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime?.hour ?? event.date.hour,
+      pickedTime?.minute ?? event.date.minute,
+    );
+
+    // Shift end date by the same offset if it exists
+    DateTime? newEndDate;
+    if (event.endDate != null) {
+      final shift = newDate.difference(event.date);
+      newEndDate = event.endDate!.add(shift);
+    }
+
+    final duplicated = event.copyWith(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      date: newDate,
+      endDate: newEndDate,
+    );
+
+    await eventService.addEvent(duplicated);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Duplicated "${event.title}"'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => EventDetailScreen(
+                    event: duplicated,
+                    eventService: eventService,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _exportEvent(BuildContext context, EventModel event) async {
