@@ -556,6 +556,32 @@ class EventDeduplicationService {
     return 1.0 - (distance / maxLen);
   }
 
+  /// Token-based Jaccard similarity for longer text.
+  /// More accurate and O(n) vs Levenshtein's O(n*m) for long strings.
+  double _tokenSimilarity(String a, String b) {
+    final na = a.trim().toLowerCase();
+    final nb = b.trim().toLowerCase();
+    if (na == nb) return 1.0;
+    if (na.isEmpty || nb.isEmpty) return 0.0;
+
+    final tokensA = na.split(RegExp(r'\s+')).toSet();
+    final tokensB = nb.split(RegExp(r'\s+')).toSet();
+    if (tokensA.isEmpty && tokensB.isEmpty) return 1.0;
+
+    final intersection = tokensA.intersection(tokensB).length;
+    final union = tokensA.union(tokensB).length;
+    return union > 0 ? intersection / union : 0.0;
+  }
+
+  /// Smart text similarity: uses Levenshtein for short text (≤50 chars)
+  /// and token-based Jaccard for longer text. Fixes issue #32.
+  double _textSimilarity(String a, String b) {
+    if (a.length <= 50 && b.length <= 50) {
+      return _titleSimilarity(a, b);
+    }
+    return _tokenSimilarity(a, b);
+  }
+
   /// Levenshtein edit distance between two strings.
   int _levenshteinDistance(String a, String b) {
     if (a.isEmpty) return b.length;
@@ -598,7 +624,7 @@ class EventDeduplicationService {
 
     // Description similarity
     if (a.description.isNotEmpty && b.description.isNotEmpty) {
-      score += _titleSimilarity(a.description, b.description);
+      score += _textSimilarity(a.description, b.description);
       factors++;
     } else if (a.description.isEmpty && b.description.isEmpty) {
       // Both empty — neutral, don't count
