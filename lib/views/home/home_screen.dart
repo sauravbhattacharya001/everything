@@ -10,6 +10,7 @@ import 'calendar_screen.dart';
 import 'event_detail_screen.dart';
 import 'heatmap_screen.dart';
 import 'stats_screen.dart';
+import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
 enum EventSortBy {
@@ -356,6 +357,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
+          // Next upcoming event countdown banner
+          if (allEvents.isNotEmpty)
+            NextUpBanner(
+              events: allEvents.toList(),
+              onTap: _viewEventDetail,
+            ),
+
           // Collapsible search & filter bar
           AnimatedSize(
             duration: const Duration(milliseconds: 250),
