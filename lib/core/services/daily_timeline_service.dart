@@ -1,4 +1,5 @@
 import '../models/event_model.dart';
+import '../utils/formatting_utils.dart';
 
 /// Represents a block of time in the daily timeline.
 ///
@@ -284,8 +285,8 @@ class DailyTimelineService {
   String formatAsText(List<TimelineBlock> timeline) {
     final buffer = StringBuffer();
     for (final block in timeline) {
-      final startStr = _formatTime(block.start);
-      final endStr = _formatTime(block.end);
+      final startStr = FormattingUtils.formatTime24h(block.start);
+      final endStr = FormattingUtils.formatTime24h(block.end);
       if (block.isEvent) {
         final priority = block.event!.priority.label;
         buffer.writeln('$startStr - $endStr  [$priority] ${block.event!.title}');
@@ -299,7 +300,7 @@ class DailyTimelineService {
     return buffer.toString();
   }
 
-  static String _formatTime(DateTime dt) {
+  static String FormattingUtils.formatTime24h(DateTime dt) {
     final hour = dt.hour.toString().padLeft(2, '0');
     final minute = dt.minute.toString().padLeft(2, '0');
     return '$hour:$minute';

@@ -9,6 +9,7 @@
 /// tomorrow", "What's my availability for the next 3 days?"
 
 import '../../models/event_model.dart';
+import '../utils/formatting_utils.dart';
 
 /// Represents a free time slot in the calendar.
 class FreeSlot {
@@ -28,8 +29,8 @@ class FreeSlot {
   String get label {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final day = days[start.weekday - 1];
-    final startStr = _formatTime(start);
-    final endStr = _formatTime(end);
+    final startStr = FormattingUtils.formatTime12h(start);
+    final endStr = FormattingUtils.formatTime12h(end);
     final hrs = duration.inHours;
     final mins = duration.inMinutes % 60;
     final durStr = hrs > 0
@@ -40,7 +41,7 @@ class FreeSlot {
 
   const FreeSlot({required this.start, required this.end});
 
-  static String _formatTime(DateTime dt) {
+  static String FormattingUtils.formatTime12h(DateTime dt) {
     final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final minute = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour < 12 ? 'AM' : 'PM';

@@ -15,6 +15,7 @@
 ///   - **Streak**: consecutive days with a review entry.
 
 import '../../models/event_model.dart';
+import '../utils/formatting_utils.dart';
 
 // ─── Data Classes ───────────────────────────────────────────────
 
@@ -213,7 +214,7 @@ class ReviewTrend {
     int streak = 0;
     DateTime expected = DateTime.now();
     for (final review in sorted) {
-      if (_sameDay(review.date, expected)) {
+      if (FormattingUtils.sameDay(review.date, expected)) {
         streak++;
         expected = expected.subtract(const Duration(days: 1));
       } else if (review.date.isBefore(expected)) {
@@ -259,7 +260,7 @@ class DailyReviewService {
 
   /// Compute a summary for a specific date.
   DaySummary summarize(DateTime date) {
-    final dayEvents = events.where((e) => _sameDay(e.date, date)).toList();
+    final dayEvents = events.where((e) => FormattingUtils.sameDay(e.date, date)).toList();
 
     int completed = 0;
     int totalChecklist = 0;
@@ -332,14 +333,14 @@ class DailyReviewService {
   /// Get the review for a specific date, or null if not yet reviewed.
   DailyReview? getReview(DateTime date) {
     for (final review in _reviews) {
-      if (_sameDay(review.date, date)) return review;
+      if (FormattingUtils.sameDay(review.date, date)) return review;
     }
     return null;
   }
 
   /// Save or update a review for a date.
   void saveReview(DailyReview review) {
-    _reviews.removeWhere((r) => _sameDay(r.date, review.date));
+    _reviews.removeWhere((r) => FormattingUtils.sameDay(r.date, review.date));
     _reviews.add(review);
   }
 
@@ -355,14 +356,14 @@ class DailyReviewService {
   List<EventModel> tomorrowEvents(DateTime today) {
     final tomorrow = today.add(const Duration(days: 1));
     return events
-        .where((e) => _sameDay(e.date, tomorrow))
+        .where((e) => FormattingUtils.sameDay(e.date, tomorrow))
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   /// Get today's top accomplishments (high priority completed events).
   List<EventModel> topAccomplishments(DateTime date) {
-    final dayEvents = events.where((e) => _sameDay(e.date, date)).toList();
+    final dayEvents = events.where((e) => FormattingUtils.sameDay(e.date, date)).toList();
     return dayEvents
         .where((e) {
           final endTime = e.endDate ?? e.date;
@@ -373,7 +374,3 @@ class DailyReviewService {
   }
 }
 
-// ─── Helpers ────────────────────────────────────────────────────
-
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;

@@ -1,4 +1,5 @@
 import '../../models/event_model.dart';
+import '../utils/formatting_utils.dart';
 
 /// Configuration for agenda digest generation.
 class DigestConfig {
@@ -289,7 +290,7 @@ class AgendaDigestService {
         buf.writeln('  (no events)');
       } else {
         for (final event in day.events) {
-          buf.write('  ${_formatTime(event.date)}  ');
+          buf.write('  ${FormattingUtils.formatTime24h(event.date)}  ');
           buf.write(_priorityIcon(event.priority));
           buf.write('  ${event.title}');
 
@@ -353,7 +354,7 @@ class AgendaDigestService {
         buf.writeln('*No events scheduled*');
       } else {
         for (final event in day.events) {
-          final time = _formatTime(event.date);
+          final time = FormattingUtils.formatTime24h(event.date);
           final icon = _priorityIcon(event.priority);
           final recurring = event.isRecurring ? ' 🔁' : '';
 
@@ -426,7 +427,7 @@ class AgendaDigestService {
   }
 
   /// Formats a time as "HH:MM" (24-hour).
-  String _formatTime(DateTime dt) {
+  String FormattingUtils.formatTime24h(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';

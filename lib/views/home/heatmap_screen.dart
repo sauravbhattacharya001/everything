@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/heatmap_service.dart';
+import '../../core/utils/formatting_utils.dart';
 import '../../models/event_model.dart';
 import '../../state/providers/event_provider.dart';
 
@@ -494,19 +495,9 @@ class _HeatmapScreenState extends State<HeatmapScreen> {
 
   /// Formats the time portion of an event for display.
   String _formatTime(EventModel event) {
-    final h = event.date.hour;
-    final m = event.date.minute;
-    final period = h >= 12 ? 'PM' : 'AM';
-    final hour12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
-    final time = '$hour12:${m.toString().padLeft(2, '0')} $period';
-
     if (event.endDate != null) {
-      final eh = event.endDate!.hour;
-      final em = event.endDate!.minute;
-      final ePeriod = eh >= 12 ? 'PM' : 'AM';
-      final eHour12 = eh == 0 ? 12 : (eh > 12 ? eh - 12 : eh);
-      return '$time – $eHour12:${em.toString().padLeft(2, '0')} $ePeriod';
+      return FormattingUtils.formatTimeRange12h(event.date, event.endDate!);
     }
-    return time;
+    return FormattingUtils.formatTime12h(event.date);
   }
 }

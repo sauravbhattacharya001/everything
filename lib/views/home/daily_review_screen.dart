@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/data/daily_review_sample_data.dart';
 import '../../core/services/daily_review_service.dart';
+import '../../core/utils/formatting_utils.dart';
 import '../../models/event_model.dart';
 
 /// Daily Review Screen — end-of-day reflection with event summary,
@@ -218,7 +219,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
   // ─── Widgets ────────────────────────────────────────────────────
 
   Widget _buildDateNavigator(ThemeData theme) {
-    final isToday = _sameDay(_selectedDate, DateTime.now());
+    final isToday = FormattingUtils.sameDay(_selectedDate, DateTime.now());
     final dayNames = [
       'Monday', 'Tuesday', 'Wednesday', 'Thursday',
       'Friday', 'Saturday', 'Sunday'
@@ -296,7 +297,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
                   '${_summary.completionRate.toStringAsFixed(0)}%',
                   'Complete',
                   Icons.check_circle,
-                  _completionColor(_summary.completionRate),
+                  FormattingUtils.completionColor(_summary.completionRate),
                 )),
                 Expanded(
                     child: _statTile(
@@ -329,11 +330,11 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
             const SizedBox(height: 8),
             Center(
               child: Chip(
-                avatar: Icon(_productivityIcon(_summary.productivityLabel),
+                avatar: Icon(FormattingUtils.productivityIcon(_summary.productivityLabel),
                     size: 18),
                 label: Text(_summary.productivityLabel),
                 backgroundColor:
-                    _productivityColor(_summary.productivityLabel)
+                    FormattingUtils.productivityColor(_summary.productivityLabel)
                         .withAlpha(30),
               ),
             ),
@@ -407,7 +408,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
                   title: Text(e.title),
                   subtitle: e.endDate != null
                       ? Text(
-                          '${_formatTime(e.date)} – ${_formatTime(e.endDate!)}')
+                          '${FormattingUtils.formatTime12h(e.date)} – ${FormattingUtils.formatTime12h(e.endDate!)}')
                       : null,
                   contentPadding: EdgeInsets.zero,
                 )),
@@ -621,7 +622,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
                     leading: Icon(e.priority.icon,
                         color: e.priority.color, size: 20),
                     title: Text(e.title),
-                    trailing: Text(_formatTime(e.date),
+                    trailing: Text(FormattingUtils.formatTime12h(e.date),
                         style: theme.textTheme.bodySmall),
                     contentPadding: EdgeInsets.zero,
                   )),
@@ -851,42 +852,4 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
     );
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────
-
-  Color _completionColor(double rate) {
-    if (rate >= 90) return Colors.green;
-    if (rate >= 75) return Colors.lightGreen;
-    if (rate >= 50) return Colors.orange;
-    if (rate >= 25) return Colors.deepOrange;
-    return Colors.red;
-  }
-
-  IconData _productivityIcon(String label) {
-    return switch (label) {
-      'Excellent' => Icons.emoji_events,
-      'Great' => Icons.thumb_up,
-      'Good' => Icons.sentiment_satisfied,
-      'Fair' => Icons.sentiment_neutral,
-      _ => Icons.sentiment_dissatisfied,
-    };
-  }
-
-  Color _productivityColor(String label) {
-    return switch (label) {
-      'Excellent' => Colors.green,
-      'Great' => Colors.lightGreen,
-      'Good' => Colors.orange,
-      'Fair' => Colors.deepOrange,
-      _ => Colors.red,
-    };
-  }
-
-  String _formatTime(DateTime dt) {
-    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final period = dt.hour < 12 ? 'AM' : 'PM';
-    return '$hour:${dt.minute.toString().padLeft(2, '0')} $period';
-  }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 }

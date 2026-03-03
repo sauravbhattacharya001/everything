@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/daily_timeline_service.dart';
 import '../../core/services/event_service.dart';
+import '../../core/utils/formatting_utils.dart';
 import '../../models/event_model.dart';
 import '../../state/providers/event_provider.dart';
 import '../widgets/event_form_dialog.dart';
@@ -375,7 +375,7 @@ class _AgendaTimelineScreenState extends State<AgendaTimelineScreen> {
                     ),
                   ),
                   Text(
-                    '${_formatTimeShort(block.start)} – ${_formatTimeShort(block.end)}',
+                    '${FormattingUtils.formatTime12h(block.start)} – ${FormattingUtils.formatTime12h(block.end)}',
                     style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                   ),
                 ],
@@ -496,9 +496,5 @@ class _AgendaTimelineScreenState extends State<AgendaTimelineScreen> {
     if (hour == 12) return '12 PM';
     if (hour > 12) return '${hour - 12} PM';
     return '$hour AM';
-  }
-
-  String _formatTimeShort(DateTime dt) {
-    return DateFormat('h:mm a').format(dt);
   }
 }
