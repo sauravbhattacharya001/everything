@@ -13,6 +13,7 @@ import 'heatmap_screen.dart';
 import 'stats_screen.dart';
 import 'weekly_report_screen.dart';
 import 'countdown_screen.dart';
+import 'habit_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -354,6 +355,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Event countdowns',
+          ),
+          // Habit tracker button
+          IconButton(
+            icon: const Icon(Icons.track_changes),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const HabitTrackerScreen()),
+              );
+            },
+            tooltip: 'Habit tracker',
           ),
           // Heatmap button
           IconButton(
