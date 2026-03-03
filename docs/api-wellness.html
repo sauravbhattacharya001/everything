@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wellness Services — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-wellness.html" class="sidebar-link active">Wellness Services</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Wellness Services</div>
+    <h1>Wellness &amp; Productivity Services</h1>
+    <p class="subtitle">Services for sleep tracking, mood journaling, habit tracking, goal management, and focused work sessions.</p>
+
+    <p>All wellness services follow a consistent pattern: <code>SharedPreferences</code>-backed persistence, lazy initialization via <code>init()</code>, sorted-descending storage, and analytics methods that operate on the in-memory list. Each service owns a single storage key and is independent of the others.</p>
+
+    <div class="callout callout-info">
+      <strong>Common Pattern</strong>
+      <code>init()</code> → <code>addEntry()</code> / <code>deleteEntry()</code> / <code>updateEntry()</code> → analytics methods. All mutations call <code>_save()</code> automatically. Services are safe to call before <code>init()</code> — they self-initialize on first data access.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="sleep-tracker">SleepTrackerService</h2>
+    <p><code>lib/core/services/sleep_tracker_service.dart</code></p>
+    <p>Manages sleep log entries with bedtime/wake time tracking, quality ratings, sleep factor analysis, and trend analytics. Supports sleep debt calculation and schedule consistency scoring.</p>
+
+    <h3>Data Model</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>bedtime</code></td><td><code>DateTime</code></td><td>When the user went to bed</td></tr>
+      <tr><td><code>wakeTime</code></td><td><code>DateTime</code></td><td>When the user woke up</td></tr>
+      <tr><td><code>quality</code></td><td><code>SleepQuality</code></td><td>Rating: terrible (1) → excellent (5)</td></tr>
+      <tr><td><code>factors</code></td><td><code>List&lt;SleepFactor&gt;</code></td><td>Contributing factors (caffeine, exercise, stress, etc.)</td></tr>
+      <tr><td><code>awakenings</code></td><td><code>int</code></td><td>Number of times woken during the night</td></tr>
+      <tr><td><code>notes</code></td><td><code>String?</code></td><td>Optional free-text notes</td></tr>
+    </table>
+
+    <h3>CRUD Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>init()</code></td><td><code>Future&lt;void&gt;</code></td><td>Load entries from SharedPreferences (idempotent)</td></tr>
+      <tr><td><code>addEntry(entry)</code></td><td><code>Future&lt;void&gt;</code></td><td>Insert at front, auto-save</td></tr>
+      <tr><td><code>deleteEntry(id)</code></td><td><code>Future&lt;void&gt;</code></td><td>Remove by ID, auto-save</td></tr>
+      <tr><td><code>updateEntry(entry)</code></td><td><code>Future&lt;void&gt;</code></td><td>Replace by ID, auto-save</td></tr>
+      <tr><td><code>entriesForDate(date)</code></td><td><code>List&lt;SleepEntry&gt;</code></td><td>Filter entries by wake date</td></tr>
+      <tr><td><code>entriesForLastDays(days)</code></td><td><code>List&lt;SleepEntry&gt;</code></td><td>Entries within the last N days</td></tr>
+    </table>
+
+    <h3>Analytics Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>durationTrend(days)</code></td><td><code>Map&lt;DateTime, double&gt;</code></td><td>Daily average sleep duration for chart data</td></tr>
+      <tr><td><code>qualityTrend(days)</code></td><td><code>Map&lt;DateTime, double&gt;</code></td><td>Daily average quality for chart data</td></tr>
+      <tr><td><code>overallAvgDuration()</code></td><td><code>double?</code></td><td>Lifetime average sleep hours</td></tr>
+      <tr><td><code>overallAvgQuality()</code></td><td><code>double?</code></td><td>Lifetime average quality (1–5)</td></tr>
+      <tr><td><code>avgBedtimeHour(days)</code></td><td><code>double?</code></td><td>Average bedtime (0–24), handles midnight normalization</td></tr>
+      <tr><td><code>avgWakeTimeHour(days)</code></td><td><code>double?</code></td><td>Average wake time (0–24)</td></tr>
+      <tr><td><code>factorFrequency()</code></td><td><code>Map&lt;SleepFactor, int&gt;</code></td><td>Factor occurrence counts, sorted descending</td></tr>
+      <tr><td><code>qualityByFactor()</code></td><td><code>Map&lt;SleepFactor, double&gt;</code></td><td>Average quality per factor (correlations)</td></tr>
+      <tr><td><code>sleepDebt(days)</code></td><td><code>double</code></td><td>Cumulative hours below target (default 8h)</td></tr>
+      <tr><td><code>currentStreak()</code></td><td><code>int</code></td><td>Consecutive days with sleep logs</td></tr>
+      <tr><td><code>bestStreak()</code></td><td><code>int</code></td><td>Longest-ever consecutive logging streak</td></tr>
+      <tr><td><code>consistencyScore(days)</code></td><td><code>double</code></td><td>Schedule consistency (0–100) based on bedtime/wake variance</td></tr>
+    </table>
+
+    <h3>Usage Example</h3>
+    <div class="code-block">
+<span class="keyword">final</span> service = <span class="type">SleepTrackerService</span>();
+<span class="keyword">await</span> service.<span class="fn">init</span>();
+
+<span class="comment">// Log last night's sleep</span>
+<span class="keyword">await</span> service.<span class="fn">addEntry</span>(<span class="type">SleepEntry</span>(
+  id: <span class="string">'uuid-1'</span>,
+  bedtime: <span class="type">DateTime</span>(2026, 3, 2, 23, 15),
+  wakeTime: <span class="type">DateTime</span>(2026, 3, 3, 7, 0),
+  quality: <span class="type">SleepQuality</span>.good,
+  factors: [<span class="type">SleepFactor</span>.exercise, <span class="type">SleepFactor</span>.meditation],
+));
+
+<span class="comment">// Check sleep debt this week</span>
+<span class="keyword">final</span> debt = service.<span class="fn">sleepDebt</span>(7);  <span class="comment">// hours below 8h target</span>
+
+<span class="comment">// Which factors correlate with better sleep?</span>
+<span class="keyword">final</span> correlations = service.<span class="fn">qualityByFactor</span>();
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="mood-journal">MoodJournalService</h2>
+    <p><code>lib/core/services/mood_journal_service.dart</code></p>
+    <p>Tracks mood entries with a 5-level rating system, 14 activity tags, and notes. Provides trend analysis, activity-mood correlations, and streak tracking.</p>
+
+    <h3>Data Model</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>mood</code></td><td><code>MoodLevel</code></td><td>Rating: terrible (1) → great (5)</td></tr>
+      <tr><td><code>activities</code></td><td><code>List&lt;MoodActivity&gt;</code></td><td>What the user was doing (exercise, work, social, etc.)</td></tr>
+      <tr><td><code>notes</code></td><td><code>String?</code></td><td>Optional journal text</td></tr>
+      <tr><td><code>timestamp</code></td><td><code>DateTime</code></td><td>When the entry was recorded</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>init()</code></td><td><code>Future&lt;void&gt;</code></td><td>Load from SharedPreferences</td></tr>
+      <tr><td><code>addEntry(entry)</code></td><td><code>Future&lt;void&gt;</code></td><td>Add mood entry, auto-save</td></tr>
+      <tr><td><code>deleteEntry(id)</code></td><td><code>Future&lt;void&gt;</code></td><td>Remove by ID</td></tr>
+      <tr><td><code>entriesForDate(date)</code></td><td><code>List&lt;MoodEntry&gt;</code></td><td>Filter by date</td></tr>
+      <tr><td><code>averageMoodForDate(date)</code></td><td><code>double?</code></td><td>Mean mood level for a day</td></tr>
+      <tr><td><code>moodTrend(days)</code></td><td><code>Map&lt;DateTime, double&gt;</code></td><td>Daily average mood for charting</td></tr>
+      <tr><td><code>activityFrequency()</code></td><td><code>Map&lt;MoodActivity, int&gt;</code></td><td>How often each activity appears</td></tr>
+      <tr><td><code>moodByActivity()</code></td><td><code>Map&lt;MoodActivity, double&gt;</code></td><td>Average mood per activity (correlations)</td></tr>
+      <tr><td><code>currentStreak()</code></td><td><code>int</code></td><td>Consecutive days with entries</td></tr>
+    </table>
+
+    <div class="callout callout-success">
+      <strong>Correlation Insight</strong>
+      Use <code>moodByActivity()</code> to discover which activities are associated with higher mood scores. This powers the Insights tab in the Mood Journal screen.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="habit-tracker">HabitTrackerService</h2>
+    <p><code>lib/core/services/habit_tracker_service.dart</code></p>
+    <p>Manages daily habits with check-off tracking, streak counting, and completion statistics. Habits persist across sessions.</p>
+
+    <h3>Data Model</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>name</code></td><td><code>String</code></td><td>Habit name (e.g., "Meditate")</td></tr>
+      <tr><td><code>icon</code></td><td><code>String</code></td><td>Emoji icon for display</td></tr>
+      <tr><td><code>completedDates</code></td><td><code>Set&lt;DateTime&gt;</code></td><td>Dates the habit was completed</td></tr>
+      <tr><td><code>createdAt</code></td><td><code>DateTime</code></td><td>When the habit was created</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>addHabit(habit)</code></td><td><code>void</code></td><td>Add a new habit to track</td></tr>
+      <tr><td><code>removeHabit(id)</code></td><td><code>void</code></td><td>Remove a habit</td></tr>
+      <tr><td><code>toggleCompletion(id, date)</code></td><td><code>void</code></td><td>Toggle check-off for a date</td></tr>
+      <tr><td><code>isCompletedOn(id, date)</code></td><td><code>bool</code></td><td>Check if completed on a date</td></tr>
+      <tr><td><code>currentStreak(id)</code></td><td><code>int</code></td><td>Current consecutive-day streak</td></tr>
+      <tr><td><code>completionRate(id, days)</code></td><td><code>double</code></td><td>Completion percentage over N days</td></tr>
+      <tr><td><code>todayProgress()</code></td><td><code>double</code></td><td>Fraction of habits done today (0.0–1.0)</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="goal-tracker">GoalTrackerService</h2>
+    <p><code>lib/core/services/goal_tracker_service.dart</code></p>
+    <p>Manages goals with milestones, progress percentages, deadlines, and categories. Supports urgency sorting and summary statistics.</p>
+
+    <h3>Data Model</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>title</code></td><td><code>String</code></td><td>Goal name</td></tr>
+      <tr><td><code>description</code></td><td><code>String?</code></td><td>Detailed description</td></tr>
+      <tr><td><code>category</code></td><td><code>GoalCategory</code></td><td>Health, career, finance, education, personal, creative, social</td></tr>
+      <tr><td><code>progress</code></td><td><code>int</code></td><td>Completion percentage (0–100)</td></tr>
+      <tr><td><code>deadline</code></td><td><code>DateTime?</code></td><td>Optional target date</td></tr>
+      <tr><td><code>milestones</code></td><td><code>List&lt;Milestone&gt;</code></td><td>Sub-tasks with individual completion tracking</td></tr>
+      <tr><td><code>status</code></td><td><code>GoalStatus</code></td><td>active, completed, archived</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>addGoal(goal)</code></td><td><code>void</code></td><td>Add a new goal</td></tr>
+      <tr><td><code>updateGoal(goal)</code></td><td><code>void</code></td><td>Replace an existing goal</td></tr>
+      <tr><td><code>deleteGoal(id)</code></td><td><code>void</code></td><td>Remove permanently</td></tr>
+      <tr><td><code>completeGoal(id)</code></td><td><code>void</code></td><td>Mark as completed (100%)</td></tr>
+      <tr><td><code>archiveGoal(id)</code></td><td><code>void</code></td><td>Move to archived</td></tr>
+      <tr><td><code>toggleMilestone(goalId, milestoneId)</code></td><td><code>void</code></td><td>Toggle milestone completion</td></tr>
+      <tr><td><code>updateProgress(goalId, progress)</code></td><td><code>void</code></td><td>Set progress percentage</td></tr>
+      <tr><td><code>getSummary()</code></td><td><code>GoalSummary</code></td><td>Aggregate stats (active, completed, average progress)</td></tr>
+      <tr><td><code>getByUrgency()</code></td><td><code>List&lt;Goal&gt;</code></td><td>Active goals sorted by deadline proximity</td></tr>
+    </table>
+
+    <h3>Computed Properties</h3>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>activeGoals</code></td><td><code>List&lt;Goal&gt;</code></td><td>Goals with status = active</td></tr>
+      <tr><td><code>completedGoals</code></td><td><code>List&lt;Goal&gt;</code></td><td>Goals with status = completed</td></tr>
+      <tr><td><code>overdueGoals</code></td><td><code>List&lt;Goal&gt;</code></td><td>Active goals past their deadline</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="pomodoro">PomodoroService</h2>
+    <p><code>lib/core/services/pomodoro_service.dart</code></p>
+    <p>Manages Pomodoro technique work sessions with configurable durations, automatic phase transitions (work → short break → long break), and daily statistics.</p>
+
+    <h3>Settings</h3>
+    <table>
+      <tr><th>Setting</th><th>Default</th><th>Description</th></tr>
+      <tr><td><code>workMinutes</code></td><td>25</td><td>Focus session duration</td></tr>
+      <tr><td><code>shortBreakMinutes</code></td><td>5</td><td>Break between work sessions</td></tr>
+      <tr><td><code>longBreakMinutes</code></td><td>15</td><td>Break after every N work sessions</td></tr>
+      <tr><td><code>longBreakInterval</code></td><td>4</td><td>Work sessions before a long break</td></tr>
+    </table>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>nextPhase()</code></td><td><code>PomodoroPhase</code></td><td>Determine next phase based on session count</td></tr>
+      <tr><td><code>phaseDuration(phase)</code></td><td><code>int</code></td><td>Minutes for the given phase</td></tr>
+      <tr><td><code>startSession(phase)</code></td><td><code>PomodoroSession</code></td><td>Begin a new session</td></tr>
+      <tr><td><code>completeCurrentSession()</code></td><td><code>void</code></td><td>Mark current session as completed</td></tr>
+      <tr><td><code>todayStats()</code></td><td><code>PomodoroStats</code></td><td>Today's completed sessions, focus minutes, streak</td></tr>
+      <tr><td><code>reset()</code></td><td><code>void</code></td><td>Clear all sessions and reset phase counter</td></tr>
+    </table>
+
+    <h3>Phase Cycle</h3>
+    <div class="code-block">
+<span class="comment">// Default cycle with longBreakInterval = 4:</span>
+work → short break → work → short break → work → short break → work → <span class="keyword">long break</span> → work → ...
+    </div>
+
+    <div class="callout callout-warning">
+      <strong>Timer Not Included</strong>
+      PomodoroService manages phase logic and statistics only. The countdown timer is handled by the UI layer (<code>PomodoroScreen</code>) using <code>Timer.periodic</code>.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="daily-review">DailyReviewService</h2>
+    <p><code>lib/core/services/daily_review_service.dart</code></p>
+    <p>End-of-day reflection service with completion summaries, mood/energy tracking, highlights/lowlights, star ratings, and 7-day trend analysis.</p>
+
+    <h3>Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>init()</code></td><td><code>Future&lt;void&gt;</code></td><td>Load review history from SharedPreferences</td></tr>
+      <tr><td><code>addReview(review)</code></td><td><code>Future&lt;void&gt;</code></td><td>Save a daily review</td></tr>
+      <tr><td><code>reviewForDate(date)</code></td><td><code>DailyReview?</code></td><td>Get review for a specific date</td></tr>
+      <tr><td><code>recentReviews(days)</code></td><td><code>List&lt;DailyReview&gt;</code></td><td>Last N days of reviews</td></tr>
+      <tr><td><code>currentStreak()</code></td><td><code>int</code></td><td>Consecutive days with reviews</td></tr>
+      <tr><td><code>averageRating(days)</code></td><td><code>double?</code></td><td>Mean star rating over N days</td></tr>
+    </table>
+
+  </main>
+</div>
+</body>
+</html>
