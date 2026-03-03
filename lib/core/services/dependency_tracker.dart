@@ -153,6 +153,39 @@ class EventDependencyTracker {
   final List<EventDependency> _dependencies = [];
   final Set<String> _completedEvents = {};
 
+  /// Adjacency index: blockerId -> list of dependencies where this ID is the blocker.
+  final Map<String, List<EventDependency>> _byBlocker = {};
+  /// Adjacency index: dependentId -> list of dependencies where this ID is the dependent.
+  final Map<String, List<EventDependency>> _byDependent = {};
+
+  /// Rebuild adjacency indexes from the dependency list.
+  void _rebuildIndexes() {
+    _byBlocker.clear();
+    _byDependent.clear();
+    for (final dep in _dependencies) {
+      _byBlocker.putIfAbsent(dep.blockerId, () => []).add(dep);
+      _byDependent.putIfAbsent(dep.dependentId, () => []).add(dep);
+    }
+  }
+
+  /// Add a single dependency to the indexes.
+  void _indexAdd(EventDependency dep) {
+    _byBlocker.putIfAbsent(dep.blockerId, () => []).add(dep);
+    _byDependent.putIfAbsent(dep.dependentId, () => []).add(dep);
+  }
+
+  /// Remove entries matching a predicate from the indexes.
+  void _indexRemoveWhere(bool Function(EventDependency) test) {
+    for (final list in _byBlocker.values) {
+      list.removeWhere(test);
+    }
+    _byBlocker.removeWhere((_, v) => v.isEmpty);
+    for (final list in _byDependent.values) {
+      list.removeWhere(test);
+    }
+    _byDependent.removeWhere((_, v) => v.isEmpty);
+  }
+
   static const int maxDependencies = 500;
 
   List<EventDependency> get dependencies => List.unmodifiable(_dependencies);
@@ -178,22 +211,26 @@ class EventDependencyTracker {
 
     if (_dependencies.contains(dep)) return false;
     _dependencies.add(dep);
+    _indexAdd(dep);
     return true;
   }
 
   bool removeDependency(String blockerId, String dependentId) {
     final before = _dependencies.length;
-    _dependencies.removeWhere(
-      (d) => d.blockerId == blockerId && d.dependentId == dependentId,
-    );
-    return _dependencies.length < before;
+    final test = (EventDependency d) => d.blockerId == blockerId && d.dependentId == dependentId;
+    _dependencies.removeWhere(test);
+    if (_dependencies.length < before) {
+      _indexRemoveWhere(test);
+      return true;
+    }
+    return false;
   }
 
   int removeAllForEvent(String eventId) {
     final before = _dependencies.length;
-    _dependencies.removeWhere(
-      (d) => d.blockerId == eventId || d.dependentId == eventId,
-    );
+    final test = (EventDependency d) => d.blockerId == eventId || d.dependentId == eventId;
+    _dependencies.removeWhere(test);
+    _indexRemoveWhere(test);
     _completedEvents.remove(eventId);
     return before - _dependencies.length;
   }
@@ -203,25 +240,23 @@ class EventDependencyTracker {
   bool isCompleted(String eventId) => _completedEvents.contains(eventId);
 
   List<String> getBlockers(String eventId) {
-    return _dependencies
-        .where((d) => d.dependentId == eventId)
+    return (_byDependent[eventId] ?? const [])
         .map((d) => d.blockerId)
         .toList();
   }
 
   List<String> getDependents(String eventId) {
-    return _dependencies
-        .where((d) => d.blockerId == eventId)
+    return (_byBlocker[eventId] ?? const [])
         .map((d) => d.dependentId)
         .toList();
   }
 
   List<EventDependency> getDependenciesFor(String eventId) {
-    return _dependencies.where((d) => d.dependentId == eventId).toList();
+    return List.of(_byDependent[eventId] ?? const []);
   }
 
   List<EventDependency> getDependenciesFrom(String eventId) {
-    return _dependencies.where((d) => d.blockerId == eventId).toList();
+    return List.of(_byBlocker[eventId] ?? const []);
   }
 
   /// Checks if adding blockerId→dependentId would create a cycle.
@@ -236,8 +271,8 @@ class EventDependencyTracker {
       if (current == blockerId) return true;
       if (visited.contains(current)) continue;
       visited.add(current);
-      for (final dep in _dependencies) {
-        if (dep.blockerId == current && !visited.contains(dep.dependentId)) {
+      for (final dep in (_byBlocker[current] ?? const [])) {
+        if (!visited.contains(dep.dependentId)) {
           queue.add(dep.dependentId);
         }
       }
@@ -251,8 +286,8 @@ class EventDependencyTracker {
       if (current == dependentId) return true;
       if (visited2.contains(current)) continue;
       visited2.add(current);
-      for (final dep in _dependencies) {
-        if (dep.dependentId == current && !visited2.contains(dep.blockerId)) {
+      for (final dep in (_byDependent[current] ?? const [])) {
+        if (!visited2.contains(dep.blockerId)) {
           queue2.add(dep.blockerId);
         }
       }
@@ -271,8 +306,7 @@ class EventDependencyTracker {
     void dfs(String node, List<String> path) {
       color[node] = 1;
       path.add(node);
-      for (final dep in _dependencies) {
-        if (dep.blockerId != node) continue;
+      for (final dep in (_byBlocker[node] ?? const [])) {
         final next = dep.dependentId;
         if (color[next] == 1) {
           final cycleStart = path.indexOf(next);
@@ -441,8 +475,7 @@ class EventDependencyTracker {
     while (queue.isNotEmpty) {
       final current = queue.removeAt(0);
       result.add(current);
-      for (final dep in _dependencies) {
-        if (dep.blockerId != current) continue;
+      for (final dep in (_byBlocker[current] ?? const [])) {
         inDegree[dep.dependentId] = (inDegree[dep.dependentId] ?? 1) - 1;
         if (inDegree[dep.dependentId] == 0) {
           var inserted = false;
@@ -506,12 +539,15 @@ class EventDependencyTracker {
     for (final id in (json['completed'] as List<dynamic>? ?? [])) {
       tracker._completedEvents.add(id as String);
     }
+    tracker._rebuildIndexes();
     return tracker;
   }
 
   void clear() {
     _dependencies.clear();
     _completedEvents.clear();
+    _byBlocker.clear();
+    _byDependent.clear();
   }
 
   Set<String> _allEventIds() {

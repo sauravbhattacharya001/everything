@@ -499,4 +499,82 @@ void main() {
       expect(tracker.getInfo('target').status, DependencyStatus.ready);
     });
   });
+
+  group('index consistency', () {
+    test('getBlockers returns correct results after add and remove', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('a', 'c');
+      tracker.addDependency('b', 'c');
+      expect(tracker.getBlockers('c'), unorderedEquals(['a', 'b']));
+      tracker.removeDependency('a', 'c');
+      expect(tracker.getBlockers('c'), equals(['b']));
+    });
+
+    test('getDependents returns correct results after add and remove', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('a', 'b');
+      tracker.addDependency('a', 'c');
+      tracker.addDependency('a', 'd');
+      expect(tracker.getDependents('a'), unorderedEquals(['b', 'c', 'd']));
+      tracker.removeDependency('a', 'c');
+      expect(tracker.getDependents('a'), unorderedEquals(['b', 'd']));
+    });
+
+    test('removeAllForEvent cleans up indexes', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('a', 'b');
+      tracker.addDependency('b', 'c');
+      tracker.addDependency('d', 'b');
+      tracker.removeAllForEvent('b');
+      expect(tracker.getBlockers('b'), isEmpty);
+      expect(tracker.getDependents('b'), isEmpty);
+      expect(tracker.getBlockers('c'), isEmpty);
+      expect(tracker.getDependents('a'), isEmpty);
+    });
+
+    test('getDependenciesFor and getDependenciesFrom use indexes', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('x', 'y', label: 'dep1');
+      tracker.addDependency('x', 'z', label: 'dep2');
+      tracker.addDependency('w', 'y', label: 'dep3');
+      final fromX = tracker.getDependenciesFrom('x');
+      expect(fromX.length, 2);
+      expect(fromX.map((d) => d.label), unorderedEquals(['dep1', 'dep2']));
+      final forY = tracker.getDependenciesFor('y');
+      expect(forY.length, 2);
+      expect(forY.map((d) => d.label), unorderedEquals(['dep1', 'dep3']));
+    });
+
+    test('clear resets indexes', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('a', 'b');
+      tracker.addDependency('c', 'd');
+      tracker.clear();
+      expect(tracker.getBlockers('b'), isEmpty);
+      expect(tracker.getDependents('a'), isEmpty);
+      expect(tracker.dependencies, isEmpty);
+    });
+
+    test('fromJson rebuilds indexes correctly', () {
+      final t1 = EventDependencyTracker();
+      t1.addDependency('a', 'b');
+      t1.addDependency('b', 'c');
+      t1.markCompleted('a');
+      final json = t1.toJson();
+      final t2 = EventDependencyTracker.fromJson(json);
+      expect(t2.getBlockers('b'), equals(['a']));
+      expect(t2.getDependents('b'), equals(['c']));
+      expect(t2.isCompleted('a'), isTrue);
+    });
+
+    test('wouldCreateCycle uses indexed lookups', () {
+      final tracker = EventDependencyTracker();
+      tracker.addDependency('a', 'b');
+      tracker.addDependency('b', 'c');
+      tracker.addDependency('c', 'd');
+      expect(tracker.wouldCreateCycle('d', 'a'), isTrue);
+      expect(tracker.wouldCreateCycle('d', 'e'), isFalse);
+    });
+  });
+  });
 }
