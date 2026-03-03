@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/event_service.dart';
+import '../../core/utils/date_utils.dart';
 import '../../models/event_model.dart';
 import '../../state/providers/event_provider.dart';
 import '../widgets/event_card.dart';
@@ -90,12 +91,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     setState(() => _selectedDay = day);
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
   bool _isToday(DateTime day) {
-    return _isSameDay(day, DateTime.now());
+    return AppDateUtils.isSameDay(day, DateTime.now());
   }
 
   bool _isCurrentMonth(DateTime day) {
@@ -374,7 +371,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final dayKey = DateTime(day.year, day.month, day.day);
     final dayEvents = eventsByDay[dayKey] ?? [];
     final isToday = _isToday(day);
-    final isSelected = _selectedDay != null && _isSameDay(day, _selectedDay!);
+    final isSelected = _selectedDay != null && AppDateUtils.isSameDay(day, _selectedDay!);
     final isInMonth = _isCurrentMonth(day);
     final hasEvents = dayEvents.isNotEmpty;
 

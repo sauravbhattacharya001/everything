@@ -19,4 +19,14 @@ class AppDateUtils {
     if (difference.inMinutes > 0) return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
     return 'just now';
   }
+
+  /// Whether two [DateTime] values fall on the same calendar day.
+  static bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// Strips the time component from a [DateTime], returning midnight
+  /// on that day.
+  static DateTime dateOnly(DateTime dt) =>
+      DateTime(dt.year, dt.month, dt.day);
 }

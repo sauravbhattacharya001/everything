@@ -1,4 +1,5 @@
 import '../../models/event_model.dart';
+import '../utils/date_utils.dart';
 import 'dart:math' as math;
 
 /// A pair of events suspected to be duplicates, with a similarity score
@@ -306,7 +307,7 @@ class EventDeduplicationService {
         final gapMinutes =
             b.date.difference(a.date).inMinutes.abs();
         if (gapMinutes > config.maxTimeGapMinutes &&
-            !_isSameDay(a.date, b.date)) {
+            !AppDateUtils.isSameDay(a.date, b.date)) {
           // If events are sorted by date and we're past the window,
           // we can skip remaining comparisons for this i (they'll be
           // even further away) — BUT same-day events may be far apart
@@ -414,7 +415,7 @@ class EventDeduplicationService {
     final titleSim = _titleSimilarity(a.title, b.title);
     final timeSim = _timeSimilarity(gapMinutes);
     final contentSim = _contentSimilarity(a, b);
-    final sameDay = _isSameDay(a.date, b.date);
+    final sameDay = AppDateUtils.isSameDay(a.date, b.date);
 
     // ── Exact duplicate: identical title + overlapping time ──
     if (titleSim >= 0.95 && _eventsOverlap(a, b)) {
@@ -508,7 +509,7 @@ class EventDeduplicationService {
     if (titleSim < config.titleSimilarityThreshold) return null;
 
     // Manual event must be on a day the recurring event would fire
-    if (_isSameDay(manual.date, recurring.date) ||
+    if (AppDateUtils.isSameDay(manual.date, recurring.date) ||
         _isRecurrenceDay(manual.date, recurring)) {
       final timeDiff =
           (manual.date.hour * 60 + manual.date.minute) -
@@ -535,7 +536,7 @@ class EventDeduplicationService {
     final windowStart = date.subtract(const Duration(days: 1));
     final windowEnd = date.add(const Duration(days: 1));
     final occurrences = recurring.generateOccurrences(windowStart, windowEnd);
-    return occurrences.any((occ) => _isSameDay(occ.date, date));
+    return occurrences.any((occ) => AppDateUtils.isSameDay(occ.date, date));
   }
 
   // ─── Similarity functions ────────────────────────────────────
@@ -644,11 +645,6 @@ class EventDeduplicationService {
     final bStart = b.date;
     final bEnd = b.endDate ?? b.date.add(const Duration(minutes: 30));
     return aStart.isBefore(bEnd) && bStart.isBefore(aEnd);
-  }
-
-  /// Are two dates on the same calendar day?
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   /// Suggest which event to keep based on richness of data.

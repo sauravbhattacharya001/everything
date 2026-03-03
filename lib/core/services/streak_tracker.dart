@@ -5,6 +5,7 @@
 /// event exists. Streaks help users stay motivated by visualizing consistency.
 
 import '../../models/event_model.dart';
+import '../utils/date_utils.dart';
 
 /// A single streak period with start/end dates and length.
 class Streak {
@@ -23,11 +24,17 @@ class Streak {
     required this.length,
   });
 
-  /// Whether this streak is still active (includes today or the reference date).
+  /// Whether this streak is still active on [referenceDate].
+  ///
+  /// A streak is active if [referenceDate] falls within the streak's range
+  /// (from [startDate] to [endDate]) or is the very next day after [endDate]
+  /// (the streak hasn't been broken yet — today may extend it).
   bool isActiveOn(DateTime referenceDate) {
-    final ref = _dateOnly(referenceDate);
-    return !endDate.isAfter(ref) &&
-        !ref.isAfter(endDate.add(const Duration(days: 1)));
+    final ref = AppDateUtils.dateOnly(referenceDate);
+    final start = AppDateUtils.dateOnly(startDate);
+    final dayAfterEnd = AppDateUtils.dateOnly(endDate).add(const Duration(days: 1));
+    // ref >= startDate AND ref <= endDate + 1 day
+    return !ref.isBefore(start) && !ref.isAfter(dayAfterEnd);
   }
 
   /// Human-readable summary of the streak.
@@ -192,7 +199,7 @@ class StreakTracker {
   /// Create a StreakTracker. Pass [referenceDate] for deterministic testing.
   StreakTracker({DateTime? referenceDate}) : _referenceDate = referenceDate;
 
-  DateTime get _today => _dateOnly(_referenceDate ?? DateTime.now());
+  DateTime get _today => AppDateUtils.dateOnly(_referenceDate ?? DateTime.now());
 
   /// Analyze events and produce a full [StreakReport].
   ///
@@ -205,7 +212,7 @@ class StreakTracker {
   }) {
     final allEvents = _expandEvents(events, includeRecurring: includeRecurring);
     final activeDays = _getActiveDays(allEvents);
-    final startDate = since != null ? _dateOnly(since) : _today.subtract(const Duration(days: 365));
+    final startDate = since != null ? AppDateUtils.dateOnly(since) : _today.subtract(const Duration(days: 365));
     final streaks = _computeStreaks(activeDays);
     final stats = _computeStats(allEvents, activeDays, startDate);
 
@@ -349,7 +356,7 @@ class StreakTracker {
 
   /// Extracts the set of unique calendar days that have at least one event.
   Set<DateTime> _getActiveDays(List<EventModel> events) {
-    return events.map((e) => _dateOnly(e.date)).toSet();
+    return events.map((e) => AppDateUtils.dateOnly(e.date)).toSet();
   }
 
   /// Identifies consecutive-day runs from a set of active dates.
@@ -432,9 +439,6 @@ class StreakTracker {
 }
 
 // ─── Utilities ──────────────────────────────────────────────────
-
-/// Strips the time component from a [DateTime], returning midnight on that day.
-DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
 /// Formats a date as "Mon DD" (e.g., "Jan 15").
 String _formatDate(DateTime dt) {
