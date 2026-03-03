@@ -8,6 +8,7 @@ import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
 import 'calendar_screen.dart';
 import 'event_detail_screen.dart';
+import 'agenda_timeline_screen.dart';
 import 'heatmap_screen.dart';
 import 'stats_screen.dart';
 import '../widgets/next_up_banner.dart';
@@ -302,6 +303,16 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('My Events'),
         elevation: 0,
         actions: [
+          // Agenda timeline button
+          IconButton(
+            icon: const Icon(Icons.view_timeline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AgendaTimelineScreen()),
+              );
+            },
+            tooltip: 'Daily agenda',
+          ),
           // Calendar view button
           IconButton(
             icon: const Icon(Icons.calendar_month),
