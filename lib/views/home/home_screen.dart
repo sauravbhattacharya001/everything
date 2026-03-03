@@ -11,6 +11,7 @@ import 'event_detail_screen.dart';
 import 'agenda_timeline_screen.dart';
 import 'heatmap_screen.dart';
 import 'stats_screen.dart';
+import 'weekly_report_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -332,6 +333,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Event analytics',
+          ),
+          // Weekly report button
+          IconButton(
+            icon: const Icon(Icons.assessment),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
+              );
+            },
+            tooltip: 'Weekly report',
           ),
           // Heatmap button
           IconButton(
