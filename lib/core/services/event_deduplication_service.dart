@@ -591,6 +591,29 @@ class EventDeduplicationService {
     return math.exp(-gapMinutes / (config.maxTimeGapMinutes / 3.0));
   }
 
+  /// Similarity for descriptions: uses Jaccard token overlap for longer text
+  /// (>50 chars) to avoid O(n*m) Levenshtein on long strings and improve
+  /// semantic accuracy for text with minor additions/edits.
+  double _descriptionSimilarity(String a, String b) {
+    final na = a.trim().toLowerCase();
+    final nb = b.trim().toLowerCase();
+    if (na == nb) return 1.0;
+    if (na.isEmpty || nb.isEmpty) return 0.0;
+
+    // Short text: Levenshtein works well
+    if (na.length <= 50 && nb.length <= 50) {
+      return _titleSimilarity(a, b);
+    }
+
+    // Longer text: token-based Jaccard similarity — O(n) and semantically better
+    final tokensA = na.split(RegExp(r'\s+')).toSet();
+    final tokensB = nb.split(RegExp(r'\s+')).toSet();
+    if (tokensA.isEmpty && tokensB.isEmpty) return 1.0;
+    final intersection = tokensA.intersection(tokensB).length;
+    final union = tokensA.union(tokensB).length;
+    return union > 0 ? intersection / union : 0.0;
+  }
+
   /// Content similarity based on description and location.
   double _contentSimilarity(EventModel a, EventModel b) {
     double score = 0.0;
@@ -598,7 +621,7 @@ class EventDeduplicationService {
 
     // Description similarity
     if (a.description.isNotEmpty && b.description.isNotEmpty) {
-      score += _titleSimilarity(a.description, b.description);
+      score += _descriptionSimilarity(a.description, b.description);
       factors++;
     } else if (a.description.isEmpty && b.description.isEmpty) {
       // Both empty — neutral, don't count
