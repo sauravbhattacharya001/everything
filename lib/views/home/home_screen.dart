@@ -14,6 +14,7 @@ import 'stats_screen.dart';
 import 'weekly_report_screen.dart';
 import 'countdown_screen.dart';
 import 'habit_tracker_screen.dart';
+import 'daily_review_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -375,6 +376,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Activity heatmap',
+          ),
+          // Daily review button
+          IconButton(
+            icon: const Icon(Icons.rate_review),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DailyReviewScreen()),
+              );
+            },
+            tooltip: 'Daily review',
           ),
           // Sort button
           IconButton(
