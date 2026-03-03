@@ -15,6 +15,7 @@ import 'weekly_report_screen.dart';
 import 'countdown_screen.dart';
 import 'habit_tracker_screen.dart';
 import 'daily_review_screen.dart';
+import 'pomodoro_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -386,6 +387,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Daily review',
+          ),
+          // Pomodoro timer button
+          IconButton(
+            icon: const Icon(Icons.av_timer),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PomodoroScreen()),
+              );
+            },
+            tooltip: 'Pomodoro timer',
           ),
           // Sort button
           IconButton(
