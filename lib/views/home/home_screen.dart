@@ -18,6 +18,7 @@ import 'daily_review_screen.dart';
 import 'pomodoro_screen.dart';
 import 'goals_screen.dart';
 import 'mood_journal_screen.dart';
+import 'sleep_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -419,6 +420,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Mood journal',
+          ),
+          // Sleep tracker button
+          IconButton(
+            icon: const Icon(Icons.bedtime),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SleepTrackerScreen()),
+              );
+            },
+            tooltip: 'Sleep tracker',
           ),
           // Sort button
           IconButton(
