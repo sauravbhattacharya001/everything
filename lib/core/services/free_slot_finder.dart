@@ -41,13 +41,6 @@ class FreeSlot {
 
   const FreeSlot({required this.start, required this.end});
 
-  static String FormattingUtils.formatTime12h(DateTime dt) {
-    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = dt.hour < 12 ? 'AM' : 'PM';
-    return '$hour:$minute $period';
-  }
-
   /// Whether this slot can fit an event of the given duration.
   bool canFit(Duration eventDuration) => duration >= eventDuration;
 
