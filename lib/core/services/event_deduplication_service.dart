@@ -591,14 +591,39 @@ class EventDeduplicationService {
     return math.exp(-gapMinutes / (config.maxTimeGapMinutes / 3.0));
   }
 
+  /// Token-based Jaccard similarity for longer text.
+  ///
+  /// More accurate than Levenshtein for strings longer than ~50 chars,
+  /// and runs in O(n) time instead of O(n*m).
+  double _tokenSimilarity(String a, String b) {
+    final tokensA = a.trim().toLowerCase().split(RegExp(r'\s+')).toSet();
+    final tokensB = b.trim().toLowerCase().split(RegExp(r'\s+')).toSet();
+    if (tokensA.isEmpty && tokensB.isEmpty) return 1.0;
+    if (tokensA.isEmpty || tokensB.isEmpty) return 0.0;
+    final intersection = tokensA.intersection(tokensB).length;
+    final union = tokensA.union(tokensB).length;
+    return union > 0 ? intersection / union : 0.0;
+  }
+
+  /// Text similarity that picks the right algorithm based on length.
+  ///
+  /// Short text (≤50 chars): Levenshtein (good for typos).
+  /// Longer text: Jaccard token overlap (O(n), handles additions/edits).
+  double _textSimilarity(String a, String b) {
+    if (a.length <= 50 && b.length <= 50) {
+      return _titleSimilarity(a, b);
+    }
+    return _tokenSimilarity(a, b);
+  }
+
   /// Content similarity based on description and location.
   double _contentSimilarity(EventModel a, EventModel b) {
     double score = 0.0;
     int factors = 0;
 
-    // Description similarity
+    // Description similarity — use token-based for long descriptions
     if (a.description.isNotEmpty && b.description.isNotEmpty) {
-      score += _titleSimilarity(a.description, b.description);
+      score += _textSimilarity(a.description, b.description);
       factors++;
     } else if (a.description.isEmpty && b.description.isEmpty) {
       // Both empty — neutral, don't count
@@ -607,9 +632,9 @@ class EventDeduplicationService {
       factors++;
     }
 
-    // Location similarity
+    // Location similarity — use token-based for long locations
     if (a.location.isNotEmpty && b.location.isNotEmpty) {
-      score += _titleSimilarity(a.location, b.location);
+      score += _textSimilarity(a.location, b.location);
       factors++;
     } else if (a.location.isEmpty && b.location.isEmpty) {
       // Both empty — neutral
