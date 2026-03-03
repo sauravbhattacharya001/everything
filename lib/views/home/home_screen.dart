@@ -12,6 +12,7 @@ import 'agenda_timeline_screen.dart';
 import 'heatmap_screen.dart';
 import 'stats_screen.dart';
 import 'weekly_report_screen.dart';
+import 'countdown_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -343,6 +344,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Weekly report',
+          ),
+          // Countdown button
+          IconButton(
+            icon: const Icon(Icons.timer),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CountdownScreen()),
+              );
+            },
+            tooltip: 'Event countdowns',
           ),
           // Heatmap button
           IconButton(
