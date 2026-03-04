@@ -491,7 +491,7 @@ class StatsScreen extends StatelessWidget {
         children: displayKeys.map((key) {
           final count = monthCounts[key]!;
           final fraction = maxMonth > 0 ? count / maxMonth : 0.0;
-          final date = DateTime.parse('$key-01');
+          final date = DateTime.tryParse('$key-01') ?? DateTime.now();
           final label = DateFormat('MMM yyyy').format(date);
 
           return Padding(

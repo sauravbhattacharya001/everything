@@ -197,9 +197,9 @@ class EventModel {
       title: json['title'] as String,
       description: (json['description'] as String?) ?? '',
       location: (json['location'] as String?) ?? '',
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
       endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'] as String)
+          ? DateTime.tryParse(json['end_date'] as String)
           : null,
       priority: EventPriority.fromString(
         (json['priority'] as String?) ?? 'medium',

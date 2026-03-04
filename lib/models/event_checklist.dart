@@ -101,10 +101,10 @@ class ChecklistItem {
       note: (json['note'] as String?) ?? '',
       completed: (json['completed'] as bool?) ?? false,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'] as String? ?? '')
           : DateTime.now(),
       completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
+          ? DateTime.tryParse(json['completedAt'] as String? ?? '')
           : null,
     );
   }

@@ -124,7 +124,7 @@ class Habit {
                 .toList() ??
             [],
         emoji: json['emoji'] as String?,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
         isActive: json['isActive'] as bool? ?? true,
         targetCount: json['targetCount'] as int? ?? 1,
       );
@@ -161,7 +161,7 @@ class HabitCompletion {
   factory HabitCompletion.fromJson(Map<String, dynamic> json) =>
       HabitCompletion(
         habitId: json['habitId'] as String,
-        date: DateTime.parse(json['date'] as String),
+        date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0),
         count: json['count'] as int? ?? 1,
         note: json['note'] as String?,
       );

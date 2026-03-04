@@ -49,7 +49,7 @@ class EventDependency {
       blockerId: json['blocker_id'] as String,
       dependentId: json['dependent_id'] as String,
       label: (json['label'] as String?) ?? '',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

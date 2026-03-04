@@ -200,7 +200,7 @@ class MoodEntry {
   factory MoodEntry.fromJson(Map<String, dynamic> json) {
     return MoodEntry(
       id: json['id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
       mood: MoodLevel.fromValue(json['mood'] as int),
       note: json['note'] as String?,
       activities: (json['activities'] as List<dynamic>?)

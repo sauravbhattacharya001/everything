@@ -100,7 +100,7 @@ class Milestone {
         title: json['title'] as String,
         isCompleted: json['isCompleted'] as bool? ?? false,
         completedAt: json['completedAt'] != null
-            ? DateTime.parse(json['completedAt'] as String)
+            ? DateTime.tryParse(json['completedAt'] as String? ?? '')
             : null,
       );
 }
@@ -225,9 +225,9 @@ class Goal {
         (c) => c.name == json['category'],
         orElse: () => GoalCategory.personal,
       ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
       deadline: json['deadline'] != null
-          ? DateTime.parse(json['deadline'] as String)
+          ? DateTime.tryParse(json['deadline'] as String? ?? '')
           : null,
       progress: json['progress'] as int? ?? 0,
       isCompleted: json['isCompleted'] as bool? ?? false,

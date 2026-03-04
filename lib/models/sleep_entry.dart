@@ -222,8 +222,8 @@ class SleepEntry {
   factory SleepEntry.fromJson(Map<String, dynamic> json) {
     return SleepEntry(
       id: json['id'] as String,
-      bedtime: DateTime.parse(json['bedtime'] as String),
-      wakeTime: DateTime.parse(json['wakeTime'] as String),
+      bedtime: DateTime.tryParse(json['bedtime'] as String? ?? '') ?? DateTime.now(),
+      wakeTime: DateTime.tryParse(json['wakeTime'] as String? ?? '') ?? DateTime.now(),
       quality: SleepQuality.fromValue(json['quality'] as int),
       note: json['note'] as String?,
       factors: (json['factors'] as List<dynamic>?)

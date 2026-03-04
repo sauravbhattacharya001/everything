@@ -150,7 +150,7 @@ class RecurrenceRule {
       frequency: RecurrenceFrequency.fromString(json['frequency'] as String),
       interval: (json['interval'] as int?) ?? 1,
       endDate: json['endDate'] != null
-          ? DateTime.parse(json['endDate'] as String)
+          ? DateTime.tryParse(json['endDate'] as String? ?? '')
           : null,
     );
   }
