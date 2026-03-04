@@ -472,6 +472,7 @@ class EventAttachments {
       }
       return const EventAttachments.empty();
     } catch (_) {
+      // Gracefully handle malformed stored data
       return const EventAttachments.empty();
     }
   }

@@ -72,11 +72,8 @@ class TemplateService {
 
   /// Finds a template by ID across both built-in and custom templates.
   EventTemplate? findById(String id) {
-    try {
-      return allTemplates.firstWhere((t) => t.id == id);
-    } catch (_) {
-      return null;
-    }
+    final matches = allTemplates.where((t) => t.id == id);
+    return matches.isEmpty ? null : matches.first;
   }
 
   /// Searches templates by name (case-insensitive substring match).

@@ -339,13 +339,10 @@ class HabitTrackerService {
 
   HabitCompletion? _completionFor(String habitId, DateTime date) {
     final d = _dateOnly(date);
-    try {
-      return _completions.firstWhere(
-        (c) => c.habitId == habitId && _dateOnly(c.date) == d,
-      );
-    } catch (_) {
-      return null;
-    }
+    final matches = _completions.where(
+      (c) => c.habitId == habitId && _dateOnly(c.date) == d,
+    );
+    return matches.isEmpty ? null : matches.first;
   }
 
   static DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);

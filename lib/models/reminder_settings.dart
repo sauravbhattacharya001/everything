@@ -192,6 +192,7 @@ class ReminderSettings {
           .toList();
       return ReminderSettings(offsets: offsets);
     } catch (_) {
+      // Gracefully handle malformed stored data
       return ReminderSettings.none;
     }
   }

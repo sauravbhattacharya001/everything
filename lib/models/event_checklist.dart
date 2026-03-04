@@ -271,6 +271,7 @@ class EventChecklist {
           .toList();
       return EventChecklist(items: items);
     } catch (_) {
+      // Gracefully handle malformed stored data
       return EventChecklist.empty;
     }
   }

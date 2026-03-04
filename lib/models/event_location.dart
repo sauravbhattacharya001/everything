@@ -158,6 +158,7 @@ class EventLocation {
       final map = jsonDecode(jsonString) as Map<String, dynamic>;
       return EventLocation.fromJson(map);
     } catch (_) {
+      // Gracefully handle malformed stored data
       return null;
     }
   }

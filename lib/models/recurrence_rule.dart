@@ -174,6 +174,7 @@ class RecurrenceRule {
       final decoded = jsonDecode(value) as Map<String, dynamic>;
       return RecurrenceRule.fromJson(decoded);
     } catch (_) {
+      // Gracefully handle malformed stored data
       return null;
     }
   }

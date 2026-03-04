@@ -267,6 +267,7 @@ class EventTemplate {
           .map((t) => EventTemplate.fromJson(t as Map<String, dynamic>))
           .toList();
     } catch (_) {
+      // Gracefully handle malformed stored data
       return [];
     }
   }
