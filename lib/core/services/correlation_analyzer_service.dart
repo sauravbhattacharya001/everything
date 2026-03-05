@@ -305,11 +305,21 @@ class CorrelationAnalyzerService {
     final varNames = variables.keys.toList();
     final stats = <String, VariableStats>{};
 
-    // Compute stats for each variable.
+    // Pre-extract all variable values in a single pass over the
+    // snapshots.  This avoids calling every extractor per variable-pair
+    // (previously 21 separate iterations through snapshots for 7
+    // variables).  The resulting map stores a list of nullable doubles
+    // aligned by snapshot index so that paired-value lookup below is
+    // a simple index comparison.
+    final preExtracted = <String, List<double?>>{};
     for (final name in varNames) {
       final extractor = variables[name]!;
-      final values = snapshots
-          .map(extractor)
+      preExtracted[name] = snapshots.map(extractor).toList();
+    }
+
+    // Compute stats for each variable.
+    for (final name in varNames) {
+      final values = preExtracted[name]!
           .where((v) => v != null)
           .map((v) => v!)
           .toList();
@@ -318,21 +328,21 @@ class CorrelationAnalyzerService {
       }
     }
 
-    // Compute pairwise correlations.
+    // Compute pairwise correlations using the pre-extracted values.
     for (int i = 0; i < varNames.length; i++) {
       for (int j = i + 1; j < varNames.length; j++) {
         final nameA = varNames[i];
         final nameB = varNames[j];
-        final extractA = variables[nameA]!;
-        final extractB = variables[nameB]!;
+        final valsA = preExtracted[nameA]!;
+        final valsB = preExtracted[nameB]!;
 
         // Collect paired data points where both have values.
         final pairsA = <double>[];
         final pairsB = <double>[];
 
-        for (final snap in snapshots) {
-          final a = extractA(snap);
-          final b = extractB(snap);
+        for (int k = 0; k < snapshots.length; k++) {
+          final a = valsA[k];
+          final b = valsB[k];
           if (a != null && b != null) {
             pairsA.add(a);
             pairsB.add(b);
@@ -461,6 +471,8 @@ class CorrelationAnalyzerService {
   /// Compute a rolling correlation between two variables over a window.
   ///
   /// Returns list of (date, coefficient) pairs.
+  /// Uses index-based iteration instead of sublist allocation to
+  /// avoid creating windowSize-length lists at every position.
   List<MapEntry<DateTime, double>> rollingCorrelation({
     required List<DailySnapshot> snapshots,
     required double? Function(DailySnapshot) extractA,
@@ -472,13 +484,12 @@ class CorrelationAnalyzerService {
     final results = <MapEntry<DateTime, double>>[];
 
     for (int i = windowSize - 1; i < snapshots.length; i++) {
-      final window = snapshots.sublist(i - windowSize + 1, i + 1);
       final valsA = <double>[];
       final valsB = <double>[];
 
-      for (final s in window) {
-        final a = extractA(s);
-        final b = extractB(s);
+      for (int j = i - windowSize + 1; j <= i; j++) {
+        final a = extractA(snapshots[j]);
+        final b = extractB(snapshots[j]);
         if (a != null && b != null) {
           valsA.add(a);
           valsB.add(b);
