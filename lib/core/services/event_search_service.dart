@@ -125,6 +125,30 @@ class SearchResult {
   });
 }
 
+/// Pre-processed filter state to avoid repeated computation per event.
+///
+/// Tag names from [SearchFilters.requiredTags] and [SearchFilters.anyTags]
+/// are lowercased once and stored here so [_passesFilters] never calls
+/// [String.toLowerCase] inside its per-event loop.
+class _PreparedFilters {
+  final SearchFilters raw;
+
+  /// Pre-lowercased required tag names (null when filter absent).
+  final Set<String>? requiredTagsLower;
+
+  /// Pre-lowercased "any" tag names (null when filter absent).
+  final Set<String>? anyTagsLower;
+
+  /// Whether any tag-based filter is active — avoids building the
+  /// per-event lowercase tag set when no tag filters are in use.
+  final bool hasTagFilter;
+
+  _PreparedFilters(this.raw)
+      : requiredTagsLower = raw.requiredTags?.map((t) => t.toLowerCase()).toSet(),
+        anyTagsLower = raw.anyTags?.map((t) => t.toLowerCase()).toSet(),
+        hasTagFilter = raw.requiredTags != null || raw.anyTags != null;
+}
+
 /// Performs search and filtering across a list of events.
 class EventSearchService {
   static const Map<SearchField, double> _fieldWeights = {
@@ -134,6 +158,9 @@ class EventSearchService {
     SearchField.tags: 0.8,
     SearchField.checklist: 0.4,
   };
+
+  /// Compiled once instead of per-[_tokenize] call.
+  static final RegExp _whitespace = RegExp(r'\s+');
 
   const EventSearchService();
 
@@ -145,7 +172,8 @@ class EventSearchService {
     SearchSort? sort,
     int? limit,
   }) {
-    var filtered = events.where((e) => _passesFilters(e, filters)).toList();
+    final prepared = _PreparedFilters(filters);
+    var filtered = events.where((e) => _passesFilters(e, prepared)).toList();
 
     final normalizedQuery = query.trim().toLowerCase();
     List<SearchResult> results;
@@ -214,21 +242,32 @@ class EventSearchService {
     return sorted.take(limit).map((e) => e.key).toList();
   }
 
-  bool _passesFilters(EventModel event, SearchFilters filters) {
+  /// Check whether [event] passes all active filters.
+  ///
+  /// Uses [_PreparedFilters] so that tag name lowercasing is done once
+  /// per search call rather than once per event.
+  bool _passesFilters(EventModel event, _PreparedFilters pf) {
+    final filters = pf.raw;
     if (filters.priorities != null && !filters.priorities!.contains(event.priority)) return false;
     if (filters.dateRange != null) {
       if (event.date.isAfter(filters.dateRange!.end) || event.date.isBefore(filters.dateRange!.start)) return false;
     }
-    if (filters.requiredTags != null) {
-      final names = event.tags.map((t) => t.name.toLowerCase()).toSet();
-      for (final req in filters.requiredTags!) {
-        if (!names.contains(req.toLowerCase())) return false;
+
+    // Build the per-event lowercase tag set at most once, only when
+    // a tag filter is actually active.
+    if (pf.hasTagFilter) {
+      final eventTagsLower = event.tags.map((t) => t.name.toLowerCase()).toSet();
+
+      if (pf.requiredTagsLower != null) {
+        for (final req in pf.requiredTagsLower!) {
+          if (!eventTagsLower.contains(req)) return false;
+        }
+      }
+      if (pf.anyTagsLower != null) {
+        if (!pf.anyTagsLower!.any((t) => eventTagsLower.contains(t))) return false;
       }
     }
-    if (filters.anyTags != null) {
-      final names = event.tags.map((t) => t.name.toLowerCase()).toSet();
-      if (!filters.anyTags!.any((t) => names.contains(t.toLowerCase()))) return false;
-    }
+
     if (filters.hasLocation == true && event.location.isEmpty) return false;
     if (filters.hasLocation == false && event.location.isNotEmpty) return false;
     if (filters.isRecurring == true && !event.isRecurring) return false;
@@ -240,7 +279,8 @@ class EventSearchService {
     return true;
   }
 
-  List<String> _tokenize(String text) => text.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+  /// Tokenize text by whitespace using the pre-compiled [_whitespace] regex.
+  List<String> _tokenize(String text) => text.split(_whitespace).where((t) => t.isNotEmpty).toList();
 
   String _getFieldText(EventModel event, SearchField field) {
     switch (field) {
@@ -278,13 +318,23 @@ class EventSearchService {
     return score;
   }
 
+  /// Sort results, using a Schwartzian transform for [titleAscending]
+  /// to avoid calling [String.toLowerCase] O(n log n) times.
   void _sortResults(List<SearchResult> results, SearchSort sort) {
     switch (sort) {
-      case SearchSort.relevance: results.sort((a, b) => b.score.compareTo(a.score));
-      case SearchSort.dateAscending: results.sort((a, b) => a.event.date.compareTo(b.event.date));
-      case SearchSort.dateDescending: results.sort((a, b) => b.event.date.compareTo(a.event.date));
-      case SearchSort.priorityDescending: results.sort((a, b) => b.event.priority.index.compareTo(a.event.priority.index));
-      case SearchSort.titleAscending: results.sort((a, b) => a.event.title.toLowerCase().compareTo(b.event.title.toLowerCase()));
+      case SearchSort.relevance:
+        results.sort((a, b) => b.score.compareTo(a.score));
+      case SearchSort.dateAscending:
+        results.sort((a, b) => a.event.date.compareTo(b.event.date));
+      case SearchSort.dateDescending:
+        results.sort((a, b) => b.event.date.compareTo(a.event.date));
+      case SearchSort.priorityDescending:
+        results.sort((a, b) => b.event.priority.index.compareTo(a.event.priority.index));
+      case SearchSort.titleAscending:
+        // Pre-compute lowercased titles once (O(n)) instead of
+        // calling toLowerCase() inside the comparator (O(n log n)).
+        final keys = {for (final r in results) r: r.event.title.toLowerCase()};
+        results.sort((a, b) => keys[a]!.compareTo(keys[b]!));
     }
   }
 
