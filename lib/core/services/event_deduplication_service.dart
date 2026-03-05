@@ -539,6 +539,13 @@ class EventDeduplicationService {
     return occurrences.any((occ) => AppDateUtils.isSameDay(occ.date, date));
   }
 
+  /// Creates a canonical key for an event pair to prevent duplicate
+  /// symmetric matches (A↔B and B↔A).
+  String _pairKey(String idA, String idB) {
+    // Lexicographic ordering ensures (A,B) and (B,A) produce the same key
+    return idA.compareTo(idB) <= 0 ? '$idA|$idB' : '$idB|$idA';
+  }
+
   // ─── Similarity functions ────────────────────────────────────
 
   /// Title similarity using normalized Levenshtein distance.
