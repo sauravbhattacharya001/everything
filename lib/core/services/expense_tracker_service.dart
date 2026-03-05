@@ -660,6 +660,13 @@ class ExpenseTrackerService {
     final sortedDates = dates.toList()
       ..sort((a, b) => b.compareTo(a));
 
+    // Anchor check: most recent entry must be today or yesterday,
+    // otherwise the streak is broken.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final daysSinceLast = today.difference(sortedDates.first).inDays;
+    if (daysSinceLast > 1) return 0;
+
     int streak = 1;
     for (int i = 1; i < sortedDates.length; i++) {
       final diff = sortedDates[i - 1].difference(sortedDates[i]).inDays;

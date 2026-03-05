@@ -382,6 +382,18 @@ void main() {
       expect(service.getLoggingStreak(), 5);
     });
 
+    test('getLoggingStreak returns 0 when most recent entry is stale', () {
+      // Issue #38: streak should be 0 if last entry > 1 day ago
+      final staleDate = DateTime.now().subtract(const Duration(days: 10));
+      for (int i = 0; i < 5; i++) {
+        service.addEntry(_makeEntry(
+          id: 'stale$i',
+          timestamp: staleDate.subtract(Duration(days: i)),
+        ));
+      }
+      expect(service.getLoggingStreak(), 0);
+    });
+
     test('getLoggingStreak breaks on gap', () {
       final now = DateTime.now();
       service.addEntry(_makeEntry(id: 'a', timestamp: now));
