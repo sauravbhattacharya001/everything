@@ -463,6 +463,24 @@ void main() {
       expect(analytics.longestStreak, 3);
     });
 
+    test('calculates streaks correctly for non-daily routines', () {
+      // Mon=1, Wed=3, Fri=5 routine — max gap is 3 days (Fri→Mon)
+      service.addRoutine(_routine(activeDays: [1, 3, 5]));
+
+      // Complete on Mon Mar 2, Wed Mar 4, Fri Mar 6 (all 2026)
+      // Mar 2 is a Monday, Mar 4 Wed, Mar 6 Fri
+      for (final d in [2, 4, 6]) {
+        service.startRun('r1', now: DateTime(2026, 3, d));
+        service.completeStep('r1', DateTime(2026, 3, d), 's1', actualMinutes: 10);
+        service.completeStep('r1', DateTime(2026, 3, d), 's2', actualMinutes: 20);
+      }
+
+      final analytics = service.getAnalytics('r1');
+      // All 3 scheduled days completed — streak should be 3, not 1
+      expect(analytics.currentStreak, 3);
+      expect(analytics.longestStreak, 3);
+    });
+
     test('respects date range filter', () {
       service.addRoutine(_routine());
       service.startRun('r1', now: DateTime(2026, 3, 1));

@@ -883,6 +883,26 @@ class RoutineBuilderService {
   String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  /// Maximum gap in days between two consecutive scheduled occurrences of a
+  /// routine. For daily routines (or routines with no specific active days)
+  /// this returns 1. For routines scheduled on specific weekdays, it computes
+  /// the largest gap between any two adjacent scheduled days (including the
+  /// wrap-around from the last day of the week back to the first).
+  int _maxScheduledGap(Routine routine) {
+    final days = routine.activeDays;
+    if (days.isEmpty || days.length >= 7) return 1; // daily
+    final sorted = days.toList()..sort();
+    int maxGap = 0;
+    for (var i = 1; i < sorted.length; i++) {
+      final gap = sorted[i] - sorted[i - 1];
+      if (gap > maxGap) maxGap = gap;
+    }
+    // Wrap-around gap (e.g., Fri=5 to Mon=1 → 7 - 5 + 1 = 3)
+    final wrapGap = 7 - sorted.last + sorted.first;
+    if (wrapGap > maxGap) maxGap = wrapGap;
+    return maxGap;
+  }
+
   int _calculateCurrentStreak(Routine routine, List<RoutineRun> sortedRuns) {
     if (sortedRuns.isEmpty) return 0;
 
@@ -893,10 +913,11 @@ class RoutineBuilderService {
 
     if (completedRuns.isEmpty) return 0;
 
+    final maxGap = _maxScheduledGap(routine);
     int streak = 1;
     for (var i = 1; i < completedRuns.length; i++) {
       final diff = completedRuns[i - 1].date.difference(completedRuns[i].date).inDays;
-      if (diff <= 1) {
+      if (diff <= maxGap) {
         streak++;
       } else {
         break;
@@ -915,11 +936,12 @@ class RoutineBuilderService {
 
     if (completedRuns.isEmpty) return 0;
 
+    final maxGap = _maxScheduledGap(routine);
     int longest = 1;
     int current = 1;
     for (var i = 1; i < completedRuns.length; i++) {
       final diff = completedRuns[i].date.difference(completedRuns[i - 1].date).inDays;
-      if (diff <= 1) {
+      if (diff <= maxGap) {
         current++;
         if (current > longest) longest = current;
       } else {
