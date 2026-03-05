@@ -219,6 +219,46 @@ void main() {
       expect(summary.totalDelay, const Duration(minutes: 90));
     });
 
+    test('totalDelay with single snooze equals that snooze delay', () {
+      final records = [
+        SnoozeRecord(
+          snoozedAt: fixedNow,
+          originalDate: DateTime(2026, 3, 2, 10, 0),
+          newDate: DateTime(2026, 3, 2, 12, 0),
+          optionId: '2hr',
+        ),
+      ];
+      final summary = SnoozeSummary(eventId: 'e1', history: records);
+      expect(summary.totalDelay, const Duration(hours: 2));
+    });
+
+    test('totalDelay with three snoozes accumulates correctly', () {
+      final records = [
+        SnoozeRecord(
+          snoozedAt: fixedNow,
+          originalDate: DateTime(2026, 3, 2, 10, 0),
+          newDate: DateTime(2026, 3, 2, 10, 15),
+          optionId: '15min',
+        ),
+        SnoozeRecord(
+          snoozedAt: fixedNow.add(const Duration(minutes: 15)),
+          originalDate: DateTime(2026, 3, 2, 10, 15),
+          newDate: DateTime(2026, 3, 2, 10, 45),
+          optionId: '30min',
+        ),
+        SnoozeRecord(
+          snoozedAt: fixedNow.add(const Duration(minutes: 45)),
+          originalDate: DateTime(2026, 3, 2, 10, 45),
+          newDate: DateTime(2026, 3, 2, 14, 45),
+          optionId: '4hr',
+        ),
+      ];
+      final summary = SnoozeSummary(eventId: 'e1', history: records);
+      // 15min + 30min + 4hr = 4h 45m = 285 min
+      expect(summary.totalDelay, const Duration(minutes: 285));
+      expect(summary.snoozeCount, 3);
+    });
+
     test('toString', () {
       const summary = SnoozeSummary(eventId: 'e1', history: []);
       expect(summary.toString(), contains('e1'));

@@ -465,6 +465,18 @@ void main() {
     test('above target capped at 100', () {
       expect(service.scoreFocus(200), lessThanOrEqualTo(100));
     });
+
+    test('exactly at target gives exactly 100', () {
+      expect(service.scoreFocus(120), equals(100));
+    });
+
+    test('double target still returns 100', () {
+      expect(service.scoreFocus(240), equals(100));
+    });
+
+    test('quarter target returns ~25', () {
+      expect(service.scoreFocus(30), closeTo(25, 1));
+    });
   });
 
   // ── Daily Composite Score ──────────────────────────────────

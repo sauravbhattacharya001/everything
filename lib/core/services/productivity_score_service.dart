@@ -426,14 +426,10 @@ class ProductivityScoreService {
 
   /// Score focus time (Pomodoro minutes) against daily target.
   double scoreFocus(int focusMinutes) {
-    if (focusMinutes < 0) return 0;
-    if (focusMinutes == 0) return 0;
+    if (focusMinutes <= 0) return 0;
     final ratio = focusMinutes / targetFocusMinutes;
-    // Diminishing returns above target
-    if (ratio <= 1.0) {
-      return ratio * 100;
-    }
-    return min(100 + (ratio - 1.0) * 10, 100);
+    // Cap at 100 — meeting or exceeding target is full marks
+    return min(ratio * 100, 100);
   }
 
   // ── Daily Composite Score ──────────────────────────────────

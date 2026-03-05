@@ -139,13 +139,10 @@ class SnoozeSummary {
   /// Total cumulative delay across all snoozes.
   Duration get totalDelay {
     if (history.isEmpty) return Duration.zero;
-    return history.first.originalDate
-        .difference(history.first.originalDate)
-        .abs() +
-        history.fold<Duration>(
-          Duration.zero,
-          (sum, r) => sum + r.delay,
-        );
+    return history.fold<Duration>(
+      Duration.zero,
+      (sum, r) => sum + r.delay,
+    );
   }
 
   /// The event's very first original date (before any snoozes).
