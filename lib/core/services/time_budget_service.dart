@@ -358,7 +358,7 @@ class TimeBudgetService {
   double _totalHours(List<EventModel> events) {
     var total = 0.0;
     for (final e in events) {
-      if (e.duration != null) {
+      if (e.duration != null && !e.duration!.isNegative) {
         total += e.duration!.inMinutes / 60.0;
       }
     }
@@ -375,10 +375,13 @@ class TimeBudgetService {
     final tagMinutes = <String, List<double>>{};
 
     for (final e in events) {
-      if (e.duration == null) continue;
+      if (e.duration == null || e.duration!.isNegative) continue;
       final mins = e.duration!.inMinutes.toDouble();
       final hours = mins / 60.0;
 
+      // NOTE: Multi-tag events count hours once per tag. Tag percentages
+      // may therefore sum to >100% of totalTrackedHours. This is by
+      // design — each tag gets the full event duration attributed to it.
       if (e.tags.isEmpty) {
         tagHours['(untagged)'] = (tagHours['(untagged)'] ?? 0) + hours;
         tagCounts['(untagged)'] = (tagCounts['(untagged)'] ?? 0) + 1;
@@ -430,7 +433,7 @@ class TimeBudgetService {
     final prioMinutes = <String, List<double>>{};
 
     for (final e in events) {
-      if (e.duration == null) continue;
+      if (e.duration == null || e.duration!.isNegative) continue;
       final mins = e.duration!.inMinutes.toDouble();
       final hours = mins / 60.0;
       final label = e.priority.label;
@@ -470,11 +473,26 @@ class TimeBudgetService {
   Map<DateTime, _DayData> _computeDailyHours(List<EventModel> events) {
     final daily = <DateTime, _DayData>{};
     for (final e in events) {
-      if (e.duration == null) continue;
-      final day = _dateOnly(e.date);
-      final data = daily.putIfAbsent(day, () => _DayData());
-      data.hours += e.duration!.inMinutes / 60.0;
-      data.count++;
+      if (e.duration == null || e.duration!.isNegative) continue;
+      // Split multi-day events across each calendar day they span.
+      final start = e.date;
+      final end = e.endDate ?? start;
+      var cursor = _dateOnly(start);
+      final endDay = _dateOnly(end);
+      while (!cursor.isAfter(endDay)) {
+        final dayStart =
+            cursor == _dateOnly(start) ? start : cursor;
+        final nextDay = cursor.add(const Duration(days: 1));
+        final dayEnd =
+            cursor == endDay ? end : nextDay;
+        final hours = dayEnd.difference(dayStart).inMinutes / 60.0;
+        if (hours > 0) {
+          final data = daily.putIfAbsent(cursor, () => _DayData());
+          data.hours += hours;
+          data.count++;
+        }
+        cursor = nextDay;
+      }
     }
     return daily;
   }
@@ -498,9 +516,25 @@ class TimeBudgetService {
   Map<int, double> _computeWeekdayHours(List<EventModel> events) {
     final weekday = <int, double>{};
     for (final e in events) {
-      if (e.duration == null) continue;
-      final wd = e.date.weekday - 1; // 0=Mon..6=Sun
-      weekday[wd] = (weekday[wd] ?? 0) + e.duration!.inMinutes / 60.0;
+      if (e.duration == null || e.duration!.isNegative) continue;
+      // Split multi-day events across each calendar day's weekday.
+      final start = e.date;
+      final end = e.endDate ?? start;
+      var cursor = _dateOnly(start);
+      final endDay = _dateOnly(end);
+      while (!cursor.isAfter(endDay)) {
+        final dayStart =
+            cursor == _dateOnly(start) ? start : cursor;
+        final nextDay = cursor.add(const Duration(days: 1));
+        final dayEnd =
+            cursor == endDay ? end : nextDay;
+        final hours = dayEnd.difference(dayStart).inMinutes / 60.0;
+        if (hours > 0) {
+          final wd = cursor.weekday - 1; // 0=Mon..6=Sun
+          weekday[wd] = (weekday[wd] ?? 0) + hours;
+        }
+        cursor = nextDay;
+      }
     }
     return weekday;
   }
