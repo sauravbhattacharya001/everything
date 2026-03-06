@@ -267,6 +267,9 @@ class EventDeduplicationService {
   /// The configuration for this scan.
   final DeduplicationConfig config;
 
+  /// Pre-compiled whitespace splitter for token-based similarity.
+  static final RegExp _whitespace = RegExp(r'\s+');
+
   /// Creates a deduplication service with the given config.
   ///
   /// Uses [DeduplicationConfig] defaults if not specified.
@@ -294,6 +297,14 @@ class EventDeduplicationService {
     // Sort by date for efficient windowed comparison
     final sorted = List<EventModel>.from(events)
       ..sort((a, b) => a.date.compareTo(b.date));
+
+    // Pre-compute lowercased titles once — avoids redundant
+    // trim().toLowerCase() calls in the O(n²) comparison loop.
+    // For 1000 events this eliminates ~500K string allocations.
+    final titleCache = <String, String>{};
+    for (final e in sorted) {
+      titleCache[e.id] = e.title.trim().toLowerCase();
+    }
 
     final matches = <DuplicateMatch>[];
     final seen = <String>{}; // Track pair IDs to avoid symmetric duplicates
@@ -323,7 +334,7 @@ class EventDeduplicationService {
         final pairKey = _pairKey(a.id, b.id);
         if (seen.contains(pairKey)) continue;
 
-        final match = _compareEvents(a, b, gapMinutes);
+        final match = _compareEvents(a, b, gapMinutes, titleCache);
         if (match != null && match.similarity >= config.minimumOverallScore) {
           matches.add(match);
           seen.add(pairKey);
@@ -407,12 +418,19 @@ class EventDeduplicationService {
 
   /// Compares two events and returns a [DuplicateMatch] if they're
   /// suspected duplicates, or null if they're not.
+  ///
+  /// When [titleCache] is provided (from the bulk [scan] path),
+  /// pre-computed lowercased titles are reused instead of calling
+  /// [String.toLowerCase] per comparison.
   DuplicateMatch? _compareEvents(
     EventModel a,
     EventModel b,
-    int gapMinutes,
-  ) {
-    final titleSim = _titleSimilarity(a.title, b.title);
+    int gapMinutes, [
+    Map<String, String>? titleCache,
+  ]) {
+    final titleSim = titleCache != null
+        ? _titleSimilarityPrecomputed(titleCache[a.id]!, titleCache[b.id]!)
+        : _titleSimilarity(a.title, b.title);
     final timeSim = _timeSimilarity(gapMinutes);
     final contentSim = _contentSimilarity(a, b);
     final sameDay = AppDateUtils.isSameDay(a.date, b.date);
@@ -553,8 +571,16 @@ class EventDeduplicationService {
   /// Case-insensitive, trims whitespace. Returns 1.0 for identical
   /// titles, 0.0 for completely different ones.
   double _titleSimilarity(String a, String b) {
-    final na = a.trim().toLowerCase();
-    final nb = b.trim().toLowerCase();
+    return _titleSimilarityPrecomputed(
+      a.trim().toLowerCase(),
+      b.trim().toLowerCase(),
+    );
+  }
+
+  /// Title similarity from pre-lowercased, pre-trimmed strings.
+  ///
+  /// Called from the hot [scan] loop where titles are already cached.
+  double _titleSimilarityPrecomputed(String na, String nb) {
     if (na == nb) return 1.0;
     if (na.isEmpty || nb.isEmpty) return 0.0;
 
@@ -571,8 +597,8 @@ class EventDeduplicationService {
     if (na == nb) return 1.0;
     if (na.isEmpty || nb.isEmpty) return 0.0;
 
-    final tokensA = na.split(RegExp(r'\s+')).toSet();
-    final tokensB = nb.split(RegExp(r'\s+')).toSet();
+    final tokensA = na.split(_whitespace).toSet();
+    final tokensB = nb.split(_whitespace).toSet();
     if (tokensA.isEmpty && tokensB.isEmpty) return 1.0;
 
     final intersection = tokensA.intersection(tokensB).length;
@@ -590,29 +616,43 @@ class EventDeduplicationService {
   }
 
   /// Levenshtein edit distance between two strings.
+  ///
+  /// Uses two-row DP with inline min to avoid allocating a temporary
+  /// list on every inner iteration (was O(n*m) allocations, now zero).
   int _levenshteinDistance(String a, String b) {
     if (a.isEmpty) return b.length;
     if (b.isEmpty) return a.length;
 
-    // Use two-row optimization for space efficiency
-    var prev = List<int>.generate(b.length + 1, (i) => i);
-    var curr = List<int>.filled(b.length + 1, 0);
+    // Ensure we iterate over the shorter string in the inner loop
+    // to minimise row width and cache pressure.
+    if (a.length < b.length) {
+      final tmp = a;
+      a = b;
+      b = tmp;
+    }
+
+    final bLen = b.length;
+    var prev = List<int>.generate(bLen + 1, (i) => i);
+    var curr = List<int>.filled(bLen + 1, 0);
 
     for (int i = 1; i <= a.length; i++) {
       curr[0] = i;
-      for (int j = 1; j <= b.length; j++) {
-        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
-        curr[j] = [
-          prev[j] + 1,       // deletion
-          curr[j - 1] + 1,   // insertion
-          prev[j - 1] + cost, // substitution
-        ].reduce(math.min);
+      final ai = a[i - 1];
+      for (int j = 1; j <= bLen; j++) {
+        final cost = ai == b[j - 1] ? 0 : 1;
+        // Inline min of three values — avoids allocating a List per cell
+        final del = prev[j] + 1;
+        final ins = curr[j - 1] + 1;
+        final sub = prev[j - 1] + cost;
+        curr[j] = del < ins
+            ? (del < sub ? del : sub)
+            : (ins < sub ? ins : sub);
       }
       final temp = prev;
       prev = curr;
       curr = temp;
     }
-    return prev[b.length];
+    return prev[bLen];
   }
 
   /// Time proximity score: 1.0 for overlapping/same time, decaying
