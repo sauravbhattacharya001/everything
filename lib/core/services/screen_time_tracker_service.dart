@@ -426,16 +426,25 @@ class ScreenTimeTrackerService {
   });
 
   void importFromJson(String json) {
+    // Parse everything into temporaries first so that a malformed JSON
+    // string doesn't wipe existing data (clear is only called after
+    // successful parsing).
     final data = jsonDecode(json) as Map<String, dynamic>;
-    _entries.clear();
-    _limits.clear();
+    final parsedEntries = <ScreenTimeEntry>[];
+    final parsedLimits = <ScreenTimeLimit>[];
     for (final e in (data['entries'] as List)) {
-      _entries.add(ScreenTimeEntry.fromJson(e));
+      parsedEntries.add(ScreenTimeEntry.fromJson(e));
     }
     for (final l in (data['limits'] as List)) {
-      _limits.add(ScreenTimeLimit.fromJson(l));
+      parsedLimits.add(ScreenTimeLimit.fromJson(l));
     }
-    _dailyGoalMinutes = data['dailyGoalMinutes'] ?? 180;
+    final goal = data['dailyGoalMinutes'] ?? 180;
+    // All parsed successfully — safe to replace.
+    _entries.clear();
+    _limits.clear();
+    _entries.addAll(parsedEntries);
+    _limits.addAll(parsedLimits);
+    _dailyGoalMinutes = goal;
   }
 
   List<ScreenTimeEntry> _getEntriesForDate(DateTime date) {

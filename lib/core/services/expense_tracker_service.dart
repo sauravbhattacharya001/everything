@@ -690,17 +690,26 @@ class ExpenseTrackerService {
 
   void importFromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    // Parse config and entries into temporaries first so that a
+    // malformed JSON string doesn't wipe existing financial data.
+    BudgetConfig? parsedConfig;
     if (data.containsKey('config')) {
-      _config = BudgetConfig.fromJson(
+      parsedConfig = BudgetConfig.fromJson(
           data['config'] as Map<String, dynamic>);
     }
+    List<ExpenseEntry>? parsedEntries;
     if (data.containsKey('entries')) {
       final list = data['entries'] as List<dynamic>;
-      _entries.clear();
-      _entries.addAll(list
+      parsedEntries = list
           .map((e) =>
               ExpenseEntry.fromJson(e as Map<String, dynamic>))
-          .toList());
+          .toList();
+    }
+    // All parsed successfully — safe to apply.
+    if (parsedConfig != null) _config = parsedConfig;
+    if (parsedEntries != null) {
+      _entries.clear();
+      _entries.addAll(parsedEntries);
     }
   }
 

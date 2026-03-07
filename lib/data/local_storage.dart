@@ -8,7 +8,10 @@ import 'package:path/path.dart';
 /// contains two tables:
 ///
 /// - `users` — id (TEXT PK), name (TEXT), email (TEXT)
-/// - `events` — id (TEXT PK), title (TEXT), date (TEXT)
+/// - `events` — id (TEXT PK), title (TEXT), description (TEXT),
+///   date (TEXT), end_date (TEXT), location (TEXT), priority (TEXT),
+///   tags (TEXT/JSON), recurrence (TEXT/JSON), reminders (TEXT/JSON),
+///   checklist (TEXT/JSON), attachments (TEXT/JSON)
 ///
 /// All operations use parameterized queries to prevent SQL injection.
 class LocalStorage {
@@ -45,11 +48,14 @@ class LocalStorage {
             title TEXT,
             description TEXT DEFAULT '',
             date TEXT,
+            end_date TEXT,
+            location TEXT DEFAULT '',
             priority TEXT DEFAULT 'medium',
             tags TEXT DEFAULT '[]',
             recurrence TEXT,
             reminders TEXT,
-            checklist TEXT
+            checklist TEXT,
+            attachments TEXT
           )
           ''',
         );
@@ -82,8 +88,21 @@ class LocalStorage {
           await db.execute(
               "ALTER TABLE events ADD COLUMN checklist TEXT");
         }
+        if (oldVersion < 7) {
+          // Add missing columns for event end dates, locations, and
+          // attachments.  EventModel.toJson() writes these fields but
+          // the schema never included them, causing sqflite to throw
+          // DatabaseException on insert and silently losing any data
+          // set via the model.
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN end_date TEXT");
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN location TEXT DEFAULT ''");
+          await db.execute(
+              "ALTER TABLE events ADD COLUMN attachments TEXT");
+        }
       },
-      version: 6,
+      version: 7,
     );
   }
 

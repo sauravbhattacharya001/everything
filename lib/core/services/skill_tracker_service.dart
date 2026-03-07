@@ -538,10 +538,14 @@ class SkillTrackerService {
   String toJson() => jsonEncode(_skills.map((s) => s.toJson()).toList());
 
   void loadFromJson(String json) {
-    _skills.clear();
+    // Parse into a temporary list first — if the JSON is malformed,
+    // the existing skills are preserved instead of being cleared and lost.
     final list = jsonDecode(json) as List<dynamic>;
+    final parsed = <SkillEntry>[];
     for (final item in list) {
-      _skills.add(SkillEntry.fromJson(item as Map<String, dynamic>));
+      parsed.add(SkillEntry.fromJson(item as Map<String, dynamic>));
     }
+    _skills.clear();
+    _skills.addAll(parsed);
   }
 }

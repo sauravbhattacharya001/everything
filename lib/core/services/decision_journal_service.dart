@@ -581,8 +581,12 @@ class DecisionJournalService {
   String exportToJson() => DecisionEntry.encodeList(_entries);
 
   void importFromJson(String jsonStr) {
+    // Parse into a temporary list first — if the JSON is malformed or
+    // contains invalid entries, the existing data is preserved instead
+    // of being cleared and lost.
+    final parsed = DecisionEntry.decodeList(jsonStr);
     _entries.clear();
-    _entries.addAll(DecisionEntry.decodeList(jsonStr));
+    _entries.addAll(parsed);
   }
 
   void clear() => _entries.clear();

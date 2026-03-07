@@ -542,16 +542,22 @@ class GratitudeJournalService {
   }
 
   void importFromJson(String jsonStr) {
+    // Parse into a temporary list first — if the JSON is malformed or
+    // contains invalid entries, the existing data is preserved instead
+    // of being cleared and lost.
     final list = jsonDecode(jsonStr) as List<dynamic>;
-    _entries.clear();
-    _idCounter = 0;
+    final parsed = <GratitudeEntry>[];
+    int maxId = 0;
     for (final item in list) {
       final entry = GratitudeEntry.fromJson(item as Map<String, dynamic>);
-      _entries.add(entry);
-      // Keep id counter in sync
+      parsed.add(entry);
       final numPart = entry.id.replaceAll(RegExp(r'[^0-9]'), '');
       final num = int.tryParse(numPart) ?? 0;
-      if (num > _idCounter) _idCounter = num;
+      if (num > maxId) maxId = num;
     }
+    // All entries parsed successfully — safe to replace.
+    _entries.clear();
+    _entries.addAll(parsed);
+    _idCounter = maxId;
   }
 }

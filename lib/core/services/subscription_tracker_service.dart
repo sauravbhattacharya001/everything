@@ -253,7 +253,13 @@ class SubscriptionTrackerService {
   String toJson() => jsonEncode(_subscriptions.map((s) => s.toJson()).toList());
 
   void loadFromJson(String json) {
+    // Parse into a temporary list first — if the JSON is malformed,
+    // existing subscriptions are preserved instead of being wiped.
+    final parsed = <SubscriptionEntry>[];
+    for (final item in jsonDecode(json) as List<dynamic>) {
+      parsed.add(SubscriptionEntry.fromJson(item as Map<String, dynamic>));
+    }
     _subscriptions.clear();
-    for (final item in jsonDecode(json) as List<dynamic>) _subscriptions.add(SubscriptionEntry.fromJson(item as Map<String, dynamic>));
+    _subscriptions.addAll(parsed);
   }
 }

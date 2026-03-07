@@ -451,16 +451,23 @@ class ContactTrackerService {
   }
 
   /// Restore contacts from JSON string.
+  ///
+  /// Parses into a temporary list first so that malformed JSON
+  /// doesn't destroy existing contact data.
   void loadJson(String jsonString) {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
-    _contacts.clear();
     final list = data['contacts'] as List<dynamic>;
+    final parsed = <Contact>[];
     for (final item in list) {
-      _contacts.add(Contact.fromJson(item as Map<String, dynamic>));
+      parsed.add(Contact.fromJson(item as Map<String, dynamic>));
     }
-    _nextId = data['nextId'] as int? ?? _contacts.length + 1;
-    _nextInteractionId =
-        data['nextInteractionId'] as int? ?? _contacts.length + 1;
+    final nextIdVal = data['nextId'] as int? ?? parsed.length + 1;
+    final nextIntIdVal = data['nextInteractionId'] as int? ?? parsed.length + 1;
+    // All parsed successfully — safe to replace.
+    _contacts.clear();
+    _contacts.addAll(parsed);
+    _nextId = nextIdVal;
+    _nextInteractionId = nextIntIdVal;
   }
 
   double _categoryWeight(RelationshipCategory cat) {
