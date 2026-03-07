@@ -22,6 +22,7 @@ import 'sleep_tracker_screen.dart';
 import 'expense_tracker_screen.dart';
 import 'contact_tracker_screen.dart';
 import 'workout_tracker_screen.dart';
+import 'water_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -463,6 +464,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Workout tracker',
+          ),
+          // Water tracker button
+          IconButton(
+            icon: const Icon(Icons.water_drop),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WaterTrackerScreen()),
+              );
+            },
+            tooltip: 'Water tracker',
           ),
           // Sort button
           IconButton(
