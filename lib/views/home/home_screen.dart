@@ -20,6 +20,7 @@ import 'goals_screen.dart';
 import 'mood_journal_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'expense_tracker_screen.dart';
+import 'contact_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -441,6 +442,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Expense tracker',
+          ),
+          // Contact tracker button
+          IconButton(
+            icon: const Icon(Icons.contacts),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ContactTrackerScreen()),
+              );
+            },
+            tooltip: 'Contact tracker',
           ),
           // Sort button
           IconButton(
