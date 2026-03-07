@@ -23,6 +23,7 @@ import 'expense_tracker_screen.dart';
 import 'contact_tracker_screen.dart';
 import 'workout_tracker_screen.dart';
 import 'water_tracker_screen.dart';
+import 'meal_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -474,6 +475,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Water tracker',
+          ),
+          // Meal tracker button
+          IconButton(
+            icon: const Icon(Icons.restaurant_menu),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MealTrackerScreen()),
+              );
+            },
+            tooltip: 'Meal tracker',
           ),
           // Sort button
           IconButton(
