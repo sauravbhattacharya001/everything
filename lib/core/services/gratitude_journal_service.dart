@@ -541,11 +541,24 @@ class GratitudeJournalService {
     return jsonEncode(_entries.map((e) => e.toJson()).toList());
   }
 
+  /// Maximum number of entries allowed via import.
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON file
+  /// containing millions of entries.
+  static const int maxImportEntries = 100000;
+
   void importFromJson(String jsonStr) {
     // Parse into a temporary list first — if the JSON is malformed or
     // contains invalid entries, the existing data is preserved instead
     // of being cleared and lost.
     final list = jsonDecode(jsonStr) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     final parsed = <GratitudeEntry>[];
     int maxId = 0;
     for (final item in list) {
@@ -555,9 +568,14 @@ class GratitudeJournalService {
       final num = int.tryParse(numPart) ?? 0;
       if (num > maxId) maxId = num;
     }
+    // Clamp _idCounter to a sane upper bound — a crafted import with
+    // ids like "999999999999" could push the counter to absurd values
+    // that cause issues with storage or display.  The counter only
+    // needs to exceed the highest existing id.
+    final clampedMax = maxId.clamp(0, 10000000);
     // All entries parsed successfully — safe to replace.
     _entries.clear();
     _entries.addAll(parsed);
-    _idCounter = maxId;
+    _idCounter = clampedMax;
   }
 }

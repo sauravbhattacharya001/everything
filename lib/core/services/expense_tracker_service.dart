@@ -688,6 +688,13 @@ class ExpenseTrackerService {
     });
   }
 
+  /// Maximum number of entries allowed via import.
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON file
+  /// containing millions of entries.  Normal usage should never come
+  /// close to this limit.
+  static const int maxImportEntries = 100000;
+
   void importFromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
     // Parse config and entries into temporaries first so that a
@@ -700,6 +707,13 @@ class ExpenseTrackerService {
     List<ExpenseEntry>? parsedEntries;
     if (data.containsKey('entries')) {
       final list = data['entries'] as List<dynamic>;
+      if (list.length > maxImportEntries) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportEntries entries '
+          '(got ${list.length}). This limit prevents memory exhaustion '
+          'from corrupted or malicious data.',
+        );
+      }
       parsedEntries = list
           .map((e) =>
               ExpenseEntry.fromJson(e as Map<String, dynamic>))

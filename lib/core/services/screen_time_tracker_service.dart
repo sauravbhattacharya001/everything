@@ -425,26 +425,51 @@ class ScreenTimeTrackerService {
     'dailyGoalMinutes': _dailyGoalMinutes,
   });
 
+  /// Maximum number of entries allowed via import.
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON file
+  /// containing millions of entries.
+  static const int maxImportEntries = 100000;
+
+  /// Maximum number of limits allowed via import.
+  static const int maxImportLimits = 1000;
+
   void importFromJson(String json) {
     // Parse everything into temporaries first so that a malformed JSON
     // string doesn't wipe existing data (clear is only called after
     // successful parsing).
     final data = jsonDecode(json) as Map<String, dynamic>;
+    final rawEntries = data['entries'] as List;
+    final rawLimits = data['limits'] as List;
+    if (rawEntries.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${rawEntries.length}).',
+      );
+    }
+    if (rawLimits.length > maxImportLimits) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportLimits limits '
+        '(got ${rawLimits.length}).',
+      );
+    }
     final parsedEntries = <ScreenTimeEntry>[];
     final parsedLimits = <ScreenTimeLimit>[];
-    for (final e in (data['entries'] as List)) {
+    for (final e in rawEntries) {
       parsedEntries.add(ScreenTimeEntry.fromJson(e));
     }
-    for (final l in (data['limits'] as List)) {
+    for (final l in rawLimits) {
       parsedLimits.add(ScreenTimeLimit.fromJson(l));
     }
     final goal = data['dailyGoalMinutes'] ?? 180;
+    // Validate goal is within sane range (1 min to 1440 min = 24 hours).
+    final clampedGoal = (goal as int).clamp(1, 1440);
     // All parsed successfully — safe to replace.
     _entries.clear();
     _limits.clear();
     _entries.addAll(parsedEntries);
     _limits.addAll(parsedLimits);
-    _dailyGoalMinutes = goal;
+    _dailyGoalMinutes = clampedGoal;
   }
 
   List<ScreenTimeEntry> _getEntriesForDate(DateTime date) {

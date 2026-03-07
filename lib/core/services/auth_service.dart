@@ -33,7 +33,12 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapFirebaseErrorCode(e.code), e.message);
     } catch (e) {
-      throw AuthException('unknown', 'Login failed: $e');
+      // Do NOT include the raw exception in user-facing errors.
+      // The original code used 'Login failed: $e' which can leak
+      // internal details (stack traces, connection strings, SDK
+      // internals) to the UI layer.  Log internally if needed but
+      // only surface a generic message.
+      throw AuthException('unknown', 'Login failed. Please try again.');
     }
   }
 
@@ -53,7 +58,8 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapFirebaseErrorCode(e.code), e.message);
     } catch (e) {
-      throw AuthException('unknown', 'Sign-up failed: $e');
+      // Generic message only — never expose raw exception details.
+      throw AuthException('unknown', 'Sign-up failed. Please try again.');
     }
   }
 
@@ -66,7 +72,8 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapFirebaseErrorCode(e.code), e.message);
     } catch (e) {
-      throw AuthException('unknown', 'Password reset failed: $e');
+      // Generic message only — never expose raw exception details.
+      throw AuthException('unknown', 'Password reset failed. Please try again.');
     }
   }
 

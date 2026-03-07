@@ -17,6 +17,8 @@
 ///   - **Decision Quality Score**: Composite metric combining calibration,
 ///     outcome positivity, and reflection completion.
 
+import 'dart:convert';
+
 import '../../models/decision_entry.dart';
 
 // ─── Data Classes ───────────────────────────────────────────────
@@ -580,11 +582,30 @@ class DecisionJournalService {
 
   String exportToJson() => DecisionEntry.encodeList(_entries);
 
+  /// Maximum number of entries allowed via import.
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON file
+  /// containing millions of entries.
+  static const int maxImportEntries = 100000;
+
   void importFromJson(String jsonStr) {
     // Parse into a temporary list first — if the JSON is malformed or
     // contains invalid entries, the existing data is preserved instead
     // of being cleared and lost.
-    final parsed = DecisionEntry.decodeList(jsonStr);
+    //
+    // Validate size before full deserialization to avoid allocating
+    // millions of DecisionEntry objects from a crafted file.
+    final rawList = jsonDecode(jsonStr) as List<dynamic>;
+    if (rawList.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${rawList.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    final parsed = rawList
+        .map((e) => DecisionEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
     _entries.clear();
     _entries.addAll(parsed);
   }
