@@ -232,6 +232,7 @@ class _LogTabState extends State<_LogTab> {
                       initialTime: TimeOfDay.fromDateTime(_startTime),
                     );
                     if (time != null) {
+                      if (!mounted) return;
                       setState(() {
                         _startTime = DateTime(
                           _startTime.year, _startTime.month, _startTime.day,
@@ -259,6 +260,7 @@ class _LogTabState extends State<_LogTab> {
                           _endTime ?? DateTime.now()),
                     );
                     if (time != null) {
+                      if (!mounted) return;
                       setState(() {
                         _endTime = DateTime(
                           _startTime.year, _startTime.month, _startTime.day,

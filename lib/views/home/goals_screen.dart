@@ -975,7 +975,10 @@ class _GoalFormSheetState extends State<_GoalFormSheet> {
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
                 );
-                if (picked != null) setState(() => _deadline = picked);
+                if (picked != null) {
+                  if (!mounted) return;
+                  setState(() => _deadline = picked);
+                }
               },
             ),
             const SizedBox(height: 20),

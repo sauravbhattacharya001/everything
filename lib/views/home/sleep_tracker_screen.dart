@@ -123,6 +123,7 @@ class _LogTabState extends State<_LogTab> {
       initialTime: isBedtime ? _bedtime : _wakeTime,
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() {
         if (isBedtime) {
           _bedtime = picked;
@@ -141,6 +142,7 @@ class _LogTabState extends State<_LogTab> {
       lastDate: DateTime.now(),
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => _selectedDate = picked);
     }
   }

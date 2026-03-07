@@ -89,6 +89,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => _selectedDate = picked);
     }
   }
@@ -99,6 +100,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       initialTime: _selectedTime,
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => _selectedTime = picked);
     }
   }
@@ -112,6 +114,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       ),
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => _selectedEndTime = picked);
     }
   }
@@ -367,6 +370,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => _recurrenceEndDate = picked);
     }
   }

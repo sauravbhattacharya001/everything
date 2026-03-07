@@ -78,7 +78,10 @@ class _ContactTrackerScreenState extends State<ContactTrackerScreen>
       context: context,
       builder: (ctx) => _AddContactDialog(service: _service),
     );
-    if (result == true) setState(() {});
+    if (result == true) {
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 }
 
@@ -871,6 +874,7 @@ class _AddContactDialogState extends State<_AddContactDialog> {
                       lastDate: DateTime.now(),
                     );
                     if (picked != null) {
+                      if (!mounted) return;
                       setState(() => _birthday = picked);
                     }
                   },
@@ -986,7 +990,10 @@ class _LogInteractionDialogState extends State<_LogInteractionDialog> {
                       DateTime.now().subtract(const Duration(days: 365)),
                   lastDate: DateTime.now(),
                 );
-                if (picked != null) setState(() => _date = picked);
+                if (picked != null) {
+                  if (!mounted) return;
+                  setState(() => _date = picked);
+                }
               },
             ),
             const SizedBox(height: 8),

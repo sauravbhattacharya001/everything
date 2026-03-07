@@ -244,7 +244,10 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen>
                     firstDate: DateTime(2020),
                     lastDate: DateTime.now().add(const Duration(days: 1)),
                   );
-                  if (picked != null) setState(() => _selectedDate = picked);
+                  if (picked != null) {
+                    if (!mounted) return;
+                    setState(() => _selectedDate = picked);
+                  }
                 },
                 child: Text(
                   _isToday(today)
