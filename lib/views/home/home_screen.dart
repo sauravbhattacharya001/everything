@@ -25,6 +25,7 @@ import 'workout_tracker_screen.dart';
 import 'water_tracker_screen.dart';
 import 'meal_tracker_screen.dart';
 import 'skill_tracker_screen.dart';
+import 'subscription_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -496,6 +497,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Skill tracker',
+          ),
+          // Subscription tracker button
+          IconButton(
+            icon: const Icon(Icons.subscriptions),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SubscriptionTrackerScreen()),
+              );
+            },
+            tooltip: 'Subscription tracker',
           ),
           // Sort button
           IconButton(
