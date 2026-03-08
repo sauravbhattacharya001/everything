@@ -29,6 +29,7 @@ import 'subscription_tracker_screen.dart';
 import 'time_tracker_screen.dart';
 import 'decision_journal_screen.dart';
 import 'energy_tracker_screen.dart';
+import 'screen_time_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -540,6 +541,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Energy tracker',
+          ),
+          // Screen time tracker button
+          IconButton(
+            icon: const Icon(Icons.phone_android),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ScreenTimeTrackerScreen()),
+              );
+            },
+            tooltip: 'Screen time tracker',
           ),
           // Sort button
           IconButton(
