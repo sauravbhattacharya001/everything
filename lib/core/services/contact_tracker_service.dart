@@ -106,6 +106,10 @@ class ContactReport {
 
 /// Service for managing contacts, interactions, and relationship health.
 class ContactTrackerService {
+  /// Maximum contacts allowed via [loadJson] to prevent memory exhaustion
+  /// from corrupted or malicious import data (CWE-770).
+  static const int maxImportEntries = 50000;
+
   final List<Contact> _contacts = [];
   int _nextId = 1;
   int _nextInteractionId = 1;
@@ -457,6 +461,13 @@ class ContactTrackerService {
   void loadJson(String jsonString) {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
     final list = data['contacts'] as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries contacts '
+        '(got ${list.length}). This limit prevents memory '
+        'exhaustion from corrupted or malicious data.',
+      );
+    }
     final parsed = <Contact>[];
     for (final item in list) {
       parsed.add(Contact.fromJson(item as Map<String, dynamic>));
