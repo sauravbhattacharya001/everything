@@ -30,6 +30,7 @@ import 'time_tracker_screen.dart';
 import 'decision_journal_screen.dart';
 import 'energy_tracker_screen.dart';
 import 'screen_time_tracker_screen.dart';
+import 'routine_builder_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -551,6 +552,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Screen time tracker',
+          ),
+          // Routine builder button
+          IconButton(
+            icon: const Icon(Icons.self_improvement),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RoutineBuilderScreen()),
+              );
+            },
+            tooltip: 'Routine builder',
           ),
           // Sort button
           IconButton(
