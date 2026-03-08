@@ -539,5 +539,25 @@ void main() {
       service.addSkill(_makeSkill(weeklyGoalMinutes: 0));
       expect(service.weeklyGoalProgress('skill-1', now), 0);
     });
+
+    test('loadFromJson rejects oversized imports (CWE-770)', () {
+      // Build a JSON array just over the limit
+      final overLimit = SkillTrackerService.maxImportEntries + 1;
+      final hugeJson = '[' +
+          List.generate(overLimit, (i) =>
+            '{"id":"s-$i","name":"Skill $i","category":"technical",'
+            '"proficiency":"beginner","weeklyGoalMinutes":60,"sessions":[],'
+            '"milestones":[],"resources":[],"notes":[]}'
+          ).join(',') +
+          ']';
+
+      expect(
+        () => service.loadFromJson(hugeJson),
+        throwsA(isA<ArgumentError>().having(
+          (e) => e.message, 'message',
+          contains('maximum'),
+        )),
+      );
+    });
   });
 }

@@ -427,7 +427,7 @@ class SkillTrackerService {
     final insights = <String>[];
 
     if (daysSince != null && daysSince > 7) {
-      insights.add("Haven't practiced in $daysSince days — consider a short session!");
+      insights.add("Haven't practiced in $daysSince days - consider a short session!");
     }
     if (wkProgress < 0.5) {
       insights.add(
@@ -442,7 +442,7 @@ class SkillTrackerService {
       insights.add('Average session quality is low (${skill.averageQuality.toStringAsFixed(1)}). Try shorter, more focused sessions.');
     }
     if (skill.totalHours >= 100) {
-      insights.add('Over 100 hours invested — impressive dedication! 💪');
+      insights.add('Over 100 hours invested - impressive dedication! 💪');
     }
 
     return SkillReport(
@@ -490,7 +490,7 @@ class SkillTrackerService {
     }
     if (activeSkills.length > 5) {
       recommendations.add(
-          'Tracking ${activeSkills.length} skills — consider focusing on fewer for faster progress.');
+          'Tracking ${activeSkills.length} skills - consider focusing on fewer for faster progress.');
     }
     if (activeSkills.isEmpty) {
       recommendations.add('No active skills! Add something you want to learn.');
@@ -521,7 +521,7 @@ class SkillTrackerService {
     buf.writeln('Practice streak: ${streak.currentStreak} days (longest: ${streak.longestStreak})');
     buf.writeln();
     for (final sr in report.skillReports) {
-      buf.writeln('${sr.category.emoji} ${sr.skillName} [${sr.grade}] — ${sr.currentLevel.label} → ${sr.targetLevel.label}');
+      buf.writeln('${sr.category.emoji} ${sr.skillName} [${sr.grade}] - ${sr.currentLevel.label} → ${sr.targetLevel.label}');
       buf.writeln('  ${sr.totalHours}h total, ${sr.sessionCount} sessions, quality ${sr.averageQuality.toStringAsFixed(1)}/5');
       if (sr.totalMilestones > 0) buf.writeln('  Milestones: ${sr.completedMilestones}/${sr.totalMilestones}');
       buf.writeln('  Weekly goal: ${(sr.weeklyGoalProgress * 100).round()}%');
@@ -537,10 +537,24 @@ class SkillTrackerService {
 
   String toJson() => jsonEncode(_skills.map((s) => s.toJson()).toList());
 
+  /// Maximum entries allowed via [loadFromJson].
+  ///
+  /// Prevents memory exhaustion (CWE-770) from oversized or malicious
+  /// import data.  50 000 skill entries is well above any realistic
+  /// usage while still fitting comfortably in memory.
+  static const int maxImportEntries = 50000;
+
   void loadFromJson(String json) {
-    // Parse into a temporary list first — if the JSON is malformed,
+    // Parse into a temporary list first - if the JSON is malformed,
     // the existing skills are preserved instead of being cleared and lost.
     final list = jsonDecode(json) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     final parsed = <SkillEntry>[];
     for (final item in list) {
       parsed.add(SkillEntry.fromJson(item as Map<String, dynamic>));

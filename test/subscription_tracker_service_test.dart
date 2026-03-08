@@ -259,5 +259,25 @@ void main() {
       final r = SubscriptionTrackerService()..loadFromJson(svc.toJson());
       expect(r.subscriptions.length, 2); expect(r.getById('s1')?.name, 'Netflix');
     });
+
+    test('loadFromJson rejects oversized imports (CWE-770)', () {
+      final overLimit = SubscriptionTrackerService.maxImportEntries + 1;
+      final hugeJson = '[' +
+          List.generate(overLimit, (i) =>
+            '{"id":"sub-$i","name":"Sub $i","amount":9.99,"currency":"USD",'
+            '"billingCycle":"monthly","category":"entertainment",'
+            '"startDate":"2026-01-01T00:00:00.000","status":"active",'
+            '"priceHistory":[]}'
+          ).join(',') +
+          ']';
+
+      expect(
+        () => SubscriptionTrackerService().loadFromJson(hugeJson),
+        throwsA(isA<ArgumentError>().having(
+          (e) => e.message, 'message',
+          contains('maximum'),
+        )),
+      );
+    });
   });
 }

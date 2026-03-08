@@ -220,13 +220,13 @@ class SubscriptionTrackerService {
   List<String> getOptimizationSuggestions() {
     final suggestions = <String>[];
     for (final s in active) {
-      if (s.cycle == BillingCycle.monthly && s.monthlyCost > 5) suggestions.add('Consider switching ${s.name} to annual billing — many services offer 15-20% discounts.');
-      if (s.monthlyCost > 50) suggestions.add('${s.name} costs \$${s.monthlyCost.toStringAsFixed(2)}/mo (\$${s.annualCost.toStringAsFixed(2)}/yr) — worth reviewing.');
+      if (s.cycle == BillingCycle.monthly && s.monthlyCost > 5) suggestions.add('Consider switching ${s.name} to annual billing - many services offer 15-20% discounts.');
+      if (s.monthlyCost > 50) suggestions.add('${s.name} costs \$${s.monthlyCost.toStringAsFixed(2)}/mo (\$${s.annualCost.toStringAsFixed(2)}/yr) - worth reviewing.');
     }
-    for (final group in detectPotentialDuplicates()) suggestions.add('Potential overlap: ${group.map((s) => s.name).join(', ')} — consider consolidating.');
-    for (final t in byStatus(SubscriptionStatus.trial)) suggestions.add('${t.name} is on trial — decide before it converts to paid.');
+    for (final group in detectPotentialDuplicates()) suggestions.add('Potential overlap: ${group.map((s) => s.name).join(', ')} - consider consolidating.');
+    for (final t in byStatus(SubscriptionStatus.trial)) suggestions.add('${t.name} is on trial - decide before it converts to paid.');
     for (final cat in getCategoryBreakdown()) {
-      if (cat.percentOfTotal > 40 && cat.count > 2) suggestions.add('${cat.category.label} = ${cat.percentOfTotal.toStringAsFixed(0)}% of spending (${cat.count} subs) — look for bundles.');
+      if (cat.percentOfTotal > 40 && cat.count > 2) suggestions.add('${cat.category.label} = ${cat.percentOfTotal.toStringAsFixed(0)}% of spending (${cat.count} subs) - look for bundles.');
     }
     return suggestions;
   }
@@ -252,11 +252,26 @@ class SubscriptionTrackerService {
 
   String toJson() => jsonEncode(_subscriptions.map((s) => s.toJson()).toList());
 
+  /// Maximum entries allowed via [loadFromJson].
+  ///
+  /// Prevents memory exhaustion (CWE-770) from oversized or malicious
+  /// import data.  50 000 subscriptions is well above any realistic
+  /// usage while still fitting comfortably in memory.
+  static const int maxImportEntries = 50000;
+
   void loadFromJson(String json) {
-    // Parse into a temporary list first — if the JSON is malformed,
+    // Parse into a temporary list first - if the JSON is malformed,
     // existing subscriptions are preserved instead of being wiped.
+    final list = jsonDecode(json) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     final parsed = <SubscriptionEntry>[];
-    for (final item in jsonDecode(json) as List<dynamic>) {
+    for (final item in list) {
       parsed.add(SubscriptionEntry.fromJson(item as Map<String, dynamic>));
     }
     _subscriptions.clear();
