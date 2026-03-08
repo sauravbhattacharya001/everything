@@ -28,6 +28,7 @@ import 'skill_tracker_screen.dart';
 import 'subscription_tracker_screen.dart';
 import 'time_tracker_screen.dart';
 import 'decision_journal_screen.dart';
+import 'energy_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -529,6 +530,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Decision journal',
+          ),
+          // Energy tracker button
+          IconButton(
+            icon: const Icon(Icons.bolt),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const EnergyTrackerScreen()),
+              );
+            },
+            tooltip: 'Energy tracker',
           ),
           // Sort button
           IconButton(
