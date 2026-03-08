@@ -575,12 +575,26 @@ class ReadingListService {
           },
       };
 
+  /// Maximum books allowed via [loadFromJson].
+  static const int maxImportBooks = 50000;
+
   void loadFromJson(Map<String, dynamic> json) {
-    _books.clear();
     final bookList = json['books'] as List<dynamic>? ?? [];
-    for (final b in bookList) {
-      _books.add(Book.fromJson(b as Map<String, dynamic>));
+    if (bookList.length > maxImportBooks) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportBooks books '
+        '(got ${bookList.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
     }
+    // Parse into temporary list first — preserve existing data on error.
+    final parsed = <Book>[];
+    for (final b in bookList) {
+      parsed.add(Book.fromJson(b as Map<String, dynamic>));
+    }
+    // All parsed successfully — safe to apply.
+    _books.clear();
+    _books.addAll(parsed);
     if (json['challenge'] != null) {
       final c = json['challenge'] as Map<String, dynamic>;
       setChallenge(c['year'] as int, c['goalBooks'] as int);

@@ -586,15 +586,26 @@ class MealTrackerService {
         'nextId': _nextId,
       };
 
+  /// Maximum meal entries allowed via [fromJson].
+  static const int maxImportEntries = 100000;
+
   factory MealTrackerService.fromJson(Map<String, dynamic> json) {
+    final entryList = json['entries'] as List? ?? [];
+    if (entryList.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${entryList.length}). This limit prevents memory '
+        'exhaustion from corrupted or malicious data.',
+      );
+    }
     final service = MealTrackerService(
       config: NutritionConfig.fromJson(json['config'] as Map<String, dynamic>),
     );
     service._nextId = json['nextId'] as int? ?? 1;
-    final entries = (json['entries'] as List?)
-        ?.map((e) => MealEntry.fromJson(e as Map<String, dynamic>))
+    final entries = entryList
+        .map((e) => MealEntry.fromJson(e as Map<String, dynamic>))
         .toList();
-    if (entries != null) service._entries.addAll(entries);
+    service._entries.addAll(entries);
     return service;
   }
 }

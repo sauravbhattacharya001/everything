@@ -791,21 +791,42 @@ class AchievementService {
     return jsonEncode(list);
   }
 
+  /// Maximum entries allowed via [loadFromJson].
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON payload
+  /// containing millions of entries.
+  static const int maxImportEntries = 50000;
+
   /// Load earned achievements from JSON string.
   /// Replaces current earned state.
   void loadFromJson(String jsonStr) {
-    _earned.clear();
+    // Parse into a temporary map first so that malformed JSON doesn't
+    // wipe existing earned achievements.
+    final parsed = <String, EarnedAchievement>{};
     try {
       final list = jsonDecode(jsonStr) as List<dynamic>;
+      if (list.length > maxImportEntries) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportEntries entries '
+          '(got ${list.length}). This limit prevents memory exhaustion '
+          'from corrupted or malicious data.',
+        );
+      }
       for (final item in list) {
         if (item is Map<String, dynamic>) {
           final ea = EarnedAchievement.fromJson(item);
-          _earned[ea.achievementId] = ea;
+          parsed[ea.achievementId] = ea;
         }
       }
+    } on ArgumentError {
+      rethrow;
     } catch (_) {
-      // Silently ignore corrupt data
+      // Silently ignore corrupt data — preserve existing state
+      return;
     }
+    // All parsed successfully — safe to apply.
+    _earned.clear();
+    _earned.addAll(parsed);
   }
 
   /// Export all definitions to JSON (for backup/sync).

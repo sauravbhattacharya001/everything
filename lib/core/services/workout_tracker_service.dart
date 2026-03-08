@@ -691,16 +691,26 @@ class WorkoutTrackerService {
     });
   }
 
+  /// Maximum workout entries allowed via [fromJson].
+  static const int maxImportEntries = 100000;
+
   factory WorkoutTrackerService.fromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    final workoutList = data['workouts'] as List<dynamic>? ?? [];
+    if (workoutList.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${workoutList.length}). This limit prevents memory '
+        'exhaustion from corrupted or malicious data.',
+      );
+    }
     return WorkoutTrackerService(
       config: data['config'] != null
           ? WorkoutConfig.fromJson(data['config'] as Map<String, dynamic>)
           : const WorkoutConfig(),
-      workouts: (data['workouts'] as List<dynamic>?)
-              ?.map((w) => WorkoutEntry.fromJson(w as Map<String, dynamic>))
-              .toList() ??
-          [],
+      workouts: workoutList
+              .map((w) => WorkoutEntry.fromJson(w as Map<String, dynamic>))
+              .toList(),
     );
   }
 }

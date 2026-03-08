@@ -484,16 +484,26 @@ class MeditationTrackerService {
     });
   }
 
+  /// Maximum sessions allowed via [fromJson].
+  static const int maxImportSessions = 100000;
+
   factory MeditationTrackerService.fromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    final sessionList = data['sessions'] as List<dynamic>? ?? [];
+    if (sessionList.length > maxImportSessions) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportSessions sessions '
+        '(got ${sessionList.length}). This limit prevents memory '
+        'exhaustion from corrupted or malicious data.',
+      );
+    }
     return MeditationTrackerService(
       config: data['config'] != null
           ? MeditationConfig.fromJson(data['config'] as Map<String, dynamic>)
           : const MeditationConfig(),
-      sessions: (data['sessions'] as List<dynamic>?)
-              ?.map((s) => MeditationEntry.fromJson(s as Map<String, dynamic>))
-              .toList() ??
-          [],
+      sessions: sessionList
+              .map((s) => MeditationEntry.fromJson(s as Map<String, dynamic>))
+              .toList(),
     );
   }
 }

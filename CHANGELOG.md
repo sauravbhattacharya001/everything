@@ -5,6 +5,34 @@ All notable changes to the Everything App will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-03-07
+
+### Added
+- **Subscription Tracker Screen** — 4-tab UI for managing recurring subscriptions:
+  - *Active tab:* Searchable list with category/status filters, detail bottom sheets, pause/resume/cancel
+  - *Calendar tab:* 60-day renewal timeline with expiring trial alerts and urgency badges
+  - *Insights tab:* Cost breakdown (daily/monthly/annual), category progress bars, duplicate/overlap detection
+  - *Optimize tab:* Actionable savings suggestions (annual billing, high-cost review, trial decisions)
+  - Includes add/edit dialog with sample data for immediate demo
+- **Gratitude Journal Screen** — 4-tab journaling experience:
+  - *Log tab:* Gratitude prompt cards, text + note input, category chips, intensity slider, daily stats
+  - *Journal tab:* Chronological entries with search and category filtering
+  - *Favorites tab:* Starred entries collection
+  - *Insights tab:* 6 stat cards, category breakdowns, top tags, AI-generated insights
+- **Skill Tracker Screen** — 4-tab learning progress UI:
+  - *Skills tab:* View/filter/manage active & archived skills with category badges and level progress bars
+  - *Practice tab:* Log sessions with duration, topic, notes, quality rating; quick stats panel
+  - *Milestones tab:* Per-skill milestone management with completion tracking and reorderable lists
+  - *Portfolio tab:* Learning overview with streak tracking, category breakdowns, letter grades
+
+### Security
+- Added import size limits to 5 services that were missing bounds checks:
+  `AchievementService` (50K), `ReadingListService` (50K), `WorkoutTrackerService` (100K),
+  `MeditationTrackerService` (100K), `MealTrackerService` (100K) — prevents memory
+  exhaustion from maliciously crafted JSON payloads (CWE-400)
+- `AchievementService.loadFromJson` now parses into a temporary map before clearing
+  existing data, preventing data loss on malformed imports
+
 ## [2.0.0] - 2026-03-07
 
 Major release adding 15+ tracker services, full UI screens, and comprehensive
