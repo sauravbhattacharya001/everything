@@ -31,6 +31,7 @@ import 'decision_journal_screen.dart';
 import 'energy_tracker_screen.dart';
 import 'screen_time_tracker_screen.dart';
 import 'routine_builder_screen.dart';
+import 'life_dashboard_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -562,6 +563,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Routine builder',
+          ),
+          // Life dashboard button
+          IconButton(
+            icon: const Icon(Icons.dashboard),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LifeDashboardScreen()),
+              );
+            },
+            tooltip: 'Life dashboard',
           ),
           // Sort button
           IconButton(
