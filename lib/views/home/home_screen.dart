@@ -24,6 +24,7 @@ import 'contact_tracker_screen.dart';
 import 'workout_tracker_screen.dart';
 import 'water_tracker_screen.dart';
 import 'meal_tracker_screen.dart';
+import 'skill_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -485,6 +486,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Meal tracker',
+          ),
+          // Skill tracker button
+          IconButton(
+            icon: const Icon(Icons.school),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SkillTrackerScreen()),
+              );
+            },
+            tooltip: 'Skill tracker',
           ),
           // Sort button
           IconButton(
