@@ -27,6 +27,7 @@ import 'meal_tracker_screen.dart';
 import 'skill_tracker_screen.dart';
 import 'subscription_tracker_screen.dart';
 import 'time_tracker_screen.dart';
+import 'decision_journal_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -518,6 +519,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Time tracker',
+          ),
+          // Decision journal button
+          IconButton(
+            icon: const Icon(Icons.balance),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DecisionJournalScreen()),
+              );
+            },
+            tooltip: 'Decision journal',
           ),
           // Sort button
           IconButton(
