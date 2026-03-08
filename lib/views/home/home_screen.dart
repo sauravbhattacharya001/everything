@@ -26,6 +26,7 @@ import 'water_tracker_screen.dart';
 import 'meal_tracker_screen.dart';
 import 'skill_tracker_screen.dart';
 import 'subscription_tracker_screen.dart';
+import 'time_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -507,6 +508,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Subscription tracker',
+          ),
+          // Time tracker button
+          IconButton(
+            icon: const Icon(Icons.timer),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TimeTrackerScreen()),
+              );
+            },
+            tooltip: 'Time tracker',
           ),
           // Sort button
           IconButton(
