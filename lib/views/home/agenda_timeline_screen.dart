@@ -191,7 +191,7 @@ class _AgendaTimelineScreenState extends State<AgendaTimelineScreen> {
     );
   }
 
-  Widget _buildSummaryBar(DailySummary summary) {
+  Widget _buildSummaryBar(TimelineDailySummary summary) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(

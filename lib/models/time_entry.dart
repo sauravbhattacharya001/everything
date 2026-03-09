@@ -67,7 +67,7 @@ class TimeEntry {
 }
 
 /// Daily productivity summary.
-class DailySummary {
+class TimeAuditDailySummary {
   final DateTime date;
   final Duration totalTracked;
   final Map<TimeCategory, Duration> categoryBreakdown;
@@ -75,7 +75,7 @@ class DailySummary {
   final String? topCategory;
   final Duration longestSession;
 
-  const DailySummary({
+  const TimeAuditDailySummary({
     required this.date,
     required this.totalTracked,
     required this.categoryBreakdown,

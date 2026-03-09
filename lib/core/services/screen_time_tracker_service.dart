@@ -17,7 +17,7 @@ class CategoryBreakdownST {
   });
 }
 
-class DailySummary {
+class ScreenTimeDailySummary {
   final DateTime date;
   final int totalMinutes;
   final int totalPickups;
@@ -26,7 +26,7 @@ class DailySummary {
   final String topApp;
   final int topAppMinutes;
   final String grade;
-  const DailySummary({
+  const ScreenTimeDailySummary({
     required this.date,
     required this.totalMinutes,
     required this.totalPickups,
@@ -51,7 +51,7 @@ class LimitViolation {
   });
 }
 
-class WeeklySummary {
+class ScreenTimeWeeklySummary {
   final DateTime weekStart;
   final int totalMinutes;
   final double avgDailyMinutes;
@@ -62,7 +62,7 @@ class WeeklySummary {
   final int busiestDayMinutes;
   final String grade;
   final List<CategoryBreakdownST> categoryBreakdown;
-  const WeeklySummary({
+  const ScreenTimeWeeklySummary({
     required this.weekStart,
     required this.totalMinutes,
     required this.avgDailyMinutes,
@@ -195,7 +195,7 @@ class ScreenTimeTrackerService {
     return violations;
   }
 
-  DailySummary getDailySummary(DateTime date) {
+  ScreenTimeDailySummary getDailySummary(DateTime date) {
     final dayEntries = _getEntriesForDate(date);
     final totalMin = dayEntries.fold(0, (sum, e) => sum + e.durationMinutes);
     final totalPickups = dayEntries.fold(0, (sum, e) => sum + e.pickups);
@@ -214,14 +214,14 @@ class ScreenTimeTrackerService {
       topAppMin = top.value;
     }
 
-    return DailySummary(
+    return ScreenTimeDailySummary(
       date: date, totalMinutes: totalMin, totalPickups: totalPickups,
       appCount: apps.length, categoryBreakdown: breakdown,
       topApp: topApp, topAppMinutes: topAppMin, grade: _gradeMinutes(totalMin),
     );
   }
 
-  WeeklySummary getWeeklySummary(DateTime weekStart) {
+  ScreenTimeWeeklySummary getWeeklySummary(DateTime weekStart) {
     final days = List.generate(7, (i) => weekStart.add(Duration(days: i)));
     final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final allEntries = <ScreenTimeEntry>[];
@@ -246,7 +246,7 @@ class ScreenTimeTrackerService {
     final totalPickups = allEntries.fold(0, (sum, e) => sum + e.pickups);
     final breakdown = _buildCategoryBreakdown(allEntries, totalMin);
 
-    return WeeklySummary(
+    return ScreenTimeWeeklySummary(
       weekStart: weekStart, totalMinutes: totalMin,
       avgDailyMinutes: daysTracked > 0 ? totalMin / daysTracked : 0,
       totalPickups: totalPickups,

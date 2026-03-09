@@ -43,7 +43,7 @@ class SkillReport {
 }
 
 /// Weekly practice summary.
-class WeeklySummary {
+class SkillWeeklySummary {
   final DateTime weekStart;
   final int totalMinutes;
   final int sessionCount;
@@ -52,7 +52,7 @@ class WeeklySummary {
   final int goalMinutes;
   final double goalProgress;
 
-  WeeklySummary({
+  SkillWeeklySummary({
     required this.weekStart,
     required this.totalMinutes,
     required this.sessionCount,
@@ -350,7 +350,7 @@ class SkillTrackerService {
     );
   }
 
-  WeeklySummary getWeeklySummary(DateTime date) {
+  SkillWeeklySummary getWeeklySummary(DateTime date) {
     final weekStart = date.subtract(Duration(days: date.weekday % 7));
     final start = DateTime(weekStart.year, weekStart.month, weekStart.day);
     final end = start.add(const Duration(days: 7));
@@ -370,7 +370,7 @@ class SkillTrackerService {
       }
     }
 
-    return WeeklySummary(
+    return SkillWeeklySummary(
       weekStart: start,
       totalMinutes: totalMin,
       sessionCount: sessionCount,
