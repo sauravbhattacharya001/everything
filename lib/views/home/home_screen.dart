@@ -32,6 +32,7 @@ import 'energy_tracker_screen.dart';
 import 'screen_time_tracker_screen.dart';
 import 'routine_builder_screen.dart';
 import 'life_dashboard_screen.dart';
+import 'medication_tracker_screen.dart';
 import 'pet_care_tracker_screen.dart';
 import 'plant_care_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
@@ -595,6 +596,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Plant care tracker',
+          ),
+          // Medication tracker button
+          IconButton(
+            icon: const Icon(Icons.medication),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MedicationTrackerScreen()),
+              );
+            },
+            tooltip: 'Medication tracker',
           ),
           // Sort button
           IconButton(
