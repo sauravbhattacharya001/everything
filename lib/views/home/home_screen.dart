@@ -18,6 +18,7 @@ import 'daily_review_screen.dart';
 import 'pomodoro_screen.dart';
 import 'goals_screen.dart';
 import 'mood_journal_screen.dart';
+import 'commute_tracker_screen.dart';
 import 'sleep_tracker_screen.dart';
 import 'expense_tracker_screen.dart';
 import 'contact_tracker_screen.dart';
@@ -612,6 +613,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Savings goals',
+          ),
+          // Commute tracker button
+          IconButton(
+            icon: const Icon(Icons.commute),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CommuteTrackerScreen()),
+              );
+            },
+            tooltip: 'Commute tracker',
           ),
           // Medication tracker button
           IconButton(
