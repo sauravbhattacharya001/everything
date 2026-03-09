@@ -36,6 +36,7 @@ import 'medication_tracker_screen.dart';
 import 'pet_care_tracker_screen.dart';
 import 'plant_care_tracker_screen.dart';
 import 'savings_goal_screen.dart';
+import 'budget_planner_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -617,6 +618,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Medication tracker',
+          ),
+          // Budget planner button
+          IconButton(
+            icon: const Icon(Icons.account_balance),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BudgetPlannerScreen()),
+              );
+            },
+            tooltip: 'Budget planner',
           ),
           // Sort button
           IconButton(
