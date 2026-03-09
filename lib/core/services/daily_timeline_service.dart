@@ -51,7 +51,7 @@ class TimelineBlock {
 }
 
 /// Summary statistics for a daily timeline.
-class DailySummary {
+class TimelineDailySummary {
   /// Total number of events on this day.
   final int eventCount;
 
@@ -91,7 +91,7 @@ class DailySummary {
     return '${d.inMinutes}m';
   }
 
-  const DailySummary({
+  const TimelineDailySummary({
     required this.eventCount,
     required this.busyTime,
     required this.freeTime,
@@ -102,7 +102,7 @@ class DailySummary {
 
   @override
   String toString() =>
-      'DailySummary(events: $eventCount, busy: $busyTimeLabel, '
+      'TimelineDailySummary(events: $eventCount, busy: $busyTimeLabel, '
       'free: $freeTimeLabel, conflicts: $conflictCount)';
 }
 
@@ -111,7 +111,7 @@ class DailySummary {
 /// The [DailyTimelineService] takes a list of events and produces an
 /// ordered sequence of [TimelineBlock]s representing both events and
 /// free gaps. It also detects scheduling conflicts and computes
-/// [DailySummary] statistics.
+/// [TimelineDailySummary] statistics.
 ///
 /// Usage:
 /// ```dart
@@ -230,8 +230,8 @@ class DailyTimelineService {
     return conflicts;
   }
 
-  /// Computes a [DailySummary] for the given timeline.
-  DailySummary summarize(
+  /// Computes a [TimelineDailySummary] for the given timeline.
+  TimelineDailySummary summarize(
     List<TimelineBlock> timeline, {
     required DateTime date,
   }) {
@@ -269,7 +269,7 @@ class DailyTimelineService {
           .key;
     }
 
-    return DailySummary(
+    return TimelineDailySummary(
       eventCount: eventBlocks.length,
       busyTime: busyTime,
       freeTime: freeTime,

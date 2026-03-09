@@ -4,7 +4,7 @@ import '../../models/time_entry.dart';
 class TimeTrackerService {
   const TimeTrackerService();
 
-  DailySummary getDailySummary(List<TimeEntry> entries, DateTime date) {
+  TimeAuditDailySummary getDailySummary(List<TimeEntry> entries, DateTime date) {
     final dayEntries = entries.where((e) =>
       e.startTime.year == date.year &&
       e.startTime.month == date.month &&
@@ -30,7 +30,7 @@ class TimeTrackerService {
       topCat = sorted.first.key.label;
     }
 
-    return DailySummary(
+    return TimeAuditDailySummary(
       date: date,
       totalTracked: totalTracked,
       categoryBreakdown: breakdown,

@@ -122,7 +122,7 @@ class _LogTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final summary = service.dailySummary(entries, now);
+    final summary = service.HydrationDailySummary(entries, now);
     final pacing = service.pacing(entries, now);
     final theme = Theme.of(context);
 
@@ -279,7 +279,7 @@ class _LogTab extends StatelessWidget {
 // ── Progress Ring Widget ────────────────────────────────────────────
 
 class _ProgressRing extends StatelessWidget {
-  final DailySummary summary;
+  final HydrationDailySummary summary;
   const _ProgressRing({required this.summary});
 
   @override

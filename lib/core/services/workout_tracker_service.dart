@@ -55,7 +55,7 @@ class PersonalRecord {
 }
 
 /// Weekly workout summary.
-class WeeklySummary {
+class WorkoutWeeklySummary {
   final DateTime weekStart;
   final int workoutCount;
   final double totalVolume;
@@ -66,7 +66,7 @@ class WeeklySummary {
   final Map<MuscleGroup, int> muscleGroupFrequency;
   final double avgRpe;
 
-  const WeeklySummary({
+  const WorkoutWeeklySummary({
     required this.weekStart,
     required this.workoutCount,
     required this.totalVolume,
@@ -354,7 +354,7 @@ class WorkoutTrackerService {
 
   // ── Weekly Summary ──
 
-  WeeklySummary getWeeklySummary(DateTime weekStart) {
+  WorkoutWeeklySummary getWeeklySummary(DateTime weekStart) {
     final weekEnd = weekStart.add(const Duration(days: 7));
     final weekWorkouts = getWorkoutsInRange(weekStart, weekEnd);
 
@@ -374,7 +374,7 @@ class WorkoutTrackerService {
       totalMinutes += w.durationMinutes ?? 0;
     }
 
-    return WeeklySummary(
+    return WorkoutWeeklySummary(
       weekStart: weekStart,
       workoutCount: weekWorkouts.length,
       totalVolume: weekWorkouts.fold(0.0, (sum, w) => sum + w.totalVolume),

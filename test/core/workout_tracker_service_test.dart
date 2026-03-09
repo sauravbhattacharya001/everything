@@ -888,9 +888,9 @@ void main() {
     });
   });
 
-  group('WeeklySummary grades', () {
+  group('WorkoutWeeklySummary grades', () {
     test('grade B at 75%', () {
-      const summary = WeeklySummary(
+      const summary = WorkoutWeeklySummary(
         weekStart: null ?? DateTime(2026),
         workoutCount: 3,
         totalVolume: 0,
@@ -905,7 +905,7 @@ void main() {
     });
 
     test('grade D at 25%', () {
-      const summary = WeeklySummary(
+      const summary = WorkoutWeeklySummary(
         weekStart: null ?? DateTime(2026),
         workoutCount: 1,
         totalVolume: 0,
@@ -920,7 +920,7 @@ void main() {
     });
 
     test('grade F at 0%', () {
-      const summary = WeeklySummary(
+      const summary = WorkoutWeeklySummary(
         weekStart: null ?? DateTime(2026),
         workoutCount: 0,
         totalVolume: 0,

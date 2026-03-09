@@ -173,9 +173,9 @@ void main() {
           .toList();
     }
 
-    group('dailySummary', () {
+    group('HydrationDailySummary', () {
       test('empty entries returns zero totals', () {
-        final s = service.dailySummary([], today);
+        final s = service.HydrationDailySummary([], today);
         expect(s.totalMl, 0);
         expect(s.entryCount, 0);
         expect(s.progressPercent, 0);
@@ -189,7 +189,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 12), 'ml': 500},
           {'time': DateTime(2026, 3, 3, 10), 'ml': 1000}, // different day
         ]);
-        final s = service.dailySummary(entries, today);
+        final s = service.HydrationDailySummary(entries, today);
         expect(s.totalMl, 800);
         expect(s.entryCount, 2);
       });
@@ -200,7 +200,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 10), 'ml': 200, 'type': DrinkType.coffee},
           {'time': DateTime(2026, 3, 4, 14), 'ml': 300, 'type': DrinkType.water},
         ]);
-        final s = service.dailySummary(entries, today);
+        final s = service.HydrationDailySummary(entries, today);
         expect(s.byDrinkType[DrinkType.water], 600);
         expect(s.byDrinkType[DrinkType.coffee], 200);
       });
@@ -211,7 +211,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 8, 30), 'ml': 200},
           {'time': DateTime(2026, 3, 4, 14), 'ml': 500},
         ]);
-        final s = service.dailySummary(entries, today);
+        final s = service.HydrationDailySummary(entries, today);
         expect(s.byHour[8], 500);
         expect(s.byHour[14], 500);
       });
@@ -220,7 +220,7 @@ void main() {
         final entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 10), 'ml': 200, 'type': DrinkType.coffee},
         ]);
-        final s = service.dailySummary(entries, today);
+        final s = service.HydrationDailySummary(entries, today);
         expect(s.totalMl, 200);
         expect(s.effectiveHydrationMl, 160.0);
       });
@@ -230,38 +230,38 @@ void main() {
         var entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 2000},
         ]);
-        expect(service.dailySummary(entries, today).grade, 'A');
+        expect(service.HydrationDailySummary(entries, today).grade, 'A');
 
         // 80% = B
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 1600},
         ]);
-        expect(service.dailySummary(entries, today).grade, 'B');
+        expect(service.HydrationDailySummary(entries, today).grade, 'B');
 
         // 60% = C
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 1200},
         ]);
-        expect(service.dailySummary(entries, today).grade, 'C');
+        expect(service.HydrationDailySummary(entries, today).grade, 'C');
 
         // 40% = D
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 800},
         ]);
-        expect(service.dailySummary(entries, today).grade, 'D');
+        expect(service.HydrationDailySummary(entries, today).grade, 'D');
 
         // <40% = F
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 500},
         ]);
-        expect(service.dailySummary(entries, today).grade, 'F');
+        expect(service.HydrationDailySummary(entries, today).grade, 'F');
       });
 
       test('remaining ml clamps at 0 when over goal', () {
         final entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 3000},
         ]);
-        final s = service.dailySummary(entries, today);
+        final s = service.HydrationDailySummary(entries, today);
         expect(s.remainingMl, 0);
         expect(s.goalMet, true);
       });
@@ -419,7 +419,7 @@ void main() {
 
     group('generateTips', () {
       test('tip for high coffee intake', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 1000,
           effectiveHydrationMl: 800,
@@ -441,7 +441,7 @@ void main() {
       });
 
       test('tip for no morning intake', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 500,
           effectiveHydrationMl: 500,
@@ -463,7 +463,7 @@ void main() {
       });
 
       test('tip for goal reached', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 2500,
           effectiveHydrationMl: 2500,
@@ -485,7 +485,7 @@ void main() {
       });
 
       test('tip for large infrequent drinks', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 1500,
           effectiveHydrationMl: 1500,
@@ -507,7 +507,7 @@ void main() {
       });
 
       test('tip for being behind', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 200,
           effectiveHydrationMl: 200,
@@ -529,7 +529,7 @@ void main() {
       });
 
       test('tip for soda intake', () {
-        final summary = DailySummary(
+        final summary = HydrationDailySummary(
           date: today,
           totalMl: 800,
           effectiveHydrationMl: 600,

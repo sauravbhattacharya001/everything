@@ -48,7 +48,7 @@ class HydrationConfig {
 }
 
 /// Daily hydration summary.
-class DailySummary {
+class HydrationDailySummary {
   final DateTime date;
   final int totalMl;
   final double effectiveHydrationMl;
@@ -57,7 +57,7 @@ class DailySummary {
   final Map<DrinkType, int> byDrinkType;
   final Map<int, int> byHour; // hour -> ml
 
-  const DailySummary({
+  const HydrationDailySummary({
     required this.date,
     required this.totalMl,
     required this.effectiveHydrationMl,
@@ -116,7 +116,7 @@ class HydrationPacing {
 
 /// Weekly trend data.
 class WeeklyTrend {
-  final List<DailySummary> days;
+  final List<HydrationDailySummary> days;
   final double avgDailyMl;
   final double avgEffectiveHydration;
   final int daysGoalMet;
@@ -137,7 +137,7 @@ class WeeklyTrend {
 
 /// Full hydration report.
 class HydrationReport {
-  final DailySummary today;
+  final HydrationDailySummary today;
   final HydrationPacing pacing;
   final HydrationStreak streak;
   final WeeklyTrend? weeklyTrend;
@@ -185,7 +185,7 @@ class WaterTrackerService {
 
   // ── Daily Summary ──
 
-  DailySummary dailySummary(List<WaterEntry> entries, DateTime date) {
+  HydrationDailySummary HydrationDailySummary(List<WaterEntry> entries, DateTime date) {
     final dayEntries = _entriesForDate(entries, date);
     final byType = <DrinkType, int>{};
     final byHour = <int, int>{};
@@ -200,7 +200,7 @@ class WaterTrackerService {
           (byHour[e.timestamp.hour] ?? 0) + e.amountMl;
     }
 
-    return DailySummary(
+    return HydrationDailySummary(
       date: date,
       totalMl: total,
       effectiveHydrationMl: effective,
@@ -214,7 +214,7 @@ class WaterTrackerService {
   // ── Pacing ──
 
   HydrationPacing pacing(List<WaterEntry> entries, DateTime now) {
-    final summary = dailySummary(entries, now);
+    final summary = HydrationDailySummary(entries, now);
     final currentHour = now.hour;
 
     // Hours elapsed since wake
@@ -324,10 +324,10 @@ class WaterTrackerService {
   // ── Weekly Trend ──
 
   WeeklyTrend weeklyTrend(List<WaterEntry> entries, DateTime endDate) {
-    final days = <DailySummary>[];
+    final days = <HydrationDailySummary>[];
     for (int i = 6; i >= 0; i--) {
       final day = endDate.subtract(Duration(days: i));
-      days.add(dailySummary(entries, day));
+      days.add(HydrationDailySummary(entries, day));
     }
 
     final totalMl =
@@ -390,7 +390,7 @@ class WaterTrackerService {
 
   // ── Tips ──
 
-  List<String> generateTips(DailySummary summary, HydrationPacing pace) {
+  List<String> generateTips(HydrationDailySummary summary, HydrationPacing pace) {
     final tips = <String>[];
 
     if (pace.status == 'behind' || pace.status == 'way_behind') {
@@ -429,7 +429,7 @@ class WaterTrackerService {
   // ── Full Report ──
 
   HydrationReport report(List<WaterEntry> entries, DateTime now) {
-    final todaySummary = dailySummary(entries, now);
+    final todaySummary = HydrationDailySummary(entries, now);
     final todayPacing = pacing(entries, now);
     final todayStreak = streak(entries, now);
     final trend = weeklyTrend(entries, now);
