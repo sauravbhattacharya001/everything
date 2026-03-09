@@ -40,6 +40,7 @@ import 'budget_planner_screen.dart';
 import 'focus_time_screen.dart';
 import 'weekly_planner_screen.dart';
 import 'chore_tracker_screen.dart';
+import 'time_budget_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -661,6 +662,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Chore tracker',
+          ),
+          // Time budget button
+          IconButton(
+            icon: const Icon(Icons.timer_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TimeBudgetScreen()),
+              );
+            },
+            tooltip: 'Time budget',
           ),
           // Sort button
           IconButton(
