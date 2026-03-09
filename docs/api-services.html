@@ -26,6 +26,17 @@
       <a href="api-data.html" class="sidebar-link">Data Layer</a>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-section-title">Service Catalog</div>
+      <a href="#cat-calendar" class="sidebar-link">📅 Calendar &amp; Events</a>
+      <a href="#cat-time" class="sidebar-link">⏱️ Time Management</a>
+      <a href="#cat-health" class="sidebar-link">🏥 Health &amp; Wellness</a>
+      <a href="#cat-finance" class="sidebar-link">💰 Finance</a>
+      <a href="#cat-growth" class="sidebar-link">🌱 Personal Growth</a>
+      <a href="#cat-life" class="sidebar-link">🏡 Life Management</a>
+      <a href="#cat-planning" class="sidebar-link">📊 Planning &amp; Analytics</a>
+      <a href="#cat-core" class="sidebar-link">⚙️ Core Infrastructure</a>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-section-title">Guides</div>
       <a href="security.html" class="sidebar-link">Security</a>
       <a href="testing.html" class="sidebar-link">Testing</a>
@@ -168,6 +179,490 @@
       <tr><td><code>HttpException</code></td><td><code>statusCode</code>, <code>responseBody</code></td><td>Non-200 HTTP response</td></tr>
       <tr><td><code>HttpSecurityException</code></td><td><code>message</code></td><td>Blocked scheme or untrusted host</td></tr>
     </table>
+
+    <hr>
+    <h1 id="service-catalog">Service Catalog</h1>
+    <p class="subtitle">Complete reference for all 55 services in <code>lib/core/services/</code>, organized by domain.</p>
+
+    <!-- ─── Calendar & Events ────────────────────────────────── -->
+    <h2 id="cat-calendar">📅 Calendar &amp; Events</h2>
+
+    <h3 id="event-search-service">EventSearchService</h3>
+    <p><code>lib/core/services/event_search_service.dart</code></p>
+    <p>Full-text search across events with field-weighted scoring, fuzzy matching, and date/category/priority filters.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>search</code></td><td><code>(String query, List&lt;EventModel&gt; events, {SearchFilters?}) → List&lt;SearchResult&gt;</code></td><td>Search events with relevance scoring and highlighting</td></tr>
+      <tr><td><code>suggest</code></td><td><code>(String partial, List&lt;EventModel&gt; events) → List&lt;String&gt;</code></td><td>Autocomplete suggestions from partial input</td></tr>
+    </table>
+
+    <h3 id="event-sharing-service">EventSharingService</h3>
+    <p><code>lib/core/services/event_sharing_service.dart</code></p>
+    <p>Export events as plain text, Markdown, Google Calendar URLs, or Outlook web links.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>share</code></td><td><code>(EventModel, {ShareFormat}) → String</code></td><td>Format event for sharing (plainText, markdown, googleCalendar, outlook)</td></tr>
+    </table>
+
+    <h3 id="event-pattern-service">EventPatternService</h3>
+    <p><code>lib/core/services/event_pattern_service.dart</code></p>
+    <p>Detects recurring patterns and scheduling habits from historical events, then predicts future occurrences.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>detectPatterns</code></td><td><code>(List&lt;EventModel&gt;) → List&lt;EventPattern&gt;</code></td><td>Identify day-of-week, time-of-day, and category patterns</td></tr>
+      <tr><td><code>predict</code></td><td><code>(List&lt;EventModel&gt;, {int days}) → List&lt;EventPrediction&gt;</code></td><td>Predict future events based on detected patterns</td></tr>
+    </table>
+
+    <h3 id="event-deduplication-service">EventDeduplicationService</h3>
+    <p><code>lib/core/services/event_deduplication_service.dart</code></p>
+    <p>Finds duplicate events using title similarity, time proximity, and location matching.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>scanHighConfidence</code></td><td><code>(List&lt;EventModel&gt;) → List&lt;DuplicateMatch&gt;</code></td><td>Scan all events for high-confidence duplicates</td></tr>
+      <tr><td><code>findDuplicatesOf</code></td><td><code>(EventModel, List&lt;EventModel&gt;) → List&lt;DuplicateMatch&gt;</code></td><td>Find duplicates of a specific event</td></tr>
+    </table>
+
+    <h3 id="conflict-detector">ConflictDetector</h3>
+    <p><code>lib/core/services/conflict_detector.dart</code></p>
+    <p>Detects time overlaps between events, checks for conflicts, and suggests alternative time slots.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>conflictsFor</code></td><td><code>(String eventId) → List&lt;EventConflict&gt;</code></td><td>Get all conflicts for an event</td></tr>
+      <tr><td><code>wouldConflict</code></td><td><code>(EventModel, List&lt;EventModel&gt;) → bool</code></td><td>Check if a new event would conflict with existing ones</td></tr>
+      <tr><td><code>suggestAlternatives</code></td><td><code>(EventModel, List&lt;EventModel&gt;) → List&lt;DateTime&gt;</code></td><td>Suggest conflict-free time slots</td></tr>
+    </table>
+
+    <h3 id="dependency-tracker">DependencyTracker</h3>
+    <p><code>lib/core/services/dependency_tracker.dart</code></p>
+    <p>Tracks event dependencies (blocked-by, blocks) and computes critical paths through event chains.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addDependency</code></td><td><code>(EventDependency) → void</code></td><td>Register a dependency between two events</td></tr>
+      <tr><td><code>removeDependency</code></td><td><code>(String fromId, String toId) → void</code></td><td>Remove a dependency link</td></tr>
+      <tr><td><code>criticalPath</code></td><td><code>() → CriticalPath</code></td><td>Compute the longest dependency chain</td></tr>
+    </table>
+
+    <h3 id="free-slot-finder">FreeSlotFinder</h3>
+    <p><code>lib/core/services/free_slot_finder.dart</code></p>
+    <p>Identifies free time slots between existing events. Suggests optimal windows for new events based on duration and preferences.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>suggestBestSlots</code></td><td><code>({Duration needed, ...}) → List&lt;FreeSlot&gt;</code></td><td>Find best available slots for a given duration</td></tr>
+      <tr><td><code>slotsForDuration</code></td><td><code>(Duration needed) → List&lt;FreeSlot&gt;</code></td><td>Filter slots that can fit the needed duration</td></tr>
+    </table>
+
+    <h3 id="snooze-service">SnoozeService</h3>
+    <p><code>lib/core/services/snooze_service.dart</code></p>
+    <p>Snooze event reminders with predefined options (15 min, 1 hour, tomorrow, next week). Tracks snooze history per event.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>computeSnoozeDate</code></td><td><code>(EventModel, String optionId) → DateTime?</code></td><td>Calculate when a snoozed event should reappear</td></tr>
+      <tr><td><code>getHistory</code></td><td><code>(String eventId) → List&lt;SnoozeRecord&gt;</code></td><td>Snooze history for an event</td></tr>
+    </table>
+
+    <h3 id="template-service">TemplateService</h3>
+    <p><code>lib/core/services/template_service.dart</code></p>
+    <p>Manage reusable event templates. Ships with built-in templates and supports custom user-created ones.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addTemplate</code></td><td><code>(EventTemplate) → bool</code></td><td>Add a custom template</td></tr>
+      <tr><td><code>search</code></td><td><code>(String query) → List&lt;EventTemplate&gt;</code></td><td>Search templates by title/description</td></tr>
+      <tr><td><code>reorderTemplate</code></td><td><code>(int oldIndex, int newIndex) → bool</code></td><td>Reorder template list</td></tr>
+    </table>
+
+    <h3 id="ics-export-service">IcsExportService</h3>
+    <p><code>lib/core/services/ics_export_service.dart</code></p>
+    <p>Export events to iCalendar (.ics) format with recurrence rules, alarms, and multi-event calendar support.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>exportEvent</code></td><td><code>(EventModel) → String</code></td><td>Export a single event as .ics</td></tr>
+      <tr><td><code>exportEvents</code></td><td><code>(List&lt;EventModel&gt;) → String</code></td><td>Export multiple events as one .ics calendar</td></tr>
+    </table>
+
+    <!-- ─── Time Management ──────────────────────────────────── -->
+    <h2 id="cat-time">⏱️ Time Management</h2>
+
+    <h3 id="focus-time-service">FocusTimeService</h3>
+    <p><code>lib/core/services/focus_time_service.dart</code></p>
+    <p>Track deep focus sessions. Measures fragmentation, daily focus totals, and flow-state streaks.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>todaysFocusBlocks</code></td><td><code>(List&lt;EventModel&gt;) → List&lt;FocusBlock&gt;</code></td><td>Get today's focus blocks from events</td></tr>
+      <tr><td><code>todaysFragmentation</code></td><td><code>(List&lt;EventModel&gt;) → double</code></td><td>0.0 (solid block) to 1.0 (fully fragmented)</td></tr>
+      <tr><td><code>weeklyFocusTrend</code></td><td><code>(...) → List&lt;DailyFocusSummary&gt;</code></td><td>7-day focus trend data</td></tr>
+    </table>
+
+    <h3 id="pomodoro-service">PomodoroService</h3>
+    <p><code>lib/core/services/pomodoro_service.dart</code></p>
+    <p>Pomodoro timer with configurable work/break durations, automatic phase transitions, and session tracking.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>phaseDuration</code></td><td><code>(PomodoroPhase) → int</code></td><td>Duration in minutes for a given phase</td></tr>
+      <tr><td><code>completeCurrentSession</code></td><td><code>() → void</code></td><td>Mark current pomodoro session complete</td></tr>
+      <tr><td><code>reset</code></td><td><code>() → void</code></td><td>Reset timer state</td></tr>
+    </table>
+
+    <h3 id="time-tracker-service">TimeTrackerService</h3>
+    <p><code>lib/core/services/time_tracker_service.dart</code></p>
+    <p>Manual time tracking for projects and tasks with start/stop logging and category breakdowns.</p>
+
+    <h3 id="time-audit-service">TimeAuditService</h3>
+    <p><code>lib/core/services/time_audit_service.dart</code></p>
+    <p>Analyzes how time was spent across categories. Computes category breakdowns, daily summaries, and generates recommendations for better time allocation.</p>
+
+    <h3 id="time-budget-service">TimeBudgetService</h3>
+    <p><code>lib/core/services/time_budget_service.dart</code></p>
+    <p>Set weekly/monthly time budgets per category and track actual vs. budgeted hours.</p>
+
+    <h3 id="daily-timeline-service">DailyTimelineService</h3>
+    <p><code>lib/core/services/daily_timeline_service.dart</code></p>
+    <p>Builds a chronological timeline of the day's events and free gaps. Detects overlaps and renders as text.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>buildTimeline</code></td><td><code>({List&lt;EventModel&gt;, DateTime, ...}) → List&lt;TimelineBlock&gt;</code></td><td>Build blocks for a given day</td></tr>
+      <tr><td><code>formatAsText</code></td><td><code>(List&lt;TimelineBlock&gt;) → String</code></td><td>Render timeline as formatted text</td></tr>
+    </table>
+
+    <h3 id="eisenhower-matrix-service">EisenhowerMatrixService</h3>
+    <p><code>lib/core/services/eisenhower_matrix_service.dart</code></p>
+    <p>Classifies events into the Eisenhower Matrix (urgent/important, urgent/not-important, etc.) with computed urgency and importance scores.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>computeUrgency</code></td><td><code>(EventModel, DateTime now) → double</code></td><td>Score 0–1 based on deadline proximity</td></tr>
+      <tr><td><code>computeImportance</code></td><td><code>(EventModel) → double</code></td><td>Score 0–1 based on priority and metadata</td></tr>
+      <tr><td><code>getRecommendations</code></td><td><code>(MatrixSummary) → List&lt;String&gt;</code></td><td>Actionable advice based on quadrant distribution</td></tr>
+    </table>
+
+    <h3 id="productivity-score-service">ProductivityScoreService</h3>
+    <p><code>lib/core/services/productivity_score_service.dart</code></p>
+    <p>Computes a daily productivity score (0–100) from events, habits, goals, sleep, mood, and focus time with configurable weights.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>scoreEvents</code></td><td><code>(List&lt;EventModel&gt;, DateTime) → double</code></td><td>Event completion sub-score</td></tr>
+      <tr><td><code>scoreHabits</code></td><td><code>(List&lt;Habit&gt;, ...) → double</code></td><td>Habit adherence sub-score</td></tr>
+      <tr><td><code>scoreGoals</code></td><td><code>(List&lt;Goal&gt;, DateTime) → double</code></td><td>Goal progress sub-score</td></tr>
+      <tr><td><code>scoreSleep</code></td><td><code>(List&lt;SleepEntry&gt;, DateTime) → double</code></td><td>Sleep quality sub-score</td></tr>
+      <tr><td><code>scoreFocus</code></td><td><code>(int focusMinutes) → double</code></td><td>Focus time sub-score</td></tr>
+    </table>
+
+    <h3 id="streak-tracker">StreakTracker</h3>
+    <p><code>lib/core/services/streak_tracker.dart</code></p>
+    <p>Tracks consecutive-day streaks for recurring events. Supports current streak, longest streak, and gap detection.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>currentStreakLength</code></td><td><code>(List&lt;EventModel&gt;, {bool includeRecurring}) → int</code></td><td>Current consecutive-day streak</td></tr>
+      <tr><td><code>longestStreakLength</code></td><td><code>(List&lt;EventModel&gt;, {bool includeRecurring}) → int</code></td><td>All-time longest streak</td></tr>
+    </table>
+
+    <!-- ─── Health & Wellness ────────────────────────────────── -->
+    <h2 id="cat-health">🏥 Health &amp; Wellness</h2>
+
+    <h3 id="sleep-tracker-service">SleepTrackerService</h3>
+    <p><code>lib/core/services/sleep_tracker_service.dart</code></p>
+    <p>Tracks sleep entries with duration, quality rating, and notes. Persists to storage and provides date-range queries.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addEntry</code></td><td><code>(SleepEntry) → Future&lt;void&gt;</code></td><td>Log a sleep entry</td></tr>
+      <tr><td><code>entriesForDate</code></td><td><code>(DateTime) → List&lt;SleepEntry&gt;</code></td><td>Sleep entries for a specific date</td></tr>
+      <tr><td><code>averageQuality</code></td><td><code>(DateTime start, DateTime end) → double</code></td><td>Average sleep quality in range</td></tr>
+    </table>
+
+    <h3 id="workout-tracker-service">WorkoutTrackerService</h3>
+    <p><code>lib/core/services/workout_tracker_service.dart</code></p>
+    <p>Log workouts with exercises, sets, reps, and duration. Provides weekly summaries and personal records.</p>
+
+    <h3 id="meditation-tracker-service">MeditationTrackerService</h3>
+    <p><code>lib/core/services/meditation_tracker_service.dart</code></p>
+    <p>Track meditation sessions with type, duration, and mood. Includes config for daily goals and technique preferences.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addSession</code></td><td><code>(MeditationEntry) → void</code></td><td>Log a meditation session</td></tr>
+      <tr><td><code>getSessionsForDate</code></td><td><code>(DateTime) → List&lt;MeditationEntry&gt;</code></td><td>Sessions for a specific date</td></tr>
+      <tr><td><code>currentStreak</code></td><td><code>() → int</code></td><td>Consecutive days with at least one session</td></tr>
+    </table>
+
+    <h3 id="water-tracker-service">WaterTrackerService</h3>
+    <p><code>lib/core/services/water_tracker_service.dart</code></p>
+    <p>Track daily water intake against a configurable goal. Supports multiple entry types (glass, bottle, etc.).</p>
+
+    <h3 id="meal-tracker-service">MealTrackerService</h3>
+    <p><code>lib/core/services/meal_tracker_service.dart</code></p>
+    <p>Log meals with nutritional data, meal type (breakfast/lunch/dinner/snack), and calorie tracking against daily goals.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>getMealsForDate</code></td><td><code>(DateTime) → List&lt;MealEntry&gt;</code></td><td>All meals on a given date</td></tr>
+      <tr><td><code>getMealsByType</code></td><td><code>(MealType) → List&lt;MealEntry&gt;</code></td><td>Filter by meal type</td></tr>
+      <tr><td><code>dailyNutrition</code></td><td><code>(DateTime) → NutritionSummary</code></td><td>Aggregated nutrition for a day</td></tr>
+    </table>
+
+    <h3 id="medication-tracker-service">MedicationTrackerService</h3>
+    <p><code>lib/core/services/medication_tracker_service.dart</code></p>
+    <p>Track medication schedules, dose logging, adherence rates, and streaks. Grades adherence (A–F).</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>adherenceRate</code></td><td><code>(Medication, List&lt;DoseLog&gt;, DateTime from, DateTime to) → double</code></td><td>0.0–1.0 adherence rate in date range</td></tr>
+      <tr><td><code>currentStreak</code></td><td><code>(Medication, List&lt;DoseLog&gt;) → int</code></td><td>Consecutive days with dose logged</td></tr>
+      <tr><td><code>adherenceGrade</code></td><td><code>(double rate) → String</code></td><td>Letter grade (A/B/C/D/F)</td></tr>
+    </table>
+
+    <h3 id="energy-tracker-service">EnergyTrackerService</h3>
+    <p><code>lib/core/services/energy_tracker_service.dart</code></p>
+    <p>Track energy levels throughout the day. Analyzes time-slot patterns, factor impacts, and generates recommendations.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>timeSlotAverages</code></td><td><code>(List&lt;EnergyEntry&gt;) → List&lt;TimeSlotAverage&gt;</code></td><td>Average energy by time of day</td></tr>
+      <tr><td><code>energyBoosters</code></td><td><code>(List&lt;EnergyEntry&gt;) → List&lt;FactorImpact&gt;</code></td><td>Factors that increase energy</td></tr>
+      <tr><td><code>energyDrainers</code></td><td><code>(List&lt;EnergyEntry&gt;) → List&lt;FactorImpact&gt;</code></td><td>Factors that decrease energy</td></tr>
+      <tr><td><code>recommendations</code></td><td><code>(List&lt;EnergyEntry&gt;) → List&lt;EnergyRecommendation&gt;</code></td><td>Personalized energy optimization tips</td></tr>
+    </table>
+
+    <h3 id="mood-journal-service">MoodJournalService</h3>
+    <p><code>lib/core/services/mood_journal_service.dart</code></p>
+    <p>Async-persistent mood journal with CRUD operations. Entries include mood level, tags, and free-text notes.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addEntry</code></td><td><code>(MoodEntry) → Future&lt;void&gt;</code></td><td>Log a mood entry</td></tr>
+      <tr><td><code>entriesForDate</code></td><td><code>(DateTime) → List&lt;MoodEntry&gt;</code></td><td>Entries for a specific date</td></tr>
+      <tr><td><code>averageMood</code></td><td><code>(DateTime start, DateTime end) → double</code></td><td>Average mood in date range</td></tr>
+    </table>
+
+    <!-- ─── Finance ──────────────────────────────────────────── -->
+    <h2 id="cat-finance">💰 Finance</h2>
+
+    <h3 id="expense-tracker-service">ExpenseTrackerService</h3>
+    <p><code>lib/core/services/expense_tracker_service.dart</code></p>
+    <p>Track expenses with categories, budget limits, and period-based summaries. Supports recurring entries and CSV export.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addEntry</code></td><td><code>(ExpenseEntry) → void</code></td><td>Log an expense</td></tr>
+      <tr><td><code>getEntriesInRange</code></td><td><code>(DateTime start, DateTime end) → List&lt;ExpenseEntry&gt;</code></td><td>Expenses in date range</td></tr>
+      <tr><td><code>categoryBreakdown</code></td><td><code>(...) → Map&lt;String, double&gt;</code></td><td>Spending by category</td></tr>
+    </table>
+
+    <h3 id="budget-planner-service">BudgetPlannerService</h3>
+    <p><code>lib/core/services/budget_planner_service.dart</code></p>
+    <p>Set monthly budgets per category. Compares actual vs. budgeted spending with adherence scores and monthly trends.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>getBudgetComparison</code></td><td><code>(int year, int month, ...) → List&lt;BudgetComparison&gt;</code></td><td>Actual vs. budgeted per category</td></tr>
+      <tr><td><code>getOverspendingCategories</code></td><td><code>(...) → List&lt;BudgetComparison&gt;</code></td><td>Categories exceeding budget</td></tr>
+      <tr><td><code>getSavingsRate</code></td><td><code>(List&lt;ExpenseEntry&gt;, int year, int month) → double</code></td><td>Monthly savings rate</td></tr>
+      <tr><td><code>getBudgetAdherenceScore</code></td><td><code>(...) → int</code></td><td>0–100 score of budget compliance</td></tr>
+    </table>
+
+    <h3 id="savings-goal-service">SavingsGoalService</h3>
+    <p><code>lib/core/services/savings_goal_service.dart</code></p>
+    <p>Create savings goals with target amounts and deadlines. Track contributions, monthly savings trends, and import/export as JSON.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addContribution</code></td><td><code>(String goalId, ...) → void</code></td><td>Add a contribution toward a goal</td></tr>
+      <tr><td><code>monthlySavings</code></td><td><code>(int year, int month) → double</code></td><td>Total saved in a month</td></tr>
+      <tr><td><code>savingsHistory</code></td><td><code>({int months}) → List&lt;MonthlySavingsPoint&gt;</code></td><td>Monthly savings trend data</td></tr>
+      <tr><td><code>exportJson / importJson</code></td><td><code>() → String / (String) → void</code></td><td>Full data export/import</td></tr>
+    </table>
+
+    <h3 id="subscription-tracker-service">SubscriptionTrackerService</h3>
+    <p><code>lib/core/services/subscription_tracker_service.dart</code></p>
+    <p>Manage recurring subscriptions with billing cycles, pause/cancel support, and upcoming billing alerts.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>add / update / remove</code></td><td>CRUD operations</td><td>Manage subscription entries</td></tr>
+      <tr><td><code>cancel / pause / resume</code></td><td><code>(String id) → void</code></td><td>Subscription lifecycle control</td></tr>
+      <tr><td><code>monthlyTotal</code></td><td><code>() → double</code></td><td>Total monthly subscription cost</td></tr>
+    </table>
+
+    <!-- ─── Personal Growth ──────────────────────────────────── -->
+    <h2 id="cat-growth">🌱 Personal Growth</h2>
+
+    <h3 id="habit-tracker-service">HabitTrackerService</h3>
+    <p><code>lib/core/services/habit_tracker_service.dart</code></p>
+    <p>Full habit tracking with streaks, archiving, completion logging, and detailed stats (rate, best streak, total completions).</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addHabit / updateHabit</code></td><td>CRUD operations</td><td>Manage habits</td></tr>
+      <tr><td><code>logCompletion</code></td><td><code>(String habitId, DateTime, {String? note}) → void</code></td><td>Mark habit as done for a day</td></tr>
+      <tr><td><code>getStats</code></td><td><code>(String habitId) → HabitStats</code></td><td>Current streak, best streak, completion rate</td></tr>
+    </table>
+
+    <h3 id="skill-tracker-service">SkillTrackerService</h3>
+    <p><code>lib/core/services/skill_tracker_service.dart</code></p>
+    <p>Track skill development with practice sessions, proficiency levels, and progress reports.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>logPractice</code></td><td><code>(String skillId, PracticeSession) → void</code></td><td>Log a practice session</td></tr>
+      <tr><td><code>getReport</code></td><td><code>(String skillId) → SkillReport</code></td><td>Progress report with total hours and trends</td></tr>
+    </table>
+
+    <h3 id="reading-list-service">ReadingListService</h3>
+    <p><code>lib/core/services/reading_list_service.dart</code></p>
+    <p>Manage a reading list with book status (to-read/reading/finished), reading challenges, and progress tracking.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addBook / removeBook / updateBook</code></td><td>CRUD operations</td><td>Manage book list</td></tr>
+      <tr><td><code>setChallenge</code></td><td><code>(ReadingChallenge) → void</code></td><td>Set yearly reading challenge</td></tr>
+      <tr><td><code>readingSpeed</code></td><td><code>() → double</code></td><td>Average pages per day</td></tr>
+    </table>
+
+    <h3 id="gratitude-journal-service">GratitudeJournalService</h3>
+    <p><code>lib/core/services/gratitude_journal_service.dart</code></p>
+    <p>Daily gratitude journal with tagging, favorites, date-range queries, and streak tracking.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addEntry</code></td><td><code>({required String text, ...}) → String</code></td><td>Add a gratitude entry (returns ID)</td></tr>
+      <tr><td><code>toggleFavorite</code></td><td><code>(String id) → bool</code></td><td>Toggle favorite status</td></tr>
+      <tr><td><code>getStreak</code></td><td><code>() → int</code></td><td>Consecutive days with entries</td></tr>
+    </table>
+
+    <h3 id="decision-journal-service">DecisionJournalService</h3>
+    <p><code>lib/core/services/decision_journal_service.dart</code></p>
+    <p>Log decisions with category, importance, expected/actual outcomes, and lessons learned. Search and date-range filtering.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>byCategory</code></td><td><code>(DecisionCategory) → List&lt;DecisionEntry&gt;</code></td><td>Filter by decision category</td></tr>
+      <tr><td><code>search</code></td><td><code>(String query) → List&lt;DecisionEntry&gt;</code></td><td>Search decisions by text</td></tr>
+      <tr><td><code>allLessonsLearned</code></td><td><code>() → List&lt;String&gt;</code></td><td>All recorded lessons across decisions</td></tr>
+    </table>
+
+    <h3 id="daily-review-service">DailyReviewService</h3>
+    <p><code>lib/core/services/daily_review_service.dart</code></p>
+    <p>End-of-day reviews: save accomplishments, plan tomorrow's events, and rate the day.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>saveReview</code></td><td><code>(DailyReview) → void</code></td><td>Save a daily review</td></tr>
+      <tr><td><code>tomorrowEvents</code></td><td><code>(DateTime today) → List&lt;EventModel&gt;</code></td><td>Pre-load tomorrow's schedule for planning</td></tr>
+      <tr><td><code>topAccomplishments</code></td><td><code>(DateTime) → List&lt;EventModel&gt;</code></td><td>Completed events ranked by importance</td></tr>
+    </table>
+
+    <h3 id="goal-tracker-service">GoalTrackerService</h3>
+    <p><code>lib/core/services/goal_tracker_service.dart</code></p>
+    <p>Set long-term goals with milestones, deadlines, and progress tracking. Archive or complete goals.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addGoal / updateGoal / deleteGoal</code></td><td>CRUD operations</td><td>Goal lifecycle management</td></tr>
+      <tr><td><code>toggleMilestone</code></td><td><code>(String goalId, String milestoneId) → void</code></td><td>Mark milestone complete/incomplete</td></tr>
+      <tr><td><code>archiveGoal / completeGoal</code></td><td><code>(String goalId) → void</code></td><td>Archive or mark goal as achieved</td></tr>
+    </table>
+
+    <h3 id="achievement-service">AchievementService</h3>
+    <p><code>lib/core/services/achievement_service.dart</code></p>
+    <p>Gamification system: register achievement definitions, track progress, award badges, and level up.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>register</code></td><td><code>(AchievementDefinition) → bool</code></td><td>Register an achievement type</td></tr>
+      <tr><td><code>updateProgress</code></td><td><code>(String achievementId, int value) → void</code></td><td>Update progress toward achievement</td></tr>
+      <tr><td><code>updateProgressBatch</code></td><td><code>(Map&lt;String, int&gt;) → void</code></td><td>Batch update multiple achievements</td></tr>
+      <tr><td><code>isEarned</code></td><td><code>(String achievementId) → bool</code></td><td>Check if achievement is unlocked</td></tr>
+      <tr><td><code>getAllProgress</code></td><td><code>() → List&lt;AchievementProgress&gt;</code></td><td>Progress for all registered achievements</td></tr>
+    </table>
+
+    <!-- ─── Life Management ──────────────────────────────────── -->
+    <h2 id="cat-life">🏡 Life Management</h2>
+
+    <h3 id="contact-tracker-service">ContactTrackerService</h3>
+    <p><code>lib/core/services/contact_tracker_service.dart</code></p>
+    <p>Track personal and professional contacts with interaction logging, categories, archival, and relationship analytics.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>logInteraction</code></td><td><code>({required String contactId, ...}) → Interaction</code></td><td>Record a contact interaction</td></tr>
+      <tr><td><code>byCategory</code></td><td><code>(RelationshipCategory) → List&lt;Contact&gt;</code></td><td>Filter contacts by category</td></tr>
+      <tr><td><code>archiveContact / unarchiveContact</code></td><td><code>(String id) → void</code></td><td>Archive/restore contacts</td></tr>
+    </table>
+
+    <h3 id="chore-tracker-service">ChoreTrackerService</h3>
+    <p><code>lib/core/services/chore_tracker_service.dart</code></p>
+    <p>Manage household chores with recurrence schedules, overdue detection, streak tracking, and quality ratings.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>isOverdue</code></td><td><code>(Chore, List&lt;ChoreCompletion&gt;) → bool</code></td><td>Check if a chore is overdue</td></tr>
+      <tr><td><code>daysUntilDue</code></td><td><code>(Chore, List&lt;ChoreCompletion&gt;) → int</code></td><td>Days until next due date</td></tr>
+      <tr><td><code>currentStreak</code></td><td><code>(Chore, List&lt;ChoreCompletion&gt;) → int</code></td><td>Consecutive on-time completions</td></tr>
+      <tr><td><code>adherenceRate</code></td><td><code>(...) → double</code></td><td>% of chores completed on time</td></tr>
+    </table>
+
+    <h3 id="pet-care-service">PetCareService</h3>
+    <p><code>lib/core/services/pet_care_service.dart</code></p>
+    <p>Track pet care activities (feeding, walks, vet visits), health records, costs, and overdue checkups.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>todayEntries</code></td><td><code>(List&lt;CareEntry&gt;, String petId) → List&lt;CareEntry&gt;</code></td><td>Today's care entries for a pet</td></tr>
+      <tr><td><code>careStreak</code></td><td><code>(List&lt;CareEntry&gt;, String petId) → int</code></td><td>Consecutive days with care logged</td></tr>
+      <tr><td><code>overdueRecords</code></td><td><code>(List&lt;HealthRecord&gt;, String petId) → List&lt;HealthRecord&gt;</code></td><td>Overdue health checkups</td></tr>
+      <tr><td><code>totalCost</code></td><td><code>(List&lt;CareEntry&gt;, String petId) → double</code></td><td>Total care spending for a pet</td></tr>
+    </table>
+
+    <h3 id="plant-care-service">PlantCareService</h3>
+    <p><code>lib/core/services/plant_care_service.dart</code></p>
+    <p>Track plant care with watering schedules, care logs, and last-watered dates.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addPlant / removePlant</code></td><td>CRUD operations</td><td>Manage plant inventory</td></tr>
+      <tr><td><code>getCareLog</code></td><td><code>(String plantId, {int? limit}) → List&lt;PlantCareEntry&gt;</code></td><td>Care history for a plant</td></tr>
+      <tr><td><code>getLastWatered</code></td><td><code>(String plantId) → DateTime?</code></td><td>Last watering date</td></tr>
+    </table>
+
+    <h3 id="screen-time-tracker-service">ScreenTimeTrackerService</h3>
+    <p><code>lib/core/services/screen_time_tracker_service.dart</code></p>
+    <p>Track screen time by app/category. Set daily goals and per-app/category limits with alert generation.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addEntry</code></td><td><code>(ScreenTimeEntry) → void</code></td><td>Log screen time</td></tr>
+      <tr><td><code>setDailyGoal</code></td><td><code>(int minutes) → void</code></td><td>Set max daily screen time</td></tr>
+      <tr><td><code>addLimit / removeLimit</code></td><td><code>({String? appName, AppCategory?}) → void</code></td><td>Per-app or per-category limits</td></tr>
+    </table>
+
+    <h3 id="routine-builder-service">RoutineBuilderService</h3>
+    <p><code>lib/core/services/routine_builder_service.dart</code></p>
+    <p>Build daily routines with ordered steps. Schedule routines for specific days and track completion runs.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addRoutine / updateRoutine / removeRoutine</code></td><td>CRUD operations</td><td>Manage routines</td></tr>
+      <tr><td><code>getRoutinesForDate</code></td><td><code>(DateTime) → List&lt;Routine&gt;</code></td><td>Routines scheduled for a date</td></tr>
+      <tr><td><code>getTotalMinutesForDate</code></td><td><code>(DateTime) → int</code></td><td>Total routine time for a date</td></tr>
+    </table>
+
+    <!-- ─── Planning & Analytics ─────────────────────────────── -->
+    <h2 id="cat-planning">📊 Planning &amp; Analytics</h2>
+
+    <h3 id="agenda-digest-service">AgendaDigestService</h3>
+    <p><code>lib/core/services/agenda_digest_service.dart</code></p>
+    <p>Generates daily/weekly agenda digests from events. Outputs as plain text or Markdown, sorted by priority.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>formatText</code></td><td><code>(AgendaDigest) → String</code></td><td>Plain text agenda</td></tr>
+      <tr><td><code>formatMarkdown</code></td><td><code>(AgendaDigest) → String</code></td><td>Markdown-formatted agenda</td></tr>
+    </table>
+
+    <h3 id="weekly-planner-service">WeeklyPlannerService</h3>
+    <p><code>lib/core/services/weekly_planner_service.dart</code></p>
+    <p>Plan weekly goals and tasks across days with drag-and-drop reordering and completion tracking.</p>
+
+    <h3 id="weekly-report-service">WeeklyReportService</h3>
+    <p><code>lib/core/services/weekly_report_service.dart</code></p>
+    <p>Generate weekly summary reports: events completed, habits tracked, goals progressed, and overall productivity trends.</p>
+
+    <h3 id="heatmap-service">HeatmapService</h3>
+    <p><code>lib/core/services/heatmap_service.dart</code></p>
+    <p>Generates activity heatmap data (GitHub contribution graph style). Configurable intensity thresholds per data type.</p>
+
+    <h3 id="life-dashboard-service">LifeDashboardService</h3>
+    <p><code>lib/core/services/life_dashboard_service.dart</code></p>
+    <p>Aggregates data across all domains (health, finance, productivity, relationships) into a single life dashboard with dimension scores and trend history.</p>
+
+    <h3 id="correlation-analyzer-service">CorrelationAnalyzerService</h3>
+    <p><code>lib/core/services/correlation_analyzer_service.dart</code></p>
+    <p>Statistical analysis: computes Pearson correlations between life metrics (sleep vs. mood, exercise vs. productivity, etc.) and generates plain-English insights.</p>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>buildSnapshots</code></td><td><code>({...}) → List&lt;DailySnapshot&gt;</code></td><td>Aggregate daily metrics from all trackers</td></tr>
+      <tr><td><code>analyze</code></td><td><code>(List&lt;DailySnapshot&gt;) → List&lt;Correlation&gt;</code></td><td>Compute Pearson correlations between metrics</td></tr>
+    </table>
+
+    <!-- ─── Core Infrastructure ──────────────────────────────── -->
+    <h2 id="cat-core">⚙️ Core Infrastructure</h2>
+
+    <h3 id="secure-storage-service">SecureStorageService</h3>
+    <p><code>lib/core/services/secure_storage_service.dart</code></p>
+    <p>Wrapper around platform secure storage for sensitive data (tokens, credentials). Provides a simple key-value API.</p>
 
     <div class="docs-footer">
       <p>📱 Everything App Documentation · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a></p>
