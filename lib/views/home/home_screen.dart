@@ -44,6 +44,7 @@ import 'chore_tracker_screen.dart';
 import 'time_budget_screen.dart';
 import 'travel_log_screen.dart';
 import 'bucket_list_screen.dart';
+import 'wishlist_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -705,6 +706,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Bucket list',
+          ),
+          // Wishlist button
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WishlistScreen()),
+              );
+            },
+            tooltip: 'Wishlist',
           ),
           // Sort button
           IconButton(
