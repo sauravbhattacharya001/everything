@@ -33,6 +33,7 @@ import 'screen_time_tracker_screen.dart';
 import 'routine_builder_screen.dart';
 import 'life_dashboard_screen.dart';
 import 'pet_care_tracker_screen.dart';
+import 'plant_care_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -584,6 +585,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Pet care tracker',
+          ),
+          // Plant care tracker button
+          IconButton(
+            icon: const Icon(Icons.local_florist),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PlantCareTrackerScreen()),
+              );
+            },
+            tooltip: 'Plant care tracker',
           ),
           // Sort button
           IconButton(
