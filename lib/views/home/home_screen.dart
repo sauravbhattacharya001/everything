@@ -39,6 +39,7 @@ import 'savings_goal_screen.dart';
 import 'budget_planner_screen.dart';
 import 'focus_time_screen.dart';
 import 'weekly_planner_screen.dart';
+import 'chore_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -650,6 +651,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Weekly planner',
+          ),
+          // Chore tracker button
+          IconButton(
+            icon: const Icon(Icons.cleaning_services),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ChoreTrackerScreen()),
+              );
+            },
+            tooltip: 'Chore tracker',
           ),
           // Sort button
           IconButton(
