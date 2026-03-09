@@ -37,6 +37,7 @@ import 'pet_care_tracker_screen.dart';
 import 'plant_care_tracker_screen.dart';
 import 'savings_goal_screen.dart';
 import 'budget_planner_screen.dart';
+import 'focus_time_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -628,6 +629,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Budget planner',
+          ),
+          // Focus time button
+          IconButton(
+            icon: const Icon(Icons.center_focus_strong),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const FocusTimeScreen()),
+              );
+            },
+            tooltip: 'Focus time',
           ),
           // Sort button
           IconButton(
