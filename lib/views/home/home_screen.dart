@@ -43,6 +43,7 @@ import 'weekly_planner_screen.dart';
 import 'chore_tracker_screen.dart';
 import 'time_budget_screen.dart';
 import 'travel_log_screen.dart';
+import 'bucket_list_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -694,6 +695,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Travel log',
+          ),
+          // Bucket list button
+          IconButton(
+            icon: const Icon(Icons.format_list_bulleted_add),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BucketListScreen()),
+              );
+            },
+            tooltip: 'Bucket list',
           ),
           // Sort button
           IconButton(
