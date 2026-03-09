@@ -42,6 +42,7 @@ import 'focus_time_screen.dart';
 import 'weekly_planner_screen.dart';
 import 'chore_tracker_screen.dart';
 import 'time_budget_screen.dart';
+import 'travel_log_screen.dart';
 import '../widgets/next_up_banner.dart';
 
 /// Sort criteria for the event list.
@@ -684,6 +685,16 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             tooltip: 'Time budget',
           ),
+          // Travel log button
+          IconButton(
+            icon: const Icon(Icons.flight),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const TravelLogScreen()),
+              );
+            },
+            tooltip: 'Travel log',
+          ),
           // Sort button
           IconButton(
             icon: const Icon(Icons.sort),
@@ -1049,3 +1060,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
