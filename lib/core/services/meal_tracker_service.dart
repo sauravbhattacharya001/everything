@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/meal_entry.dart';
 
 /// Nutrition goals configuration.
@@ -230,9 +231,41 @@ class MealTrackerService {
   final List<MealEntry> _entries = [];
   NutritionConfig _config;
   int _nextId = 1;
+  bool _initialized = false;
+
+  static const String _storageKey = 'meal_tracker_entries';
+  static const String _idKey = 'meal_tracker_next_id';
 
   MealTrackerService({NutritionConfig? config})
       : _config = config ?? const NutritionConfig();
+
+  /// Load entries from local storage.
+  Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data) as List;
+        _entries.addAll(
+          decoded.map((e) => MealEntry.fromJson(e as Map<String, dynamic>)),
+        );
+      } catch (_) {}
+    }
+
+    _nextId = prefs.getInt(_idKey) ?? (_entries.length + 1);
+    _initialized = true;
+  }
+
+  Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(_entries.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setInt(_idKey, _nextId);
+  }
 
   NutritionConfig get config => _config;
 
@@ -272,6 +305,7 @@ class MealTrackerService {
       tags: tags,
     );
     _entries.add(entry);
+    _save();
     return entry;
   }
 
@@ -286,7 +320,11 @@ class MealTrackerService {
   bool removeMeal(String id) {
     final len = _entries.length;
     _entries.removeWhere((e) => e.id == id);
-    return _entries.length < len;
+    if (_entries.length < len) {
+      _save();
+      return true;
+    }
+    return false;
   }
 
   MealEntry? updateMeal(String id, {

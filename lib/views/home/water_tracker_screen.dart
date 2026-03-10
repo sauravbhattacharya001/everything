@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' show pi;
+import '../../core/services/tracker_persistence.dart';
 import '../../core/services/water_tracker_service.dart';
 import '../../models/water_entry.dart';
 
@@ -19,11 +20,40 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
   final List<WaterEntry> _entries = [];
   DrinkType _selectedDrink = DrinkType.water;
   int _nextId = 1;
+  bool _loaded = false;
+
+  static const _storageKey = 'water_tracker_entries';
+  static const _idKey = 'water_tracker_next_id';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final entries = await TrackerPersistence.loadList(
+      _storageKey,
+      WaterEntry.fromJson,
+    );
+    final nextId = await TrackerPersistence.loadInt(_idKey);
+    if (mounted) {
+      setState(() {
+        _entries.addAll(entries);
+        _nextId = nextId;
+        _loaded = true;
+      });
+    }
+  }
+
+  Future<void> _saveEntries() async {
+    await TrackerPersistence.saveList(
+      _storageKey,
+      _entries,
+      (e) => e.toJson(),
+    );
+    await TrackerPersistence.saveInt(_idKey, _nextId);
   }
 
   @override
@@ -42,6 +72,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
         containerSize: size,
       ));
     });
+    _saveEntries();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${_selectedDrink.emoji} +${ml}ml logged'),
@@ -54,6 +85,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
   void _removeEntry(int index) {
     final entry = _entries[index];
     setState(() => _entries.removeAt(index));
+    _saveEntries();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed ${entry.amountMl}ml ${entry.drinkType.label}'),
@@ -63,6 +95,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
           label: 'Undo',
           onPressed: () {
             setState(() => _entries.insert(index, entry));
+            _saveEntries();
           },
         ),
       ),

@@ -25,6 +25,9 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen>
       completions: [],
     );
     _tabController = TabController(length: 2, vsync: this);
+    _service.init().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override

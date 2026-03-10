@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/expense_entry.dart';
 
 /// Configuration for expense tracking budgets.
@@ -237,9 +238,51 @@ class ExpenseReport {
 class ExpenseTrackerService {
   final List<ExpenseEntry> _entries = [];
   BudgetConfig _config;
+  bool _initialized = false;
+
+  static const String _storageKey = 'expense_tracker_entries';
+  static const String _configKey = 'expense_tracker_config';
 
   ExpenseTrackerService({BudgetConfig? config})
       : _config = config ?? const BudgetConfig();
+
+  /// Load entries and config from local storage.
+  Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data) as List;
+        _entries.addAll(
+          decoded.map((e) => ExpenseEntry.fromJson(e as Map<String, dynamic>)),
+        );
+      } catch (_) {}
+    }
+
+    final configData = prefs.getString(_configKey);
+    if (configData != null && configData.isNotEmpty) {
+      try {
+        _config = BudgetConfig.fromJson(
+          jsonDecode(configData) as Map<String, dynamic>,
+        );
+      } catch (_) {}
+    }
+
+    _initialized = true;
+  }
+
+  Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(_entries.map((e) => e.toJson()).toList());
+    await prefs.setString(_storageKey, encoded);
+  }
+
+  Future<void> _saveConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_configKey, jsonEncode(_config.toJson()));
+  }
 
   // --- Config ---
 
@@ -247,6 +290,7 @@ class ExpenseTrackerService {
 
   void updateConfig(BudgetConfig config) {
     _config = config;
+    _saveConfig();
   }
 
   // --- CRUD ---
@@ -255,16 +299,19 @@ class ExpenseTrackerService {
 
   void addEntry(ExpenseEntry entry) {
     _entries.add(entry);
+    _save();
   }
 
   void addEntries(List<ExpenseEntry> entries) {
     _entries.addAll(entries);
+    _save();
   }
 
   bool removeEntry(String id) {
     final idx = _entries.indexWhere((e) => e.id == id);
     if (idx < 0) return false;
     _entries.removeAt(idx);
+    _save();
     return true;
   }
 
