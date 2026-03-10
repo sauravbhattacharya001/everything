@@ -28,6 +28,7 @@ import '../home/weekly_planner_screen.dart';
 import '../home/expense_tracker_screen.dart';
 import '../home/subscription_tracker_screen.dart';
 import '../home/savings_goal_screen.dart';
+import '../home/net_worth_tracker_screen.dart';
 import '../home/budget_planner_screen.dart';
 import '../home/contact_tracker_screen.dart';
 import '../home/gratitude_journal_screen.dart';
@@ -113,6 +114,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     'nav_expenses': () => ExpenseTrackerScreen(),
     'nav_subscriptions': () => SubscriptionTrackerScreen(),
     'nav_savings': () => SavingsGoalScreen(),
+    'nav_net_worth': () => NetWorthTrackerScreen(),
     'nav_budget': () => BudgetPlannerScreen(),
     'nav_contacts': () => ContactTrackerScreen(),
     'nav_gratitude': () => GratitudeJournalScreen(),

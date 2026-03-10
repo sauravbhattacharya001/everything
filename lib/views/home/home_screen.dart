@@ -48,6 +48,7 @@ import 'wishlist_screen.dart';
 import 'quick_capture_screen.dart';
 import 'quick_capture_screen.dart';
 import 'gift_tracker_screen.dart';
+import 'net_worth_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -626,6 +627,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Savings goals',
+          ),
+          // Net worth tracker button
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NetWorthTrackerScreen()),
+              );
+            },
+            tooltip: 'Net worth tracker',
           ),
           // Commute tracker button
           IconButton(
