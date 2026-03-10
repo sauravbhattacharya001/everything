@@ -21,6 +21,9 @@ class _MealTrackerScreenState extends State<MealTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _service.init().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override

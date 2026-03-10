@@ -10,6 +10,8 @@
 /// - Weekly summary with per-habit breakdown
 /// - Habit archiving (soft delete)
 
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/habit.dart';
 
 /// Stats for a single habit over a date range.
@@ -98,12 +100,56 @@ class WeeklyHabitSummary {
 class HabitTrackerService {
   final List<Habit> _habits;
   final List<HabitCompletion> _completions;
+  bool _initialized = false;
+
+  static const String _habitsKey = 'habit_tracker_habits';
+  static const String _completionsKey = 'habit_tracker_completions';
 
   HabitTrackerService({
     List<Habit>? habits,
     List<HabitCompletion>? completions,
   })  : _habits = habits ?? [],
         _completions = completions ?? [];
+
+  /// Load habits and completions from local storage.
+  Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+
+    final habitsData = prefs.getString(_habitsKey);
+    if (habitsData != null && habitsData.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(habitsData) as List;
+        _habits.addAll(
+          decoded.map((e) => Habit.fromJson(e as Map<String, dynamic>)),
+        );
+      } catch (_) {}
+    }
+
+    final compData = prefs.getString(_completionsKey);
+    if (compData != null && compData.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(compData) as List;
+        _completions.addAll(
+          decoded.map((e) => HabitCompletion.fromJson(e as Map<String, dynamic>)),
+        );
+      } catch (_) {}
+    }
+
+    _initialized = true;
+  }
+
+  Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _habitsKey,
+      jsonEncode(_habits.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setString(
+      _completionsKey,
+      jsonEncode(_completions.map((e) => e.toJson()).toList()),
+    );
+  }
 
   /// All active habits.
   List<Habit> get activeHabits =>
@@ -123,6 +169,7 @@ class HabitTrackerService {
       throw ArgumentError('Habit with id "${habit.id}" already exists');
     }
     _habits.add(habit);
+    _save();
   }
 
   /// Update an existing habit.
@@ -132,6 +179,7 @@ class HabitTrackerService {
       throw ArgumentError('Habit "${updated.id}" not found');
     }
     _habits[idx] = updated;
+    _save();
   }
 
   /// Archive a habit (soft delete).
@@ -139,6 +187,7 @@ class HabitTrackerService {
     final idx = _habits.indexWhere((h) => h.id == habitId);
     if (idx == -1) return;
     _habits[idx] = _habits[idx].copyWith(isActive: false);
+    _save();
   }
 
   // ── Completion Logging ────────────────────────────────────────────
@@ -166,6 +215,7 @@ class HabitTrackerService {
         note: note,
       ));
     }
+    _save();
   }
 
   /// Remove a completion entry for a habit on a specific date.
@@ -174,6 +224,7 @@ class HabitTrackerService {
     _completions.removeWhere(
       (c) => c.habitId == habitId && _dateOnly(c.date) == d,
     );
+    _save();
   }
 
   /// Get completions for a habit in a date range.

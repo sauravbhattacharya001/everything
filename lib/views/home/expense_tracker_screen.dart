@@ -22,6 +22,9 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _service.init().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
