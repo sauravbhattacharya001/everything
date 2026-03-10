@@ -45,6 +45,8 @@ import 'time_budget_screen.dart';
 import 'travel_log_screen.dart';
 import 'bucket_list_screen.dart';
 import 'wishlist_screen.dart';
+import 'quick_capture_screen.dart';
+import 'quick_capture_screen.dart';
 import 'gift_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
@@ -724,6 +726,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Gift tracker',
+          ),
+          // Quick Capture inbox
+          IconButton(
+            icon: const Icon(Icons.inbox_outlined),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const QuickCaptureScreen()),
+              );
+            },
+            tooltip: 'Quick Capture',
           ),
           // Wishlist button
           IconButton(
