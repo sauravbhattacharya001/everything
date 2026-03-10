@@ -47,6 +47,7 @@ import 'bucket_list_screen.dart';
 import 'wishlist_screen.dart';
 import 'gift_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
+import '../widgets/command_palette_overlay.dart';
 
 /// Sort criteria for the event list.
 enum EventSortBy {
@@ -338,6 +339,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('My Events'),
         elevation: 0,
         actions: [
+          // Command palette (spotlight search)
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => CommandPaletteOverlay.show(context),
+            tooltip: 'Command Palette',
+          ),
           // Agenda timeline button
           IconButton(
             icon: const Icon(Icons.view_timeline),
