@@ -159,6 +159,8 @@ class CommandPaletteService {
           ['medicine', 'pills', 'health']),
       _nav('nav_commute', 'Commute Tracker', Icons.directions_car, 'Personal',
           ['travel', 'drive', 'commute']),
+      _nav('nav_vehicle', 'Vehicle Maintenance', Icons.build_circle, 'Personal',
+          ['car', 'vehicle', 'maintenance', 'oil', 'service']),
 
       // ── Lists ──────────────────────────────────────────────────
       _nav('nav_bucket_list', 'Bucket List', Icons.checklist, 'Lists',
