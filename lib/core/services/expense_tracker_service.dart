@@ -386,16 +386,42 @@ class ExpenseTrackerService {
           (byPayment[e.paymentMethod] ?? 0) + e.amount;
     }
 
-    // Daily summaries for the month
+    // Daily summaries — pre-group entries by day to avoid O(days * entries)
+    // rescanning.  Previous code called getDailySummary() per day, each of
+    // which scanned the full entry list via getEntriesForDate().
     final daysInMonth = DateTime(year, month + 1, 0).day;
+    final dayBuckets = <int, List<ExpenseEntry>>{};
+    for (final e in monthEntries) {
+      dayBuckets.putIfAbsent(e.timestamp.day, () => []).add(e);
+    }
     final dailySummaries = <DailyExpenseSummary>[];
     int daysWithData = 0;
     for (int d = 1; d <= daysInMonth; d++) {
       final date = DateTime(year, month, d);
       if (date.isAfter(DateTime.now())) break;
-      final summary = getDailySummary(date);
-      dailySummaries.add(summary);
-      if (summary.transactionCount > 0) daysWithData++;
+      final dayEntries = dayBuckets[d] ?? [];
+      double daySpent = 0;
+      double dayIncome = 0;
+      final dayCat = <ExpenseCategory, double>{};
+      final dayPay = <PaymentMethod, double>{};
+      for (final e in dayEntries) {
+        if (e.category.isIncome) {
+          dayIncome += e.amount;
+        } else {
+          daySpent += e.amount;
+        }
+        dayCat[e.category] = (dayCat[e.category] ?? 0) + e.amount;
+        dayPay[e.paymentMethod] = (dayPay[e.paymentMethod] ?? 0) + e.amount;
+      }
+      dailySummaries.add(DailyExpenseSummary(
+        date: date,
+        totalSpent: daySpent,
+        totalIncome: dayIncome,
+        transactionCount: dayEntries.length,
+        byCategory: dayCat,
+        byPaymentMethod: dayPay,
+      ));
+      if (dayEntries.isNotEmpty) daysWithData++;
     }
 
     final avgDaily =
