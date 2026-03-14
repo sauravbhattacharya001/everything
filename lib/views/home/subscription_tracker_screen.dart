@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/subscription_tracker_service.dart';
 import '../../models/subscription_entry.dart';
 
@@ -14,6 +15,7 @@ class SubscriptionTrackerScreen extends StatefulWidget {
 
 class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'subscription_tracker_data';
   final SubscriptionTrackerService _service = SubscriptionTrackerService();
   late TabController _tabController;
   SubscriptionCategory? _filterCategory;
@@ -25,7 +27,26 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.loadFromJson(json);
+        _nextId = _service.subscriptions.length + 1;
+        setState(() {});
+        return;
+      } catch (_) {}
+    }
     _loadSampleData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.toJson());
   }
 
   @override
@@ -329,6 +350,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
       }
     });
     if (action != 'edit') {
+      _saveData();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${sub.name}: $action'),
@@ -837,6 +859,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
                     ));
                   }
                 });
+                _saveData();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
