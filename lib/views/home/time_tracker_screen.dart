@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../core/services/screen_persistence.dart';
 import '../../core/services/time_tracker_service.dart';
 import '../../models/time_entry.dart';
 
@@ -15,6 +16,11 @@ class TimeTrackerScreen extends StatefulWidget {
 class _TimeTrackerScreenState extends State<TimeTrackerScreen>
     with SingleTickerProviderStateMixin {
   final TimeTrackerService _service = const TimeTrackerService();
+  final _persistence = ScreenPersistence<TimeEntry>(
+    storageKey: 'time_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: TimeEntry.fromJson,
+  );
   late TabController _tabController;
   final List<TimeEntry> _entries = [];
   int _nextId = 1;
@@ -28,6 +34,17 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_entries.any((e) => e.isRunning)) setState(() {});
     });
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        _nextId = _entries.length + 1;
+      });
+    }
   }
 
   @override
@@ -56,6 +73,7 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
         notes: notes,
       ));
     });
+    _persistence.save(_entries);
   }
 
   void _stopActiveTimer() {
@@ -67,11 +85,13 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
           _entries[idx] = active.copyWith(endTime: DateTime.now());
         }
       });
+      _persistence.save(_entries);
     }
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _persistence.save(_entries);
   }
 
   void _showNewEntryDialog() {
@@ -134,6 +154,7 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
               if (a.isEmpty || m <= 0) return;
               final end = DateTime.now();
               setState(() => _entries.add(TimeEntry(id: 't${_nextId++}', activity: a, category: cat, startTime: end.subtract(Duration(minutes: m)), endTime: end)));
+              _persistence.save(_entries);
               Navigator.pop(ctx);
             }, child: const Text('Log')),
           ],

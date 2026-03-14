@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/grocery_list_service.dart';
 import '../../models/grocery_item.dart';
 
@@ -16,12 +17,31 @@ class _GroceryListScreenState extends State<GroceryListScreen>
   late final GroceryListService _service;
   late TabController _tabController;
   String? _selectedListId;
+  static const _storageKey = 'grocery_list_data';
 
   @override
   void initState() {
     super.initState();
     _service = GroceryListService();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(_storageKey);
+      if (data != null && data.isNotEmpty) {
+        setState(() => _service.importFromJson(data));
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_storageKey, _service.exportToJson());
+    } catch (_) {}
   }
 
   @override
@@ -56,6 +76,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   final list = _service.createList(controller.text.trim());
                   _selectedListId = list.id;
                 });
+                _saveData();
                 Navigator.pop(ctx);
               }
             },
@@ -205,6 +226,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                       estimatedPrice: double.tryParse(priceController.text),
                     );
                   });
+                  _saveData();
                   Navigator.pop(ctx);
                 }
               },
@@ -242,15 +264,18 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                 switch (action) {
                   case 'clear_checked':
                     setState(() => _service.clearChecked(_selectedListId!));
+                    _saveData();
                     break;
                   case 'duplicate':
                     setState(() => _service.duplicateList(_selectedListId!));
+                    _saveData();
                     break;
                   case 'archive':
                     setState(() {
                       _service.toggleArchive(_selectedListId!);
                       _selectedListId = null;
                     });
+                    _saveData();
                     break;
                 }
               },
@@ -402,6 +427,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   title: Text(isArchived ? 'Unarchive' : 'Archive'),
                   onTap: () {
                     setState(() => _service.toggleArchive(list.id));
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -410,6 +436,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   title: const Text('Duplicate'),
                   onTap: () {
                     setState(() => _service.duplicateList(list.id));
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -422,6 +449,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                       _service.deleteList(list.id);
                       if (_selectedListId == list.id) _selectedListId = null;
                     });
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -544,12 +572,14 @@ class _GroceryListScreenState extends State<GroceryListScreen>
       ),
       onDismissed: (_) {
         setState(() => _service.removeItem(listId, item.id));
+      _saveData();
       },
       child: ListTile(
         leading: Checkbox(
           value: item.isChecked,
           onChanged: (_) {
             setState(() => _service.toggleItem(listId, item.id));
+      _saveData();
           },
         ),
         title: Text(
