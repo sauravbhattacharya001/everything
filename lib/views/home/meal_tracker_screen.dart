@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/meal_tracker_service.dart';
 import '../../models/meal_entry.dart';
 
@@ -13,7 +15,8 @@ class MealTrackerScreen extends StatefulWidget {
 
 class _MealTrackerScreenState extends State<MealTrackerScreen>
     with SingleTickerProviderStateMixin {
-  final MealTrackerService _service = MealTrackerService();
+  static const _storageKey = 'meal_tracker_data';
+  MealTrackerService _service = MealTrackerService();
   late TabController _tabController;
   DateTime _selectedDate = DateTime.now();
 
@@ -21,6 +24,25 @@ class _MealTrackerScreenState extends State<MealTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        setState(() {
+          _service = MealTrackerService.fromJson(
+              jsonDecode(json) as Map<String, dynamic>);
+        });
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(_service.toJson()));
   }
 
   @override
@@ -49,12 +71,12 @@ class _MealTrackerScreenState extends State<MealTrackerScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _LogMealTab(service: _service, onAdded: () => setState(() {})),
+          _LogMealTab(service: _service, onAdded: () { setState(() {}); _saveData(); }),
           _DailyMealsTab(
             service: _service,
             date: _selectedDate,
             onDateChanged: (d) => setState(() => _selectedDate = d),
-            onChanged: () => setState(() {}),
+            onChanged: () { setState(() {}); _saveData(); },
           ),
           _NutritionTab(service: _service, date: _selectedDate),
           _InsightsTab(service: _service),

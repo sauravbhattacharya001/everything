@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/gratitude_journal_service.dart';
 import '../../models/gratitude_entry.dart';
 
@@ -13,6 +14,7 @@ class GratitudeJournalScreen extends StatefulWidget {
 
 class _GratitudeJournalScreenState extends State<GratitudeJournalScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'gratitude_journal_data';
   final GratitudeJournalService _service = GratitudeJournalService();
   late TabController _tabController;
 
@@ -20,6 +22,23 @@ class _GratitudeJournalScreenState extends State<GratitudeJournalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.importFromJson(json);
+        setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
   }
 
   @override
@@ -47,9 +66,9 @@ class _GratitudeJournalScreenState extends State<GratitudeJournalScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _LogTab(service: _service, onLogged: () => setState(() {})),
-          _JournalTab(service: _service, onChanged: () => setState(() {})),
-          _FavoritesTab(service: _service, onChanged: () => setState(() {})),
+          _LogTab(service: _service, onLogged: () { setState(() {}); _saveData(); }),
+          _JournalTab(service: _service, onChanged: () { setState(() {}); _saveData(); }),
+          _FavoritesTab(service: _service, onChanged: () { setState(() {}); _saveData(); }),
           _InsightsTab(service: _service),
         ],
       ),

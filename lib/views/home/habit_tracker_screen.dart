@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/habit_tracker_service.dart';
 import '../../models/habit.dart';
 
@@ -13,7 +15,9 @@ class HabitTrackerScreen extends StatefulWidget {
 
 class _HabitTrackerScreenState extends State<HabitTrackerScreen>
     with SingleTickerProviderStateMixin {
-  late final HabitTrackerService _service;
+  static const _habitsKey = 'habit_tracker_habits';
+  static const _completionsKey = 'habit_tracker_completions';
+  late HabitTrackerService _service;
   late TabController _tabController;
   DateTime _selectedDate = DateTime.now();
 
@@ -25,6 +29,38 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen>
       completions: [],
     );
     _tabController = TabController(length: 2, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final habitsJson = prefs.getString(_habitsKey);
+    final completionsJson = prefs.getString(_completionsKey);
+    if (habitsJson != null && habitsJson.isNotEmpty) {
+      try {
+        final habits = (jsonDecode(habitsJson) as List)
+            .map((e) => Habit.fromJson(e as Map<String, dynamic>))
+            .toList();
+        final completions = completionsJson != null && completionsJson.isNotEmpty
+            ? (jsonDecode(completionsJson) as List)
+                .map((e) => HabitCompletion.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : <HabitCompletion>[];
+        setState(() {
+          _service = HabitTrackerService(habits: habits, completions: completions);
+        });
+      } catch (_) {
+        // Keep sample data on parse error.
+      }
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_habitsKey,
+        jsonEncode(_service.allHabits.map((h) => h.toJson()).toList()));
+    await prefs.setString(_completionsKey,
+        jsonEncode(_service.completions.map((c) => c.toJson()).toList()));
   }
 
   @override
@@ -74,6 +110,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen>
         }
       }
     });
+    _saveData();
   }
 
   void _changeDate(int delta) {
@@ -177,6 +214,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen>
                     createdAt: DateTime.now(),
                   ));
                 });
+                _saveData();
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),

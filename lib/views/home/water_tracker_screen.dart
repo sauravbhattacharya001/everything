@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' show pi;
+import '../../core/services/screen_persistence.dart';
 import '../../core/services/water_tracker_service.dart';
 import '../../models/water_entry.dart';
 
@@ -15,6 +16,11 @@ class WaterTrackerScreen extends StatefulWidget {
 class _WaterTrackerScreenState extends State<WaterTrackerScreen>
     with SingleTickerProviderStateMixin {
   final WaterTrackerService _service = const WaterTrackerService();
+  final _persistence = ScreenPersistence<WaterEntry>(
+    storageKey: 'water_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: WaterEntry.fromJson,
+  );
   late TabController _tabController;
   final List<WaterEntry> _entries = [];
   DrinkType _selectedDrink = DrinkType.water;
@@ -24,6 +30,17 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        _nextId = _entries.length + 1;
+      });
+    }
   }
 
   @override
@@ -42,6 +59,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
         containerSize: size,
       ));
     });
+    _persistence.save(_entries);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${_selectedDrink.emoji} +${ml}ml logged'),
@@ -54,6 +72,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
   void _removeEntry(int index) {
     final entry = _entries[index];
     setState(() => _entries.removeAt(index));
+    _persistence.save(_entries);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed ${entry.amountMl}ml ${entry.drinkType.label}'),

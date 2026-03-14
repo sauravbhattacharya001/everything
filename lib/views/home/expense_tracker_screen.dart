@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/expense_tracker_service.dart';
 import '../../models/expense_entry.dart';
 
@@ -13,6 +14,7 @@ class ExpenseTrackerScreen extends StatefulWidget {
 
 class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'expense_tracker_data';
   final ExpenseTrackerService _service = ExpenseTrackerService();
   late TabController _tabController;
   int _selectedYear = DateTime.now().year;
@@ -22,6 +24,23 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.importFromJson(json);
+        setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
   }
 
   @override
@@ -48,8 +67,8 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _LogTab(service: _service, onAdded: () => setState(() {})),
-          _HistoryTab(service: _service, onChanged: () => setState(() {})),
+          _LogTab(service: _service, onAdded: () { setState(() {}); _saveData(); }),
+          _HistoryTab(service: _service, onChanged: () { setState(() {}); _saveData(); }),
           _SummaryTab(
             service: _service,
             year: _selectedYear,
