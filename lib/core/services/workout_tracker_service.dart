@@ -650,27 +650,40 @@ class WorkoutTrackerService {
   // ── Full Report ──
 
   WorkoutReport generateReport() {
-    final totalMinutes = _workouts
-        .where((w) => w.durationMinutes != null)
-        .fold<int>(0, (sum, w) => sum + w.durationMinutes!);
-    final durationCount =
-        _workouts.where((w) => w.durationMinutes != null).length;
-    final rpeSum = _workouts
-        .where((w) => w.rpeScore != null)
-        .fold<int>(0, (sum, w) => sum + w.rpeScore!);
-    final rpeCount = _workouts.where((w) => w.rpeScore != null).length;
+    // Single-pass aggregation: O(n) instead of O(8n) from separate
+    // fold/where/length calls over _workouts.
+    var totalVolume = 0.0;
+    var totalSets = 0;
+    var totalReps = 0;
+    var totalMinutes = 0;
+    var durationCount = 0;
+    var rpeSum = 0;
+    var rpeCount = 0;
+
+    for (final w in _workouts) {
+      totalVolume += w.totalVolume;
+      totalSets += w.totalSets;
+      totalReps += w.totalReps;
+      if (w.durationMinutes != null) {
+        totalMinutes += w.durationMinutes!;
+        durationCount++;
+      }
+      if (w.rpeScore != null) {
+        rpeSum += w.rpeScore!;
+        rpeCount++;
+      }
+    }
 
     return WorkoutReport(
       totalWorkouts: _workouts.length,
-      totalVolume: _workouts.fold(0.0, (sum, w) => sum + w.totalVolume),
-      totalSets: _workouts.fold(0, (sum, w) => sum + w.totalSets),
-      totalReps: _workouts.fold(0, (sum, w) => sum + w.totalReps),
+      totalVolume: totalVolume,
+      totalSets: totalSets,
+      totalReps: totalReps,
       totalMinutes: totalMinutes,
       avgWorkoutMinutes:
           durationCount > 0 ? totalMinutes / durationCount : 0,
       avgVolume: _workouts.isNotEmpty
-          ? _workouts.fold(0.0, (sum, w) => sum + w.totalVolume) /
-              _workouts.length
+          ? totalVolume / _workouts.length
           : 0,
       avgRpe: rpeCount > 0 ? rpeSum / rpeCount : 0,
       streak: getStreak(),
