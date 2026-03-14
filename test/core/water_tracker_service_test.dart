@@ -175,7 +175,7 @@ void main() {
 
     group('HydrationDailySummary', () {
       test('empty entries returns zero totals', () {
-        final s = service.HydrationDailySummary([], today);
+        final s = service.getDailySummary([], today);
         expect(s.totalMl, 0);
         expect(s.entryCount, 0);
         expect(s.progressPercent, 0);
@@ -189,7 +189,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 12), 'ml': 500},
           {'time': DateTime(2026, 3, 3, 10), 'ml': 1000}, // different day
         ]);
-        final s = service.HydrationDailySummary(entries, today);
+        final s = service.getDailySummary(entries, today);
         expect(s.totalMl, 800);
         expect(s.entryCount, 2);
       });
@@ -200,7 +200,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 10), 'ml': 200, 'type': DrinkType.coffee},
           {'time': DateTime(2026, 3, 4, 14), 'ml': 300, 'type': DrinkType.water},
         ]);
-        final s = service.HydrationDailySummary(entries, today);
+        final s = service.getDailySummary(entries, today);
         expect(s.byDrinkType[DrinkType.water], 600);
         expect(s.byDrinkType[DrinkType.coffee], 200);
       });
@@ -211,7 +211,7 @@ void main() {
           {'time': DateTime(2026, 3, 4, 8, 30), 'ml': 200},
           {'time': DateTime(2026, 3, 4, 14), 'ml': 500},
         ]);
-        final s = service.HydrationDailySummary(entries, today);
+        final s = service.getDailySummary(entries, today);
         expect(s.byHour[8], 500);
         expect(s.byHour[14], 500);
       });
@@ -220,7 +220,7 @@ void main() {
         final entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 10), 'ml': 200, 'type': DrinkType.coffee},
         ]);
-        final s = service.HydrationDailySummary(entries, today);
+        final s = service.getDailySummary(entries, today);
         expect(s.totalMl, 200);
         expect(s.effectiveHydrationMl, 160.0);
       });
@@ -230,38 +230,38 @@ void main() {
         var entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 2000},
         ]);
-        expect(service.HydrationDailySummary(entries, today).grade, 'A');
+        expect(service.getDailySummary(entries, today).grade, 'A');
 
         // 80% = B
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 1600},
         ]);
-        expect(service.HydrationDailySummary(entries, today).grade, 'B');
+        expect(service.getDailySummary(entries, today).grade, 'B');
 
         // 60% = C
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 1200},
         ]);
-        expect(service.HydrationDailySummary(entries, today).grade, 'C');
+        expect(service.getDailySummary(entries, today).grade, 'C');
 
         // 40% = D
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 800},
         ]);
-        expect(service.HydrationDailySummary(entries, today).grade, 'D');
+        expect(service.getDailySummary(entries, today).grade, 'D');
 
         // <40% = F
         entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 500},
         ]);
-        expect(service.HydrationDailySummary(entries, today).grade, 'F');
+        expect(service.getDailySummary(entries, today).grade, 'F');
       });
 
       test('remaining ml clamps at 0 when over goal', () {
         final entries = _makeEntries([
           {'time': DateTime(2026, 3, 4, 8), 'ml': 3000},
         ]);
-        final s = service.HydrationDailySummary(entries, today);
+        final s = service.getDailySummary(entries, today);
         expect(s.remainingMl, 0);
         expect(s.goalMet, true);
       });

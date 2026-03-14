@@ -141,7 +141,7 @@ class _LogTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final summary = service.HydrationDailySummary(entries, now);
+    final summary = service.getDailySummary(entries, now);
     final pacing = service.pacing(entries, now);
     final theme = Theme.of(context);
 

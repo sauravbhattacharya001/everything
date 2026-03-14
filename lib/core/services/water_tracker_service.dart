@@ -185,7 +185,7 @@ class WaterTrackerService {
 
   // ── Daily Summary ──
 
-  HydrationDailySummary HydrationDailySummary(List<WaterEntry> entries, DateTime date) {
+  HydrationDailySummary getDailySummary(List<WaterEntry> entries, DateTime date) {
     final dayEntries = _entriesForDate(entries, date);
     final byType = <DrinkType, int>{};
     final byHour = <int, int>{};
@@ -214,7 +214,7 @@ class WaterTrackerService {
   // ── Pacing ──
 
   HydrationPacing pacing(List<WaterEntry> entries, DateTime now) {
-    final summary = HydrationDailySummary(entries, now);
+    final summary = getDailySummary(entries, now);
     final currentHour = now.hour;
 
     // Hours elapsed since wake
@@ -327,7 +327,7 @@ class WaterTrackerService {
     final days = <HydrationDailySummary>[];
     for (int i = 6; i >= 0; i--) {
       final day = endDate.subtract(Duration(days: i));
-      days.add(HydrationDailySummary(entries, day));
+      days.add(getDailySummary(entries, day));
     }
 
     final totalMl =
