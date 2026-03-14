@@ -174,12 +174,12 @@ class SubscriptionTrackerService {
     final calendar = <DateTime, List<SubscriptionEntry>>{};
     for (final s in active) {
       var nextDate = s.nextBillingDate;
-      while (nextDate.isBefore(today)) nextDate = nextDate.add(Duration(days: s.cycle.daysBetween));
+      while (nextDate.isBefore(today)) nextDate = s.cycle.advanceDate(nextDate);
       final end = today.add(Duration(days: days));
       while (!nextDate.isAfter(end)) {
         final key = DateTime(nextDate.year, nextDate.month, nextDate.day);
         calendar.putIfAbsent(key, () => []).add(s);
-        nextDate = nextDate.add(Duration(days: s.cycle.daysBetween));
+        nextDate = s.cycle.advanceDate(nextDate);
       }
     }
     return calendar.entries.map((e) => RenewalCalendarEntry(date: e.key, subscriptions: e.value, totalAmount: e.value.fold(0.0, (sum, s) => sum + s.amount))).toList()..sort((a, b) => a.date.compareTo(b.date));

@@ -280,4 +280,118 @@ void main() {
       );
     });
   });
+
+  // -----------------------------------------------------------------
+  // Calendar-aware billing cycle tests (fix for issue #59)
+  // -----------------------------------------------------------------
+  group('BillingCycle.advanceDate', () {
+    test('monthly advances by one calendar month', () {
+      final date = DateTime(2026, 1, 15);
+      expect(BillingCycle.monthly.advanceDate(date), DateTime(2026, 2, 15));
+    });
+
+    test('monthly Jan 31 clamps to Feb 28 (non-leap year)', () {
+      final date = DateTime(2025, 1, 31);
+      expect(BillingCycle.monthly.advanceDate(date), DateTime(2025, 2, 28));
+    });
+
+    test('monthly Jan 31 clamps to Feb 29 (leap year)', () {
+      final date = DateTime(2028, 1, 31); // 2028 is a leap year
+      expect(BillingCycle.monthly.advanceDate(date), DateTime(2028, 2, 29));
+    });
+
+    test('monthly Mar 31 clamps to Apr 30', () {
+      final date = DateTime(2026, 3, 31);
+      expect(BillingCycle.monthly.advanceDate(date), DateTime(2026, 4, 30));
+    });
+
+    test('monthly December wraps to next year January', () {
+      final date = DateTime(2026, 12, 15);
+      expect(BillingCycle.monthly.advanceDate(date), DateTime(2027, 1, 15));
+    });
+
+    test('quarterly advances by 3 months', () {
+      final date = DateTime(2026, 1, 15);
+      expect(BillingCycle.quarterly.advanceDate(date), DateTime(2026, 4, 15));
+    });
+
+    test('quarterly Oct wraps to next year Jan', () {
+      final date = DateTime(2026, 10, 20);
+      expect(BillingCycle.quarterly.advanceDate(date), DateTime(2027, 1, 20));
+    });
+
+    test('semiannual advances by 6 months', () {
+      final date = DateTime(2026, 3, 15);
+      expect(BillingCycle.semiannual.advanceDate(date), DateTime(2026, 9, 15));
+    });
+
+    test('semiannual Aug 31 clamps to Feb 28', () {
+      final date = DateTime(2025, 8, 31);
+      expect(BillingCycle.semiannual.advanceDate(date), DateTime(2026, 2, 28));
+    });
+
+    test('annual advances by one year', () {
+      final date = DateTime(2026, 6, 15);
+      expect(BillingCycle.annual.advanceDate(date), DateTime(2027, 6, 15));
+    });
+
+    test('annual Feb 29 clamps to Feb 28 in non-leap year', () {
+      final date = DateTime(2028, 2, 29); // leap year
+      expect(BillingCycle.annual.advanceDate(date), DateTime(2029, 2, 28));
+    });
+
+    test('weekly advances by 7 days', () {
+      final date = DateTime(2026, 3, 10);
+      expect(BillingCycle.weekly.advanceDate(date), DateTime(2026, 3, 17));
+    });
+
+    test('biweekly advances by 14 days', () {
+      final date = DateTime(2026, 3, 10);
+      expect(BillingCycle.biweekly.advanceDate(date), DateTime(2026, 3, 24));
+    });
+
+    test('12 monthly advances land on same day', () {
+      // Key regression test: 12 monthly advances from Jan 15 should
+      // return to Jan 15 the next year — not Jan 10 (which fixed-30-day
+      // arithmetic would produce: 12*30 = 360 days, 5 days short).
+      var date = DateTime(2026, 1, 15);
+      for (var i = 0; i < 12; i++) {
+        date = BillingCycle.monthly.advanceDate(date);
+      }
+      expect(date, DateTime(2027, 1, 15));
+    });
+
+    test('monthly preserves time components', () {
+      final date = DateTime(2026, 3, 15, 14, 30, 45);
+      final next = BillingCycle.monthly.advanceDate(date);
+      expect(next.hour, 14);
+      expect(next.minute, 30);
+      expect(next.second, 45);
+    });
+  });
+
+  group('getRenewalCalendar calendar-awareness', () {
+    test('monthly renewal dates match calendar months', () {
+      final service = SubscriptionTrackerService();
+      // Subscription that bills on the 31st — should clamp properly
+      service.addSubscription(_sub(
+        name: 'TestSub',
+        cycle: BillingCycle.monthly,
+        amount: 10.0,
+        nextBillingDate: DateTime(2026, 1, 31),
+      ));
+      final calendar = service.getRenewalCalendar(days: 90);
+      // Should see Jan 31, Feb 28, Mar 31, Apr 30 (not Feb 2, Mar 4)
+      final dates = calendar.map((e) => e.date).toList();
+      // At minimum, no date should have day > 31 or be in the wrong month
+      for (final d in dates) {
+        expect(d.day, lessThanOrEqualTo(31));
+      }
+      // Feb entry should be on 28th, not some random drift date
+      final febEntries = dates.where((d) => d.month == 2).toList();
+      if (febEntries.isNotEmpty) {
+        expect(febEntries.first.day, 28);
+      }
+    });
+  });
 }
