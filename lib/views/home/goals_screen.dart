@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/goal_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/goal.dart';
 
 /// Goals Tracker screen for managing long-term goals with milestones,
@@ -14,6 +15,11 @@ class GoalsScreen extends StatefulWidget {
 class _GoalsScreenState extends State<GoalsScreen>
     with SingleTickerProviderStateMixin {
   late final GoalTrackerService _service;
+  final _persistence = ScreenPersistence<Goal>(
+    storageKey: 'goal_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: Goal.fromJson,
+  );
   late final TabController _tabController;
   GoalCategory? _categoryFilter;
 
@@ -22,8 +28,26 @@ class _GoalsScreenState extends State<GoalsScreen>
     super.initState();
     _service = GoalTrackerService();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
 
-    // Add some sample goals for demo
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      for (final goal in saved) {
+        _service.addGoal(goal);
+      }
+    } else {
+      _addSampleGoals();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _save() async {
+    await _persistence.save(_service.allGoals);
+  }
+
+  void _addSampleGoals() {
     _service.addGoal(Goal(
       id: 'goal_1',
       title: 'Learn Flutter Advanced',
@@ -78,6 +102,7 @@ class _GoalsScreenState extends State<GoalsScreen>
       builder: (ctx) => _GoalFormSheet(
         onSave: (goal) {
           setState(() => _service.addGoal(goal));
+          _save();
         },
       ),
     );
@@ -92,6 +117,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         goal: goal,
         onSave: (updated) {
           setState(() => _service.updateGoal(updated));
+          _save();
         },
       ),
     );
@@ -187,6 +213,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         onTap: () => _showGoalDetail(goals[index]),
         onToggleMilestone: (milestoneId) {
           setState(() => _service.toggleMilestone(goals[index].id, milestoneId));
+          _save();
         },
         onComplete: () {
           setState(() => _service.completeGoal(goals[index].id));
@@ -194,6 +221,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         onEdit: () => _editGoal(goals[index]),
         onArchive: () {
           setState(() => _service.archiveGoal(goals[index].id));
+          _save();
         },
       ),
     );
@@ -208,6 +236,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         goal: goal,
         onToggleMilestone: (milestoneId) {
           setState(() => _service.toggleMilestone(goal.id, milestoneId));
+          _save();
           // Refresh the detail sheet
           Navigator.of(ctx).pop();
           final updated = _service.allGoals.firstWhere((g) => g.id == goal.id);
@@ -221,6 +250,7 @@ class _GoalsScreenState extends State<GoalsScreen>
         },
         onUpdateProgress: (progress) {
           setState(() => _service.updateProgress(goal.id, progress));
+          _save();
           Navigator.of(ctx).pop();
           final updated = _service.allGoals.firstWhere((g) => g.id == goal.id);
           _showGoalDetail(updated);

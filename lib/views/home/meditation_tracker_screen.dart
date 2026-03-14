@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/meditation_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/meditation_entry.dart';
 
 /// Meditation Tracker screen for logging sessions, viewing history,
@@ -15,12 +16,30 @@ class MeditationTrackerScreen extends StatefulWidget {
 class _MeditationTrackerScreenState extends State<MeditationTrackerScreen>
     with SingleTickerProviderStateMixin {
   final MeditationTrackerService _service = MeditationTrackerService();
+  final _persistence = ScreenPersistence<MeditationEntry>(
+    storageKey: 'meditation_tracker_sessions',
+    toJson: (e) => e.toJson(),
+    fromJson: MeditationEntry.fromJson,
+  );
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    for (final session in saved) {
+      _service.addSession(session);
+    }
+    if (saved.isNotEmpty && mounted) setState(() {});
+  }
+
+  Future<void> _save() async {
+    await _persistence.save(_service.sessions);
   }
 
   @override
@@ -47,8 +66,8 @@ class _MeditationTrackerScreenState extends State<MeditationTrackerScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _LogTab(service: _service, onLogged: () => setState(() {})),
-          _HistoryTab(service: _service, onChanged: () => setState(() {})),
+          _LogTab(service: _service, onLogged: () { setState(() {}); _save(); }),
+          _HistoryTab(service: _service, onChanged: () { setState(() {}); _save(); }),
           _InsightsTab(service: _service),
         ],
       ),

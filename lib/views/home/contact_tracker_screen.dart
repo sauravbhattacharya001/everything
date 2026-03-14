@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/contact_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/contact.dart';
 
 /// Contact Tracker screen — manage contacts, log interactions,
@@ -14,6 +15,11 @@ class ContactTrackerScreen extends StatefulWidget {
 class _ContactTrackerScreenState extends State<ContactTrackerScreen>
     with SingleTickerProviderStateMixin {
   final ContactTrackerService _service = ContactTrackerService();
+  final _persistence = ScreenPersistence<Contact>(
+    storageKey: 'contact_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: Contact.fromJson,
+  );
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -26,6 +32,19 @@ class _ContactTrackerScreenState extends State<ContactTrackerScreen>
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.trim());
     });
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    for (final contact in saved) {
+      _service.addContact(contact);
+    }
+    if (saved.isNotEmpty && mounted) setState(() {});
+  }
+
+  Future<void> _save() async {
+    await _persistence.save(_service.contacts);
   }
 
   @override
@@ -59,9 +78,9 @@ class _ContactTrackerScreenState extends State<ContactTrackerScreen>
             searchQuery: _searchQuery,
             categoryFilter: _categoryFilter,
             onCategoryChanged: (c) => setState(() => _categoryFilter = c),
-            onChanged: () => setState(() {}),
+            onChanged: () { setState(() {}); _save(); },
           ),
-          _FollowUpsTab(service: _service, onChanged: () => setState(() {})),
+          _FollowUpsTab(service: _service, onChanged: () { setState(() {}); _save(); }),
           _HealthTab(service: _service),
         ],
       ),
@@ -81,6 +100,7 @@ class _ContactTrackerScreenState extends State<ContactTrackerScreen>
     if (result == true) {
       if (!mounted) return;
       setState(() {});
+      _save();
     }
   }
 }
