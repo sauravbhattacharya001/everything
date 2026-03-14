@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import '../../models/expense_entry.dart';
+import 'service_persistence.dart';
 
 /// Configuration for expense tracking budgets.
 class BudgetConfig {
@@ -234,9 +235,40 @@ class ExpenseReport {
 }
 
 /// Expense tracker service with budgeting, analytics, and insights.
-class ExpenseTrackerService {
+class ExpenseTrackerService with ServicePersistence {
   final List<ExpenseEntry> _entries = [];
   BudgetConfig _config;
+
+  @override
+  String get storageKey => 'expense_tracker_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'entries': _entries.map((e) => e.toJson()).toList(),
+        'config': {
+          'monthlyBudget': _config.monthlyBudget,
+          'alertThreshold': _config.alertThreshold,
+          'currencySymbol': _config.currencySymbol,
+        },
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _entries.clear();
+    if (json['entries'] != null) {
+      _entries.addAll(
+        (json['entries'] as List).map((e) => ExpenseEntry.fromJson(e as Map<String, dynamic>)),
+      );
+    }
+    if (json['config'] != null) {
+      final c = json['config'] as Map<String, dynamic>;
+      _config = BudgetConfig(
+        monthlyBudget: (c['monthlyBudget'] as num?)?.toDouble() ?? 3000.0,
+        alertThreshold: (c['alertThreshold'] as num?)?.toDouble() ?? 0.8,
+        currencySymbol: c['currencySymbol'] as String? ?? '\$',
+      );
+    }
+  }
 
   ExpenseTrackerService({BudgetConfig? config})
       : _config = config ?? const BudgetConfig();

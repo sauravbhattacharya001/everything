@@ -2,6 +2,7 @@
 /// progress tracking, deadlines, and category-based organization.
 
 import '../../models/goal.dart';
+import 'service_persistence.dart';
 
 /// Summary stats for goal tracking.
 class GoalSummary {
@@ -23,8 +24,26 @@ class GoalSummary {
 }
 
 /// Main service for goal tracking.
-class GoalTrackerService {
+class GoalTrackerService with ServicePersistence {
   final List<Goal> _goals;
+
+  @override
+  String get storageKey => 'goal_tracker_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'goals': _goals.map((g) => g.toJson()).toList(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _goals.clear();
+    if (json['goals'] != null) {
+      _goals.addAll(
+        (json['goals'] as List).map((g) => Goal.fromJson(g as Map<String, dynamic>)),
+      );
+    }
+  }
 
   GoalTrackerService({List<Goal>? goals}) : _goals = goals ?? [];
 
