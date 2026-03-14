@@ -11,6 +11,7 @@
 /// - Habit archiving (soft delete)
 
 import '../../models/habit.dart';
+import 'service_persistence.dart';
 
 /// Stats for a single habit over a date range.
 class HabitStats {
@@ -95,15 +96,41 @@ class WeeklyHabitSummary {
 }
 
 /// Main service for habit tracking.
-class HabitTrackerService {
+class HabitTrackerService with ServicePersistence {
   final List<Habit> _habits;
   final List<HabitCompletion> _completions;
+
+  @override
+  String get storageKey => 'habit_tracker_data';
 
   HabitTrackerService({
     List<Habit>? habits,
     List<HabitCompletion>? completions,
   })  : _habits = habits ?? [],
         _completions = completions ?? [];
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'habits': _habits.map((h) => h.toJson()).toList(),
+        'completions': _completions.map((c) => c.toJson()).toList(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _habits.clear();
+    _completions.clear();
+    if (json['habits'] != null) {
+      _habits.addAll(
+        (json['habits'] as List).map((h) => Habit.fromJson(h as Map<String, dynamic>)),
+      );
+    }
+    if (json['completions'] != null) {
+      _completions.addAll(
+        (json['completions'] as List)
+            .map((c) => HabitCompletion.fromJson(c as Map<String, dynamic>)),
+      );
+    }
+  }
 
   /// All active habits.
   List<Habit> get activeHabits =>
@@ -123,6 +150,7 @@ class HabitTrackerService {
       throw ArgumentError('Habit with id "${habit.id}" already exists');
     }
     _habits.add(habit);
+    persistState();
   }
 
   /// Update an existing habit.
@@ -132,6 +160,7 @@ class HabitTrackerService {
       throw ArgumentError('Habit "${updated.id}" not found');
     }
     _habits[idx] = updated;
+    persistState();
   }
 
   /// Archive a habit (soft delete).
@@ -139,6 +168,7 @@ class HabitTrackerService {
     final idx = _habits.indexWhere((h) => h.id == habitId);
     if (idx == -1) return;
     _habits[idx] = _habits[idx].copyWith(isActive: false);
+    persistState();
   }
 
   // ── Completion Logging ────────────────────────────────────────────
@@ -166,6 +196,7 @@ class HabitTrackerService {
         note: note,
       ));
     }
+    persistState();
   }
 
   /// Remove a completion entry for a habit on a specific date.
@@ -174,6 +205,7 @@ class HabitTrackerService {
     _completions.removeWhere(
       (c) => c.habitId == habitId && _dateOnly(c.date) == d,
     );
+    persistState();
   }
 
   /// Get completions for a habit in a date range.

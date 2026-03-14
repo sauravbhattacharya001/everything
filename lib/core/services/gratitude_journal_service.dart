@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import '../../models/gratitude_entry.dart';
+import 'service_persistence.dart';
 
 /// Daily gratitude summary.
 class DailyGratitudeSummary {
@@ -94,9 +95,30 @@ class GratitudeReport {
 
 /// Gratitude Journal Service — tracks daily gratitude entries with categories,
 /// intensity, tags, favorites, streaks, weekly reports, insights, and prompts.
-class GratitudeJournalService {
+class GratitudeJournalService with ServicePersistence {
   final List<GratitudeEntry> _entries = [];
   int _idCounter = 0;
+
+  @override
+  String get storageKey => 'gratitude_journal_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'entries': _entries.map((e) => e.toJson()).toList(),
+        'idCounter': _idCounter,
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _entries.clear();
+    if (json['entries'] != null) {
+      _entries.addAll(
+        (json['entries'] as List)
+            .map((e) => GratitudeEntry.fromJson(e as Map<String, dynamic>)),
+      );
+    }
+    _idCounter = (json['idCounter'] as int?) ?? _entries.length;
+  }
 
   // --- CRUD ---
 
@@ -119,6 +141,7 @@ class GratitudeJournalService {
       tags: List.from(tags),
       note: note?.trim(),
     ));
+    persistState();
     return id;
   }
 
@@ -146,6 +169,7 @@ class GratitudeJournalService {
       tags: tags,
       note: note,
     );
+    persistState();
     return true;
   }
 
@@ -153,6 +177,7 @@ class GratitudeJournalService {
     final idx = _entries.indexWhere((e) => e.id == id);
     if (idx == -1) return false;
     _entries.removeAt(idx);
+    persistState();
     return true;
   }
 
@@ -160,6 +185,7 @@ class GratitudeJournalService {
     final idx = _entries.indexWhere((e) => e.id == id);
     if (idx == -1) return false;
     _entries[idx] = _entries[idx].copyWith(isFavorite: !_entries[idx].isFavorite);
+    persistState();
     return true;
   }
 
@@ -577,5 +603,6 @@ class GratitudeJournalService {
     _entries.clear();
     _entries.addAll(parsed);
     _idCounter = clampedMax;
+    persistState();
   }
 }

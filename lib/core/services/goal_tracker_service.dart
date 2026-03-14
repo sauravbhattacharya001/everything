@@ -2,6 +2,7 @@
 /// progress tracking, deadlines, and category-based organization.
 
 import '../../models/goal.dart';
+import 'service_persistence.dart';
 
 /// Summary stats for goal tracking.
 class GoalSummary {
@@ -23,10 +24,29 @@ class GoalSummary {
 }
 
 /// Main service for goal tracking.
-class GoalTrackerService {
+class GoalTrackerService with ServicePersistence {
   final List<Goal> _goals;
 
+  @override
+  String get storageKey => 'goal_tracker_data';
+
   GoalTrackerService({List<Goal>? goals}) : _goals = goals ?? [];
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'goals': _goals.map((g) => g.toJson()).toList(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _goals.clear();
+    if (json['goals'] != null) {
+      _goals.addAll(
+        (json['goals'] as List)
+            .map((g) => Goal.fromJson(g as Map<String, dynamic>)),
+      );
+    }
+  }
 
   /// All non-archived goals.
   List<Goal> get activeGoals =>
@@ -54,28 +74,33 @@ class GoalTrackerService {
       throw ArgumentError('Goal with id "${goal.id}" already exists');
     }
     _goals.add(goal);
+    persistState();
   }
 
   void updateGoal(Goal updated) {
     final idx = _goals.indexWhere((g) => g.id == updated.id);
     if (idx == -1) throw ArgumentError('Goal "${updated.id}" not found');
     _goals[idx] = updated;
+    persistState();
   }
 
   void deleteGoal(String goalId) {
     _goals.removeWhere((g) => g.id == goalId);
+    persistState();
   }
 
   void archiveGoal(String goalId) {
     final idx = _goals.indexWhere((g) => g.id == goalId);
     if (idx == -1) return;
     _goals[idx] = _goals[idx].copyWith(isArchived: true);
+    persistState();
   }
 
   void completeGoal(String goalId) {
     final idx = _goals.indexWhere((g) => g.id == goalId);
     if (idx == -1) return;
     _goals[idx] = _goals[idx].copyWith(isCompleted: true, progress: 100);
+    persistState();
   }
 
   // ── Milestone Management ─────────────────────────────────────────
@@ -100,6 +125,7 @@ class GoalTrackerService {
       isCompleted: allDone,
       progress: allDone ? 100 : goal.progress,
     );
+    persistState();
   }
 
   void addMilestone(String goalId, Milestone milestone) {
@@ -108,6 +134,7 @@ class GoalTrackerService {
     final milestones = List<Milestone>.from(_goals[idx].milestones)
       ..add(milestone);
     _goals[idx] = _goals[idx].copyWith(milestones: milestones);
+    persistState();
   }
 
   void removeMilestone(String goalId, String milestoneId) {
@@ -118,6 +145,7 @@ class GoalTrackerService {
         .where((m) => m.id != milestoneId)
         .toList();
     _goals[idx] = _goals[idx].copyWith(milestones: milestones);
+    persistState();
   }
 
   // ── Progress ──────────────────────────────────────────────────────
@@ -130,6 +158,7 @@ class GoalTrackerService {
       progress: clamped,
       isCompleted: clamped == 100,
     );
+    persistState();
   }
 
   // ── Statistics ────────────────────────────────────────────────────
