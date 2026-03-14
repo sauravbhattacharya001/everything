@@ -10,6 +10,8 @@
 /// - Weekly summary with per-habit breakdown
 /// - Habit archiving (soft delete)
 
+import 'dart:convert';
+
 import '../../models/habit.dart';
 
 /// Stats for a single habit over a date range.
@@ -343,6 +345,64 @@ class HabitTrackerService {
       (c) => c.habitId == habitId && _dateOnly(c.date) == d,
     );
     return matches.isEmpty ? null : matches.first;
+  }
+
+  // ── Export / Import ──────────────────────────────────────────────
+
+  /// Maximum number of entries allowed via import.
+  static const int maxImportEntries = 100000;
+
+  /// Export all habits and completions as a JSON string.
+  String exportToJson() {
+    return jsonEncode({
+      'habits': _habits.map((h) => h.toJson()).toList(),
+      'completions': _completions.map((c) => c.toJson()).toList(),
+    });
+  }
+
+  /// Import habits and completions from a JSON string.
+  ///
+  /// Replaces all existing data. Parses into temporaries first so
+  /// malformed JSON doesn't wipe existing data.
+  void importFromJson(String jsonStr) {
+    final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    List<Habit>? parsedHabits;
+    List<HabitCompletion>? parsedCompletions;
+
+    if (data.containsKey('habits')) {
+      final list = data['habits'] as List<dynamic>;
+      if (list.length > maxImportEntries) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportEntries habits '
+          '(got ${list.length}).',
+        );
+      }
+      parsedHabits = list
+          .map((e) => Habit.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    if (data.containsKey('completions')) {
+      final list = data['completions'] as List<dynamic>;
+      if (list.length > maxImportEntries) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportEntries completions '
+          '(got ${list.length}).',
+        );
+      }
+      parsedCompletions = list
+          .map((e) => HabitCompletion.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    // All parsed successfully — safe to apply.
+    if (parsedHabits != null) {
+      _habits.clear();
+      _habits.addAll(parsedHabits);
+    }
+    if (parsedCompletions != null) {
+      _completions.clear();
+      _completions.addAll(parsedCompletions);
+    }
   }
 
   static DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);

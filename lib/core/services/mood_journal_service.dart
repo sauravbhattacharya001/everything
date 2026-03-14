@@ -119,6 +119,43 @@ class MoodJournalService {
     );
   }
 
+  // ── Export / Import ──────────────────────────────────────────────
+
+  /// Maximum number of entries allowed via import.
+  static const int maxImportEntries = 100000;
+
+  /// Export all mood entries as a JSON string.
+  String exportToJson() {
+    return jsonEncode({
+      'entries': _entries.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  /// Import mood entries from a JSON string.
+  ///
+  /// Replaces all existing entries. Parse into temporaries first so
+  /// malformed JSON doesn't wipe existing data.
+  Future<void> importFromJson(String jsonStr) async {
+    final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    if (!data.containsKey('entries')) {
+      throw ArgumentError('Missing "entries" key in mood journal backup');
+    }
+    final list = data['entries'] as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}).',
+      );
+    }
+    final parsed = list
+        .map((e) => MoodEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // All parsed successfully — safe to apply.
+    _entries = parsed;
+    _entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    await _save();
+  }
+
   /// Current streak of days with at least one entry.
   int currentStreak() {
     final now = DateTime.now();

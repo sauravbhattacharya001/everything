@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:everything/models/habit.dart';
 import 'package:everything/core/services/habit_tracker_service.dart';
@@ -209,6 +210,36 @@ void main() {
       expect(summary.perfectDays, 7);
       expect(summary.overallRate, closeTo(1.0, 0.01));
       expect(summary.habitStats.length, 1);
+    });
+  });
+
+  group('Export / Import', () {
+    test('exportToJson round-trips habits and completions', () {
+      service.addHabit(dailyHabit);
+      service.logCompletion('meditate', DateTime(2026, 3, 2), note: 'good');
+
+      final json = service.exportToJson();
+      final parsed = jsonDecode(json) as Map<String, dynamic>;
+      expect(parsed['habits'], hasLength(1));
+      expect(parsed['completions'], hasLength(1));
+
+      // Import into a fresh service
+      final fresh = HabitTrackerService();
+      fresh.importFromJson(json);
+      expect(fresh.allHabits.length, 1);
+      expect(fresh.allHabits.first.name, 'Meditate');
+      expect(fresh.completions.length, 1);
+      expect(fresh.completions.first.note, 'good');
+    });
+
+    test('importFromJson rejects oversized input', () {
+      final huge = jsonEncode({
+        'habits': List.generate(100001, (i) => {
+          'id': 'h$i', 'name': 'H$i', 'frequency': 'daily',
+          'targetCount': 1, 'isActive': true,
+        }),
+      });
+      expect(() => service.importFromJson(huge), throwsArgumentError);
     });
   });
 }
