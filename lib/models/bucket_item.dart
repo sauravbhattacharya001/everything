@@ -82,6 +82,55 @@ class BucketItem {
     this.inspiration,
   });
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'description': description,
+    'category': category.name,
+    'priority': priority.name,
+    'effort': effort.name,
+    'estimatedCost': estimatedCost,
+    'location': location,
+    'tags': tags,
+    'createdAt': createdAt.toIso8601String(),
+    'targetDate': targetDate?.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+    'completionNotes': completionNotes,
+    'rating': rating,
+    'inspiration': inspiration,
+  };
+
+  factory BucketItem.fromJson(Map<String, dynamic> json) => BucketItem(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    description: json['description'] as String?,
+    category: BucketCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => BucketCategory.personal),
+    priority: BucketPriority.values.firstWhere(
+        (e) => e.name == json['priority'],
+        orElse: () => BucketPriority.someday),
+    effort: BucketEffort.values.firstWhere(
+        (e) => e.name == json['effort'],
+        orElse: () => BucketEffort.moderate),
+    estimatedCost: (json['estimatedCost'] as num?)?.toDouble(),
+    location: json['location'] as String?,
+    tags: (json['tags'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    targetDate: json['targetDate'] != null
+        ? DateTime.parse(json['targetDate'] as String)
+        : null,
+    completedAt: json['completedAt'] != null
+        ? DateTime.parse(json['completedAt'] as String)
+        : null,
+    completionNotes: json['completionNotes'] as String?,
+    rating: json['rating'] as int? ?? 0,
+    inspiration: json['inspiration'] as String?,
+  );
+
   bool get isCompleted => completedAt != null;
 
   bool get isOverdue =>

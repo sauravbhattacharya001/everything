@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/travel_entry.dart';
 import '../../core/services/travel_log_service.dart';
+import '../../core/services/screen_persistence.dart';
 
 /// Travel Log screen — 4-tab UI for logging and reviewing trips.
 class TravelLogScreen extends StatefulWidget {
@@ -13,6 +14,11 @@ class _TravelLogScreenState extends State<TravelLogScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _service = const TravelLogService();
+  final _persistence = ScreenPersistence<TravelEntry>(
+    storageKey: 'travel_log_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: TravelEntry.fromJson,
+  );
   final List<TravelEntry> _entries = [];
   int? _filterYear;
 
@@ -20,6 +26,18 @@ class _TravelLogScreenState extends State<TravelLogScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() => _entries.addAll(saved));
+    }
+  }
+
+  void _saveEntries() {
+    _persistence.save(_entries);
   }
 
   @override
@@ -30,10 +48,12 @@ class _TravelLogScreenState extends State<TravelLogScreen>
 
   void _addEntry(TravelEntry entry) {
     setState(() => _entries.add(entry));
+    _saveEntries();
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _saveEntries();
   }
 
   @override

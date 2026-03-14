@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/wishlist_item.dart';
 import '../../core/services/wishlist_service.dart';
+import '../../core/services/screen_persistence.dart';
 
 /// Wishlist Screen — 4-tab UI for tracking things you want to buy.
 ///
@@ -20,6 +21,11 @@ class _WishlistScreenState extends State<WishlistScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _service = const WishlistService();
+  final _persistence = ScreenPersistence<WishlistItem>(
+    storageKey: 'wishlist_items',
+    toJson: (e) => e.toJson(),
+    fromJson: WishlistItem.fromJson,
+  );
   final List<WishlistItem> _items = [];
   String _searchQuery = '';
   WishlistCategory? _filterCategory;
@@ -42,6 +48,18 @@ class _WishlistScreenState extends State<WishlistScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() => _items.addAll(saved));
+    }
+  }
+
+  void _saveItems() {
+    _persistence.save(_items);
   }
 
   @override
@@ -88,20 +106,24 @@ class _WishlistScreenState extends State<WishlistScreen>
       _selectedCategory = WishlistCategory.other;
       _selectedUrgency = WishlistUrgency.considering;
     });
+    _saveItems();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Added "${item.name}" to wishlist')),
     );
     _tabController.animateTo(1);
   }
 
-  void _deleteItem(String id) =>
-      setState(() => _items.removeWhere((i) => i.id == id));
+  void _deleteItem(String id) {
+    setState(() => _items.removeWhere((i) => i.id == id));
+    _saveItems();
+  }
 
   void _toggleFavorite(String id) {
     setState(() {
       final idx = _items.indexWhere((i) => i.id == id);
       if (idx >= 0) _items[idx] = _items[idx].toggleFavorite();
     });
+    _saveItems();
   }
 
   void _markPurchased(String id) {
@@ -817,6 +839,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                     );
                   }
                 });
+                _saveItems();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -884,6 +907,7 @@ class _WishlistScreenState extends State<WishlistScreen>
                             : noteCtl.text.trim());
                   }
                 });
+                _saveItems();
                 Navigator.pop(ctx);
               }
             },

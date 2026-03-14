@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/medication_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/medication_entry.dart';
 
 /// Medication Tracker screen — manage medications, track doses, view adherence.
@@ -13,6 +14,16 @@ class MedicationTrackerScreen extends StatefulWidget {
 class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     with SingleTickerProviderStateMixin {
   final MedicationTrackerService _service = const MedicationTrackerService();
+  final _medPersistence = ScreenPersistence<Medication>(
+    storageKey: 'medication_tracker_meds',
+    toJson: (e) => e.toJson(),
+    fromJson: Medication.fromJson,
+  );
+  final _logPersistence = ScreenPersistence<DoseLog>(
+    storageKey: 'medication_tracker_logs',
+    toJson: (e) => e.toJson(),
+    fromJson: DoseLog.fromJson,
+  );
   late TabController _tabController;
   final List<Medication> _medications = [];
   final List<DoseLog> _logs = [];
@@ -24,6 +35,25 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final savedMeds = await _medPersistence.load();
+    final savedLogs = await _logPersistence.load();
+    if (savedMeds.isNotEmpty || savedLogs.isNotEmpty) {
+      setState(() {
+        _medications.addAll(savedMeds);
+        _logs.addAll(savedLogs);
+        _nextMedId = _medications.length + 1;
+        _nextLogId = _logs.length + 1;
+      });
+    }
+  }
+
+  void _saveAll() {
+    _medPersistence.save(_medications);
+    _logPersistence.save(_logs);
   }
 
   @override
@@ -49,6 +79,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         sideEffects: sideEffects,
       ));
     });
+    _saveAll();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(skip
           ? '⏭️ ${med.name} skipped (${time.label})'
@@ -175,6 +206,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                     color: color,
                   ));
                 });
+                _saveAll();
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),
@@ -394,11 +426,13 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                 final idx = _medications.indexOf(med);
                 _medications[idx] = med.copyWith(active: !med.active);
               });
+              _saveAll();
             } else if (action == 'delete') {
               setState(() {
                 _medications.remove(med);
                 _logs.removeWhere((l) => l.medicationId == med.id);
               });
+              _saveAll();
             }
           },
           itemBuilder: (_) => [
@@ -604,12 +638,15 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                     onDismissed: (_) {
                       final idx = _logs.indexOf(log);
                       setState(() => _logs.remove(log));
+                      _saveAll();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: const Text('Log entry removed'),
                         action: SnackBarAction(
                           label: 'Undo',
-                          onPressed: () =>
-                              setState(() => _logs.insert(idx, log)),
+                          onPressed: () {
+                              setState(() => _logs.insert(idx, log));
+                              _saveAll();
+                          },
                         ),
                       ));
                     },
