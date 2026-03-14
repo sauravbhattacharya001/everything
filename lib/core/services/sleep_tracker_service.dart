@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/sleep_entry.dart';
 
@@ -258,6 +259,43 @@ class SleepTrackerService {
     double avgStdDev = (_stdDev(bedVar) + _stdDev(wakeVar)) / 2;
     double score = 100 * (1 - (avgStdDev / 120).clamp(0, 1));
     return score.clamp(0, 100);
+  }
+
+  // ── Export / Import ──────────────────────────────────────────────
+
+  /// Maximum number of entries allowed via import.
+  static const int maxImportEntries = 100000;
+
+  /// Export all sleep entries as a JSON string.
+  String exportToJson() {
+    return jsonEncode({
+      'entries': _entries.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  /// Import sleep entries from a JSON string.
+  ///
+  /// Replaces all existing entries. Parses into temporaries first so
+  /// malformed JSON doesn't wipe existing data.
+  Future<void> importFromJson(String jsonStr) async {
+    final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+    if (!data.containsKey('entries')) {
+      throw ArgumentError('Missing "entries" key in sleep tracker backup');
+    }
+    final list = data['entries'] as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}).',
+      );
+    }
+    final parsed = list
+        .map((e) => SleepEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+    // All parsed successfully — safe to apply.
+    _entries = parsed;
+    _entries.sort((a, b) => b.wakeTime.compareTo(a.wakeTime));
+    await _save();
   }
 
   double _variance(List<double> values) {
