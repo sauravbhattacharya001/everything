@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/reading_list_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/book.dart';
 
 /// Reading List screen — track books, log reading sessions, view stats,
@@ -14,6 +15,11 @@ class ReadingListScreen extends StatefulWidget {
 class _ReadingListScreenState extends State<ReadingListScreen>
     with SingleTickerProviderStateMixin {
   final ReadingListService _service = ReadingListService();
+  final _persistence = ScreenPersistence<Book>(
+    storageKey: 'reading_list_books',
+    toJson: (e) => e.toJson(),
+    fromJson: Book.fromJson,
+  );
   late TabController _tabController;
   ReadingStatus? _statusFilter;
   String _searchQuery = '';
@@ -23,7 +29,24 @@ class _ReadingListScreenState extends State<ReadingListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _addSampleBooks();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      for (final book in saved) {
+        _service.addBook(book);
+      }
+      _nextId = saved.length + 1;
+    } else {
+      _addSampleBooks();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _save() async {
+    await _persistence.save(_service.books);
   }
 
   @override
@@ -876,6 +899,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
                 );
                 _service.addBook(book);
                 setState(() {});
+                _save();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -1151,6 +1175,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
                 ),
               );
               setState(() {});
+              _save();
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -1304,6 +1329,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
       case 'delete':
         _service.removeBook(book.id);
         setState(() {});
+        _save();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Removed "${book.title}"'),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/energy_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/energy_entry.dart';
 
 /// Energy Tracker screen — monitor energy levels throughout the day,
@@ -20,6 +21,11 @@ class EnergyTrackerScreen extends StatefulWidget {
 class _EnergyTrackerScreenState extends State<EnergyTrackerScreen>
     with SingleTickerProviderStateMixin {
   final EnergyTrackerService _service = EnergyTrackerService();
+  final _persistence = ScreenPersistence<EnergyEntry>(
+    storageKey: 'energy_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: EnergyEntry.fromJson,
+  );
   late TabController _tabController;
   final List<EnergyEntry> _entries = [];
   int _nextId = 1;
@@ -36,7 +42,19 @@ class _EnergyTrackerScreenState extends State<EnergyTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _addSampleEntries();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        _nextId = _entries.length + 1;
+      });
+    } else {
+      _addSampleEntries();
+    }
   }
 
   @override
@@ -109,10 +127,12 @@ class _EnergyTrackerScreenState extends State<EnergyTrackerScreen>
         duration: const Duration(seconds: 2),
       ),
     );
+    _persistence.save(_entries);
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _persistence.save(_entries);
   }
 
   List<EnergyEntry> get _todayEntries {

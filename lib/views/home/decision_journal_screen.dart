@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/decision_journal_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/decision_entry.dart';
 
 /// Decision Journal Screen — log important decisions, track outcomes,
@@ -22,6 +23,11 @@ class DecisionJournalScreen extends StatefulWidget {
 class _DecisionJournalScreenState extends State<DecisionJournalScreen>
     with SingleTickerProviderStateMixin {
   final DecisionJournalService _service = DecisionJournalService();
+  final _persistence = ScreenPersistence<DecisionEntry>(
+    storageKey: 'decision_journal_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: DecisionEntry.fromJson,
+  );
   late TabController _tabController;
   int _nextId = 1;
 
@@ -51,6 +57,20 @@ class _DecisionJournalScreenState extends State<DecisionJournalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      final jsonStr = DecisionEntry.encodeList(saved);
+      _service.importFromJson(jsonStr);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _save() async {
+    await _persistence.save(_service.entries);
   }
 
   @override
@@ -429,6 +449,7 @@ class _DecisionJournalScreenState extends State<DecisionJournalScreen>
     );
 
     _tabController.animateTo(1); // Switch to Journal
+    _save();
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -658,6 +679,7 @@ class _DecisionJournalScreenState extends State<DecisionJournalScreen>
                           style: TextStyle(color: Colors.red)),
                       onPressed: () {
                         setState(() => _service.removeDecision(entry.id));
+                        _save();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                               content:
@@ -864,6 +886,7 @@ class _DecisionJournalScreenState extends State<DecisionJournalScreen>
                   );
                 });
                 Navigator.pop(ctx);
+                _save();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
