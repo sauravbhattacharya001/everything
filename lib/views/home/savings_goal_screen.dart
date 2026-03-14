@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/savings_goal_service.dart';
 import '../../models/savings_goal.dart';
 
@@ -13,6 +14,7 @@ class SavingsGoalScreen extends StatefulWidget {
 
 class _SavingsGoalScreenState extends State<SavingsGoalScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'savings_goal_data';
   final SavingsGoalService _service = SavingsGoalService();
   late TabController _tabController;
   SavingsGoalCategory? _filterCategory;
@@ -22,6 +24,23 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.importJson(json);
+        if (mounted) setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportJson());
   }
 
   @override
@@ -67,6 +86,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen>
         ],
       ),
     );
+    _saveData();
   }
 }
 
@@ -567,6 +587,7 @@ class _AddTabState extends State<_AddTab> {
             }).toList(),
             onChanged: (val) {
               if (val != null) setState(() => _category = val);
+              _saveData();
             },
           ),
           const SizedBox(height: 16),
@@ -587,6 +608,7 @@ class _AddTabState extends State<_AddTab> {
             }).toList(),
             onChanged: (val) {
               if (val != null) setState(() => _priority = val);
+              _saveData();
             },
           ),
           const SizedBox(height: 16),
@@ -615,6 +637,7 @@ class _AddTabState extends State<_AddTab> {
                 lastDate: DateTime.now().add(const Duration(days: 3650)),
               );
               if (date != null) setState(() => _deadline = date);
+              _saveData();
             },
           ),
           const SizedBox(height: 24),
@@ -650,6 +673,7 @@ class _AddTabState extends State<_AddTab> {
                 _priority = SavingsGoalPriority.medium;
                 _deadline = null;
               });
+              _saveData();
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Goal "$name" created!')),

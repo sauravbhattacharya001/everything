@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/grocery_list_service.dart';
 import '../../models/grocery_item.dart';
 
@@ -13,6 +14,7 @@ class GroceryListScreen extends StatefulWidget {
 
 class _GroceryListScreenState extends State<GroceryListScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'grocery_list_data';
   late final GroceryListService _service;
   late TabController _tabController;
   String? _selectedListId;
@@ -22,6 +24,23 @@ class _GroceryListScreenState extends State<GroceryListScreen>
     super.initState();
     _service = GroceryListService();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.importFromJson(json);
+        if (mounted) setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
   }
 
   @override
@@ -56,6 +75,8 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   final list = _service.createList(controller.text.trim());
                   _selectedListId = list.id;
                 });
+                _saveData();
+                _saveData();
                 Navigator.pop(ctx);
               }
             },
@@ -205,6 +226,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                       estimatedPrice: double.tryParse(priceController.text),
                     );
                   });
+                  _saveData();
                   Navigator.pop(ctx);
                 }
               },
@@ -242,15 +264,18 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                 switch (action) {
                   case 'clear_checked':
                     setState(() => _service.clearChecked(_selectedListId!));
+                    _saveData();
                     break;
                   case 'duplicate':
                     setState(() => _service.duplicateList(_selectedListId!));
+                    _saveData();
                     break;
                   case 'archive':
                     setState(() {
                       _service.toggleArchive(_selectedListId!);
                       _selectedListId = null;
                     });
+                    _saveData();
                     break;
                 }
               },
@@ -390,6 +415,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
             _selectedListId = list.id;
             _tabController.animateTo(1);
           });
+          _saveData();
         },
         onLongPress: () {
           showModalBottomSheet(
@@ -402,6 +428,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   title: Text(isArchived ? 'Unarchive' : 'Archive'),
                   onTap: () {
                     setState(() => _service.toggleArchive(list.id));
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -410,6 +437,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                   title: const Text('Duplicate'),
                   onTap: () {
                     setState(() => _service.duplicateList(list.id));
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -422,6 +450,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
                       _service.deleteList(list.id);
                       if (_selectedListId == list.id) _selectedListId = null;
                     });
+                    _saveData();
                     Navigator.pop(ctx);
                   },
                 ),
@@ -544,12 +573,14 @@ class _GroceryListScreenState extends State<GroceryListScreen>
       ),
       onDismissed: (_) {
         setState(() => _service.removeItem(listId, item.id));
+        _saveData();
       },
       child: ListTile(
         leading: Checkbox(
           value: item.isChecked,
           onChanged: (_) {
             setState(() => _service.toggleItem(listId, item.id));
+            _saveData();
           },
         ),
         title: Text(
