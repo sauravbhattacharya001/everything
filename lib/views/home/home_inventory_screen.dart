@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/home_inventory_service.dart';
 import '../../models/inventory_item.dart';
 
@@ -12,7 +13,13 @@ class HomeInventoryScreen extends StatefulWidget {
 }
 
 class _HomeInventoryScreenState extends State<HomeInventoryScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'home_inventory_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
   final HomeInventoryService _service = HomeInventoryService();
   late TabController _tabController;
   InventoryRoom? _filterRoom;

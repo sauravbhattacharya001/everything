@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/savings_goal_service.dart';
 import '../../models/savings_goal.dart';
 
@@ -12,7 +13,13 @@ class SavingsGoalScreen extends StatefulWidget {
 }
 
 class _SavingsGoalScreenState extends State<SavingsGoalScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'savings_goal_data';
+  @override
+  String exportData() => _service.exportJson();
+  @override
+  void importData(String json) => _service.importJson(json);
   final SavingsGoalService _service = SavingsGoalService();
   late TabController _tabController;
   SavingsGoalCategory? _filterCategory;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/net_worth_tracker_service.dart';
 import '../../models/net_worth_account.dart';
 
@@ -12,7 +13,13 @@ class NetWorthTrackerScreen extends StatefulWidget {
 }
 
 class _NetWorthTrackerScreenState extends State<NetWorthTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'net_worth_tracker_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
   final NetWorthTrackerService _service = NetWorthTrackerService();
   late TabController _tabController;
 

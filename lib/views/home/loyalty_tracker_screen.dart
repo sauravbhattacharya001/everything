@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/loyalty_card.dart';
 import '../../core/services/loyalty_tracker_service.dart';
 
