@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/warranty_tracker_service.dart';
 import '../../models/warranty_entry.dart';
 
@@ -12,7 +13,13 @@ class WarrantyTrackerScreen extends StatefulWidget {
 }
 
 class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'warranty_tracker_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
   final WarrantyTrackerService _service = WarrantyTrackerService();
   late TabController _tabController;
   WarrantyCategory? _filterCategory;

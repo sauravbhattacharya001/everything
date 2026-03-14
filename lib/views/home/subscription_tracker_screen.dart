@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/subscription_tracker_service.dart';
 import '../../models/subscription_entry.dart';
 
@@ -13,7 +14,13 @@ class SubscriptionTrackerScreen extends StatefulWidget {
 }
 
 class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'subscription_tracker_data';
+  @override
+  String exportData() => _service.toJson();
+  @override
+  void importData(String json) => _service.loadFromJson(json);
   final SubscriptionTrackerService _service = SubscriptionTrackerService();
   late TabController _tabController;
   SubscriptionCategory? _filterCategory;

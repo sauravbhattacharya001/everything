@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/plant_care_service.dart';
 import '../../models/plant_entry.dart';
 
@@ -12,7 +13,13 @@ class PlantCareTrackerScreen extends StatefulWidget {
 }
 
 class _PlantCareTrackerScreenState extends State<PlantCareTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'plant_care_data';
+  @override
+  String exportData() => _service.export();
+  @override
+  void importData(String json) => _service.import(json);
   final PlantCareService _service = PlantCareService();
   late TabController _tabController;
   String? _selectedPlantId;
