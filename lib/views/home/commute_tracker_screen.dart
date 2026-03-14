@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/commute_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/commute_entry.dart';
 
 /// Commute Tracker screen — log daily commutes, view history,
@@ -14,6 +15,11 @@ class CommuteTrackerScreen extends StatefulWidget {
 class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
     with SingleTickerProviderStateMixin {
   final CommuteTrackerService _service = const CommuteTrackerService();
+  final _persistence = ScreenPersistence<CommuteEntry>(
+    storageKey: 'commute_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: CommuteEntry.fromJson,
+  );
   late TabController _tabController;
   final List<CommuteEntry> _entries = [];
   int _nextId = 1;
@@ -23,6 +29,17 @@ class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        _nextId = _entries.length + 1;
+      });
+    }
   }
 
   @override
@@ -33,10 +50,12 @@ class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
 
   void _addEntry(CommuteEntry entry) {
     setState(() => _entries.add(entry));
+    _persistence.save(_entries);
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _persistence.save(_entries);
   }
 
   void _showLogDialog({bool isReturn = false}) {
