@@ -51,6 +51,7 @@ import 'gift_tracker_screen.dart';
 import 'net_worth_tracker_screen.dart';
 import 'debt_payoff_screen.dart';
 import 'warranty_tracker_screen.dart';
+import 'home_inventory_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -549,6 +550,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Warranty tracker',
+          ),
+          // Home inventory button
+          IconButton(
+            icon: const Icon(Icons.inventory_2),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const HomeInventoryScreen()),
+              );
+            },
+            tooltip: 'Home inventory',
           ),
           // Time tracker button
           IconButton(
