@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/medication_tracker_service.dart';
 import '../../models/medication_entry.dart';
 
@@ -12,6 +14,8 @@ class MedicationTrackerScreen extends StatefulWidget {
 
 class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _medsKey = 'medication_tracker_meds';
+  static const _logsKey = 'medication_tracker_logs';
   final MedicationTrackerService _service = const MedicationTrackerService();
   late TabController _tabController;
   final List<Medication> _medications = [];
@@ -24,6 +28,42 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final medsJson = prefs.getString(_medsKey);
+    final logsJson = prefs.getString(_logsKey);
+    if (medsJson != null && medsJson.isNotEmpty) {
+      try {
+        final meds = (jsonDecode(medsJson) as List)
+            .map((e) => Medication.fromJson(e as Map<String, dynamic>))
+            .toList();
+        final logs = logsJson != null && logsJson.isNotEmpty
+            ? (jsonDecode(logsJson) as List)
+                .map((e) => DoseLog.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : <DoseLog>[];
+        if (mounted) {
+          setState(() {
+            _medications.addAll(meds);
+            _logs.addAll(logs);
+            _nextMedId = _medications.length + 1;
+            _nextLogId = _logs.length + 1;
+          });
+          _saveData();
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_medsKey,
+        jsonEncode(_medications.map((m) => m.toJson()).toList()));
+    await prefs.setString(_logsKey,
+        jsonEncode(_logs.map((l) => l.toJson()).toList()));
   }
 
   @override
@@ -49,6 +89,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
         sideEffects: sideEffects,
       ));
     });
+    _saveData();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(skip
           ? '⏭️ ${med.name} skipped (${time.label})'
@@ -175,6 +216,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                     color: color,
                   ));
                 });
+                _saveData();
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),
@@ -394,11 +436,13 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                 final idx = _medications.indexOf(med);
                 _medications[idx] = med.copyWith(active: !med.active);
               });
+              _saveData();
             } else if (action == 'delete') {
               setState(() {
                 _medications.remove(med);
                 _logs.removeWhere((l) => l.medicationId == med.id);
               });
+              _saveData();
             }
           },
           itemBuilder: (_) => [
@@ -559,6 +603,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                   lastDate: DateTime.now(),
                 );
                 if (picked != null) setState(() => _selectedDate = picked);
+                _saveData();
               },
               child: Text(
                 _sameDay(_selectedDate, DateTime.now())
@@ -604,6 +649,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                     onDismissed: (_) {
                       final idx = _logs.indexOf(log);
                       setState(() => _logs.remove(log));
+                      _saveData();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: const Text('Log entry removed'),
                         action: SnackBarAction(
@@ -612,6 +658,7 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen>
                               setState(() => _logs.insert(idx, log)),
                         ),
                       ));
+                      _saveData();
                     },
                     child: Card(
                       child: ListTile(

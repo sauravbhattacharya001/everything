@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/debt_payoff_service.dart';
 import '../../models/debt_entry.dart';
 
@@ -13,6 +14,7 @@ class DebtPayoffScreen extends StatefulWidget {
 
 class _DebtPayoffScreenState extends State<DebtPayoffScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'debt_payoff_data';
   final DebtPayoffService _service = DebtPayoffService();
   late TabController _tabController;
   double _extraPayment = 0;
@@ -21,6 +23,23 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final json = prefs.getString(_storageKey);
+    if (json != null && json.isNotEmpty) {
+      try {
+        _service.importFromJson(json);
+        if (mounted) setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
   }
 
   @override
@@ -155,9 +174,11 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
                   if (v == 'pay') _showPaymentDialog(debt);
                   if (v == 'paidoff') {
                     setState(() => _service.markPaidOff(debt.id));
+                    _saveData();
                   }
                   if (v == 'delete') {
                     setState(() => _service.removeDebt(debt.id));
+                    _saveData();
                   }
                 },
                 itemBuilder: (_) => [
@@ -256,6 +277,7 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
         _payoffOrderList('Avalanche', avalanche),
       ],
     );
+    _saveData();
   }
 
   Widget _strategyCard(String title, PayoffPlan plan, String subtitle) {
@@ -492,6 +514,7 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
                       category: category,
                     );
                   });
+                  _saveData();
                   Navigator.pop(ctx);
                 }
               },
@@ -537,6 +560,7 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
                   _service.addPayment(debt.id, amount,
                       note: noteCtl.text.isEmpty ? null : noteCtl.text);
                 });
+                _saveData();
                 Navigator.pop(ctx);
               }
             },

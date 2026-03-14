@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/chore_tracker_service.dart';
 import '../../models/chore_entry.dart';
 
@@ -13,6 +15,8 @@ class ChoreTrackerScreen extends StatefulWidget {
 
 class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _choresKey = 'chore_tracker_chores';
+  static const _completionsKey = 'chore_tracker_completions';
   final ChoreTrackerService _service = const ChoreTrackerService();
   late TabController _tabController;
   final List<Chore> _chores = [];
@@ -26,6 +30,42 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final choresJson = prefs.getString(_choresKey);
+    final compsJson = prefs.getString(_completionsKey);
+    if (choresJson != null && choresJson.isNotEmpty) {
+      try {
+        final chores = (jsonDecode(choresJson) as List)
+            .map((e) => Chore.fromJson(e as Map<String, dynamic>))
+            .toList();
+        final comps = compsJson != null && compsJson.isNotEmpty
+            ? (jsonDecode(compsJson) as List)
+                .map((e) => ChoreCompletion.fromJson(e as Map<String, dynamic>))
+                .toList()
+            : <ChoreCompletion>[];
+        if (mounted) {
+          setState(() {
+            _chores.addAll(chores);
+            _completions.addAll(comps);
+            _nextChoreId = _chores.length + 1;
+            _nextCompId = _completions.length + 1;
+          });
+          _saveData();
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_choresKey,
+        jsonEncode(_chores.map((c) => c.toJson()).toList()));
+    await prefs.setString(_completionsKey,
+        jsonEncode(_completions.map((c) => c.toJson()).toList()));
   }
 
   @override
@@ -47,6 +87,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
 
   void _addChore(Chore chore) {
     setState(() => _chores.add(chore));
+    _saveData();
   }
 
   void _toggleArchive(int index) {
@@ -54,6 +95,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
       final c = _chores[index];
       _chores[index] = c.copyWith(archived: !c.archived);
     });
+    _saveData();
   }
 
   void _logCompletion(String choreId, {int duration = 0, int rating = 3, String? note}) {
@@ -67,6 +109,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
         note: note,
       ));
     });
+    _saveData();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('✅ Chore completed!'),
@@ -178,6 +221,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
         ),
       ],
     );
+    _saveData();
   }
 
   Widget _buildChoreCard(Chore chore) {
@@ -711,6 +755,7 @@ class _AddChoreFormState extends State<_AddChoreForm> {
               selected: _room == room,
               onSelected: (_) => setState(() => _room = room),
             );
+            _saveData();
           }).toList(),
         ),
         const SizedBox(height: 16),
@@ -727,6 +772,7 @@ class _AddChoreFormState extends State<_AddChoreForm> {
               selected: _frequency == freq,
               onSelected: (_) => setState(() => _frequency = freq),
             );
+            _saveData();
           }).toList(),
         ),
         const SizedBox(height: 16),
@@ -743,6 +789,7 @@ class _AddChoreFormState extends State<_AddChoreForm> {
               selected: _effort == eff,
               onSelected: (_) => setState(() => _effort = eff),
             );
+            _saveData();
           }).toList(),
         ),
         const SizedBox(height: 16),
@@ -790,6 +837,7 @@ class _AddChoreFormState extends State<_AddChoreForm> {
               _frequency = ChoreFrequency.weekly;
               _effort = ChoreEffort.moderate;
             });
+            _saveData();
           },
         ),
 
