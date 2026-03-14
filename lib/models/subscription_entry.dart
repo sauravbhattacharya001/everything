@@ -41,6 +41,40 @@ enum BillingCycle {
       case BillingCycle.annual: return 365;
     }
   }
+
+  /// Advance a date by one billing period using calendar-aware arithmetic.
+  ///
+  /// For monthly/quarterly/semi-annual/annual cycles, advances by the
+  /// correct number of calendar months (or years) rather than a fixed
+  /// day count.  Clamps the day to the last day of the target month to
+  /// handle end-of-month edge cases (e.g., Jan 31 → Feb 28).
+  DateTime advanceDate(DateTime date) {
+    switch (this) {
+      case BillingCycle.weekly:
+        return date.add(const Duration(days: 7));
+      case BillingCycle.biweekly:
+        return date.add(const Duration(days: 14));
+      case BillingCycle.monthly:
+        return _addMonths(date, 1);
+      case BillingCycle.quarterly:
+        return _addMonths(date, 3);
+      case BillingCycle.semiannual:
+        return _addMonths(date, 6);
+      case BillingCycle.annual:
+        return _addMonths(date, 12);
+    }
+  }
+
+  /// Add [months] calendar months, clamping day to end-of-month.
+  static DateTime _addMonths(DateTime date, int months) {
+    final totalMonths = date.month + months;
+    final year = date.year + (totalMonths - 1) ~/ 12;
+    final month = (totalMonths - 1) % 12 + 1;
+    // Clamp day to last day of target month (handles Jan 31 → Feb 28)
+    final maxDay = DateTime(year, month + 1, 0).day;
+    final day = date.day > maxDay ? maxDay : date.day;
+    return DateTime(year, month, day, date.hour, date.minute, date.second);
+  }
 }
 
 enum SubscriptionCategory {
@@ -122,9 +156,17 @@ class SubscriptionEntry {
 
   double get totalSpent {
     final now = DateTime.now();
-    final days = now.difference(startDate).inDays;
-    if (days <= 0) return 0;
-    return (days / cycle.daysBetween).floor() * amount;
+    if (now.isBefore(startDate)) return 0;
+    // Count billing periods using calendar-aware advancement
+    var cursor = startDate;
+    var periods = 0;
+    while (true) {
+      final next = cycle.advanceDate(cursor);
+      if (next.isAfter(now)) break;
+      periods++;
+      cursor = next;
+    }
+    return periods * amount;
   }
 
   SubscriptionEntry copyWith({
