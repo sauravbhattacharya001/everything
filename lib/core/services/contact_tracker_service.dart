@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../models/contact.dart';
+import 'service_persistence.dart';
 
 /// Statistics for a relationship category.
 class CategoryStats {
@@ -105,7 +106,7 @@ class ContactReport {
 }
 
 /// Service for managing contacts, interactions, and relationship health.
-class ContactTrackerService {
+class ContactTrackerService with ServicePersistence {
   /// Maximum contacts allowed via [loadJson] to prevent memory exhaustion
   /// from corrupted or malicious import data (CWE-770).
   static const int maxImportEntries = 50000;
@@ -113,6 +114,28 @@ class ContactTrackerService {
   final List<Contact> _contacts = [];
   int _nextId = 1;
   int _nextInteractionId = 1;
+
+  @override
+  String get storageKey => 'contact_tracker_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'contacts': _contacts.map((c) => c.toJson()).toList(),
+        'nextId': _nextId,
+        'nextInteractionId': _nextInteractionId,
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _contacts.clear();
+    if (json['contacts'] != null) {
+      _contacts.addAll(
+        (json['contacts'] as List).map((c) => Contact.fromJson(c as Map<String, dynamic>)),
+      );
+    }
+    _nextId = json['nextId'] as int? ?? _contacts.length + 1;
+    _nextInteractionId = json['nextInteractionId'] as int? ?? 1;
+  }
 
   List<Contact> get contacts => List.unmodifiable(_contacts);
 
