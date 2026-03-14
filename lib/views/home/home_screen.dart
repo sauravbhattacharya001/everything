@@ -52,6 +52,7 @@ import 'net_worth_tracker_screen.dart';
 import 'debt_payoff_screen.dart';
 import 'warranty_tracker_screen.dart';
 import 'home_inventory_screen.dart';
+import 'meditation_tracker_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -470,6 +471,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Sleep tracker',
+          ),
+          // Meditation tracker button
+          IconButton(
+            icon: const Icon(Icons.self_improvement),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MeditationTrackerScreen()),
+              );
+            },
+            tooltip: 'Meditation tracker',
           ),
           // Expense tracker button
           IconButton(
