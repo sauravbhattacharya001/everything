@@ -51,6 +51,18 @@ class PricePoint {
     required this.price,
     this.note,
   });
+
+  Map<String, dynamic> toJson() => {
+        'date': date.toIso8601String(),
+        'price': price,
+        if (note != null) 'note': note,
+      };
+
+  factory PricePoint.fromJson(Map<String, dynamic> json) => PricePoint(
+        date: DateTime.parse(json['date'] as String),
+        price: (json['price'] as num).toDouble(),
+        note: json['note'] as String?,
+      );
 }
 
 /// A single wishlist item.
@@ -197,5 +209,53 @@ class WishlistItem {
         tags: tags,
         notes: notes,
         isFavorite: !isFavorite,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        if (description != null) 'description': description,
+        'category': category.name,
+        'urgency': urgency.name,
+        if (estimatedPrice != null) 'estimatedPrice': estimatedPrice,
+        if (url != null) 'url': url,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        'priceHistory': priceHistory.map((p) => p.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        if (purchasedAt != null) 'purchasedAt': purchasedAt!.toIso8601String(),
+        if (purchasedPrice != null) 'purchasedPrice': purchasedPrice,
+        'isPurchased': isPurchased,
+        'rating': rating,
+        'tags': tags,
+        if (notes != null) 'notes': notes,
+        'isFavorite': isFavorite,
+      };
+
+  factory WishlistItem.fromJson(Map<String, dynamic> json) => WishlistItem(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        description: json['description'] as String?,
+        category: WishlistCategory.values.byName(json['category'] as String),
+        urgency: WishlistUrgency.values.byName(json['urgency'] as String),
+        estimatedPrice: (json['estimatedPrice'] as num?)?.toDouble(),
+        url: json['url'] as String?,
+        imageUrl: json['imageUrl'] as String?,
+        priceHistory: (json['priceHistory'] as List<dynamic>?)
+                ?.map((p) => PricePoint.fromJson(p as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        purchasedAt: json['purchasedAt'] != null
+            ? DateTime.parse(json['purchasedAt'] as String)
+            : null,
+        purchasedPrice: (json['purchasedPrice'] as num?)?.toDouble(),
+        isPurchased: json['isPurchased'] as bool? ?? false,
+        rating: json['rating'] as int? ?? 0,
+        tags: (json['tags'] as List<dynamic>?)
+                ?.map((t) => t as String)
+                .toList() ??
+            const [],
+        notes: json['notes'] as String?,
+        isFavorite: json['isFavorite'] as bool? ?? false,
       );
 }

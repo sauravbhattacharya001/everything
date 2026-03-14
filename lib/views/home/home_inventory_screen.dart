@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/home_inventory_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/inventory_item.dart';
 
 /// Home Inventory Tracker — catalog belongings by room, track values,
@@ -12,7 +13,14 @@ class HomeInventoryScreen extends StatefulWidget {
 }
 
 class _HomeInventoryScreenState extends State<HomeInventoryScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'home_inventory_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   final HomeInventoryService _service = HomeInventoryService();
   late TabController _tabController;
   InventoryRoom? _filterRoom;
@@ -24,7 +32,17 @@ class _HomeInventoryScreenState extends State<HomeInventoryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadSampleData();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await initPersistence();
+    // If no saved data was loaded, add sample data
+    if (_service.items.isEmpty) {
+      _loadSampleData();
+      saveData();
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -236,6 +254,7 @@ class _HomeInventoryScreenState extends State<HomeInventoryScreen>
                                 if (v == 'delete') {
                                   setState(
                                       () => _service.removeItem(item.id));
+                                  saveData();
                                 }
                               },
                               itemBuilder: (_) => [
@@ -557,6 +576,7 @@ class _HomeInventoryScreenState extends State<HomeInventoryScreen>
                         : serialCtrl.text.trim(),
                   ));
                 });
+                saveData();
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),

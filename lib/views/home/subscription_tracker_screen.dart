@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../core/services/subscription_tracker_service.dart';
 import '../../models/subscription_entry.dart';
 
@@ -15,6 +16,11 @@ class SubscriptionTrackerScreen extends StatefulWidget {
 class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
     with SingleTickerProviderStateMixin {
   final SubscriptionTrackerService _service = SubscriptionTrackerService();
+  final _persistence = ScreenPersistence<SubscriptionEntry>(
+    storageKey: 'subscription_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: SubscriptionEntry.fromJson,
+  );
   late TabController _tabController;
   SubscriptionCategory? _filterCategory;
   SubscriptionStatus? _filterStatus;
@@ -25,7 +31,25 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadSampleData();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      for (final entry in saved) {
+        _service.add(entry);
+      }
+      _nextId = saved.length + 1;
+      if (mounted) setState(() {});
+    } else {
+      _loadSampleData();
+      _persistAll();
+    }
+  }
+
+  Future<void> _persistAll() async {
+    await _persistence.save(_service.subscriptions.toList());
   }
 
   @override
@@ -329,6 +353,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
       }
     });
     if (action != 'edit') {
+      _persistAll();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${sub.name}: $action'),
@@ -837,6 +862,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
                     ));
                   }
                 });
+                _persistAll();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
