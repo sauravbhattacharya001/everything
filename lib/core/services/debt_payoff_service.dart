@@ -170,10 +170,13 @@ class DebtPayoffService {
     var totalPaid = 0.0;
     var month = 0;
     const maxMonths = 600;
+    // Track freed minimums from paid-off debts so they snowball
+    // into future months (the core mechanic of debt snowball/avalanche).
+    var freedMinimums = 0.0;
 
     while (balances.values.any((b) => b > 0.01) && month < maxMonths) {
       month++;
-      var extraLeft = extraPayment;
+      var extraLeft = extraPayment + freedMinimums;
 
       for (final id in balances.keys.toList()) {
         if (balances[id]! <= 0.01) continue;
@@ -196,7 +199,11 @@ class DebtPayoffService {
 
         if (balances[id]! <= 0.01 && !payoffOrder.contains(id)) {
           payoffOrder.add(id);
-          extraLeft += mins[id]!;
+          // Freed minimum is permanently available for future months.
+          freedMinimums += mins[id]!;
+          // Also make the surplus available this month: the actual payment
+          // was min(mins[id], bal), so the unused portion is freed now.
+          extraLeft += mins[id]! - payment;
         }
       }
 
@@ -221,7 +228,7 @@ class DebtPayoffService {
 
         if (balances[id]! <= 0.01 && !payoffOrder.contains(id)) {
           payoffOrder.add(id);
-          extraLeft += mins[id]!;
+          freedMinimums += mins[id]!;
         }
       }
     }
