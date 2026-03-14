@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/loyalty_card.dart';
 import '../../core/services/loyalty_tracker_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 
 /// Loyalty Card / Rewards Tracker Screen.
 ///
@@ -17,7 +18,14 @@ class LoyaltyTrackerScreen extends StatefulWidget {
 }
 
 class _LoyaltyTrackerScreenState extends State<LoyaltyTrackerScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'loyalty_tracker_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   final LoyaltyTrackerService _service = LoyaltyTrackerService();
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
@@ -27,6 +35,7 @@ class _LoyaltyTrackerScreenState extends State<LoyaltyTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    initPersistence();
   }
 
   @override

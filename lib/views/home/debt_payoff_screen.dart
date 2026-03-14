@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/debt_payoff_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/debt_entry.dart';
 
 /// Debt Payoff Planner — track debts, compare snowball vs avalanche,
@@ -12,7 +13,14 @@ class DebtPayoffScreen extends StatefulWidget {
 }
 
 class _DebtPayoffScreenState extends State<DebtPayoffScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'debt_payoff_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   final DebtPayoffService _service = DebtPayoffService();
   late TabController _tabController;
   double _extraPayment = 0;
@@ -21,6 +29,7 @@ class _DebtPayoffScreenState extends State<DebtPayoffScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    initPersistence();
   }
 
   @override

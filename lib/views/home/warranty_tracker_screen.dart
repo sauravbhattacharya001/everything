@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/services/warranty_tracker_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/warranty_entry.dart';
 
-/// Warranty Tracker screen — manage product warranties, track expiration dates,
+/// Warranty Tracker screen - manage product warranties, track expiration dates,
 /// file claims, and view coverage analysis.
 class WarrantyTrackerScreen extends StatefulWidget {
   const WarrantyTrackerScreen({super.key});
@@ -12,7 +13,14 @@ class WarrantyTrackerScreen extends StatefulWidget {
 }
 
 class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'warranty_tracker_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   final WarrantyTrackerService _service = WarrantyTrackerService();
   late TabController _tabController;
   WarrantyCategory? _filterCategory;
@@ -23,7 +31,15 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadSampleData();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await initPersistence();
+    // Load sample data only if nothing was persisted
+    if (_service.warranties.isEmpty) {
+      _loadSampleData();
+    }
   }
 
   @override
@@ -667,7 +683,7 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('File Claim — ${warranty.productName}'),
+        title: Text('File Claim - ${warranty.productName}'),
         content: TextField(
           controller: issueCtrl,
           decoration: const InputDecoration(

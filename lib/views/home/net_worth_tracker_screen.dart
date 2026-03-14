@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/services/net_worth_tracker_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/net_worth_account.dart';
 
-/// Net Worth Tracker — manage accounts, record balances, view reports,
+/// Net Worth Tracker - manage accounts, record balances, view reports,
 /// and track milestones. 4-tab UI: Accounts / Add / Report / Milestones.
 class NetWorthTrackerScreen extends StatefulWidget {
   const NetWorthTrackerScreen({super.key});
@@ -12,7 +13,14 @@ class NetWorthTrackerScreen extends StatefulWidget {
 }
 
 class _NetWorthTrackerScreenState extends State<NetWorthTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'net_worth_tracker_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   final NetWorthTrackerService _service = NetWorthTrackerService();
   late TabController _tabController;
 
@@ -20,6 +28,7 @@ class _NetWorthTrackerScreenState extends State<NetWorthTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    initPersistence();
   }
 
   @override
@@ -361,7 +370,7 @@ class _AccountTile extends StatelessWidget {
                               const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text(
                         '${_formatDate(s.date)}'
-                        '${s.note != null ? ' — ${s.note}' : ''}',
+                        '${s.note != null ? ' - ${s.note}' : ''}',
                       ),
                       leading: Icon(
                         i < snapshots.length - 1

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/grocery_list_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/grocery_item.dart';
 
 /// Screen for managing grocery lists with categorized items,
@@ -12,7 +13,14 @@ class GroceryListScreen extends StatefulWidget {
 }
 
 class _GroceryListScreenState extends State<GroceryListScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'grocery_list_data';
+  @override
+  String exportData() => _service.exportToJson();
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
   late final GroceryListService _service;
   late TabController _tabController;
   String? _selectedListId;
@@ -22,6 +30,7 @@ class _GroceryListScreenState extends State<GroceryListScreen>
     super.initState();
     _service = GroceryListService();
     _tabController = TabController(length: 3, vsync: this);
+    initPersistence();
   }
 
   @override

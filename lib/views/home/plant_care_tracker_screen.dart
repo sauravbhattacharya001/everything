@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/services/plant_care_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/plant_entry.dart';
 
-/// Plant Care Tracker — manage plants, log care activities, track watering
+/// Plant Care Tracker - manage plants, log care activities, track watering
 /// schedules, monitor health, and view garden insights.
 class PlantCareTrackerScreen extends StatefulWidget {
   const PlantCareTrackerScreen({super.key});
@@ -12,7 +13,14 @@ class PlantCareTrackerScreen extends StatefulWidget {
 }
 
 class _PlantCareTrackerScreenState extends State<PlantCareTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'plant_care_data';
+  @override
+  String exportData() => _service.export();
+  @override
+  void importData(String json) => _service.import(json);
+
   final PlantCareService _service = PlantCareService();
   late TabController _tabController;
   String? _selectedPlantId;
@@ -24,6 +32,7 @@ class _PlantCareTrackerScreenState extends State<PlantCareTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    initPersistence();
   }
 
   @override
@@ -790,7 +799,7 @@ class _PlantCareTrackerScreenState extends State<PlantCareTrackerScreen>
             leading: Text(entry.action.emoji,
                 style: const TextStyle(fontSize: 24)),
             title: Text(
-              '${entry.action.label} — ${plant?.name ?? "Unknown"}',
+              '${entry.action.label} - ${plant?.name ?? "Unknown"}',
             ),
             subtitle: Text([
               _formatDate(entry.timestamp),

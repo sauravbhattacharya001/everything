@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/services/savings_goal_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/savings_goal.dart';
 
-/// Savings Goal Tracker — set goals, log contributions, track progress,
+/// Savings Goal Tracker - set goals, log contributions, track progress,
 /// and view projections. 4-tab UI: Goals / Add / Progress / Insights.
 class SavingsGoalScreen extends StatefulWidget {
   const SavingsGoalScreen({super.key});
@@ -12,7 +13,14 @@ class SavingsGoalScreen extends StatefulWidget {
 }
 
 class _SavingsGoalScreenState extends State<SavingsGoalScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
+  @override
+  String get storageKey => 'savings_goal_data';
+  @override
+  String exportData() => _service.exportJson();
+  @override
+  void importData(String json) => _service.importJson(json);
+
   final SavingsGoalService _service = SavingsGoalService();
   late TabController _tabController;
   SavingsGoalCategory? _filterCategory;
@@ -22,6 +30,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    initPersistence();
   }
 
   @override
@@ -925,7 +934,7 @@ class _InsightsTab extends StatelessWidget {
                   subtitle: Text(
                     daysLeft > 0
                         ? 'Need \$${perDay.toStringAsFixed(0)}/day for ${daysLeft}d'
-                        : 'Deadline passed — \$${needed.toStringAsFixed(0)} remaining',
+                        : 'Deadline passed - \$${needed.toStringAsFixed(0)} remaining',
                   ),
                   trailing: Text(
                     '${(g.progressPercent * 100).round()}%',
