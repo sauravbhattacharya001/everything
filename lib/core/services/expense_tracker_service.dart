@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import '../../models/expense_entry.dart';
+import 'service_persistence.dart';
 
 /// Configuration for expense tracking budgets.
 class BudgetConfig {
@@ -234,12 +235,35 @@ class ExpenseReport {
 }
 
 /// Expense tracker service with budgeting, analytics, and insights.
-class ExpenseTrackerService {
+class ExpenseTrackerService with ServicePersistence {
   final List<ExpenseEntry> _entries = [];
   BudgetConfig _config;
 
+  @override
+  String get storageKey => 'expense_tracker_data';
+
   ExpenseTrackerService({BudgetConfig? config})
       : _config = config ?? const BudgetConfig();
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'entries': _entries.map((e) => e.toJson()).toList(),
+        'config': _config.toJson(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _entries.clear();
+    if (json['entries'] != null) {
+      _entries.addAll(
+        (json['entries'] as List)
+            .map((e) => ExpenseEntry.fromJson(e as Map<String, dynamic>)),
+      );
+    }
+    if (json['config'] != null) {
+      _config = BudgetConfig.fromJson(json['config'] as Map<String, dynamic>);
+    }
+  }
 
   // --- Config ---
 
@@ -247,6 +271,7 @@ class ExpenseTrackerService {
 
   void updateConfig(BudgetConfig config) {
     _config = config;
+    persistState();
   }
 
   // --- CRUD ---
@@ -255,16 +280,19 @@ class ExpenseTrackerService {
 
   void addEntry(ExpenseEntry entry) {
     _entries.add(entry);
+    persistState();
   }
 
   void addEntries(List<ExpenseEntry> entries) {
     _entries.addAll(entries);
+    persistState();
   }
 
   bool removeEntry(String id) {
     final idx = _entries.indexWhere((e) => e.id == id);
     if (idx < 0) return false;
     _entries.removeAt(idx);
+    persistState();
     return true;
   }
 

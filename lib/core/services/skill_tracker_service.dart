@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../models/skill_entry.dart';
+import 'service_persistence.dart';
 
 /// Report for a single skill's learning progress.
 class SkillReport {
@@ -104,8 +105,27 @@ class PracticeStreak {
 }
 
 /// Service for tracking skills and learning progress.
-class SkillTrackerService {
+class SkillTrackerService with ServicePersistence {
   final List<SkillEntry> _skills = [];
+
+  @override
+  String get storageKey => 'skill_tracker_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'skills': _skills.map((s) => s.toJson()).toList(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _skills.clear();
+    if (json['skills'] != null) {
+      _skills.addAll(
+        (json['skills'] as List)
+            .map((s) => SkillEntry.fromJson(s as Map<String, dynamic>)),
+      );
+    }
+  }
 
   List<SkillEntry> get skills => List.unmodifiable(_skills);
   List<SkillEntry> get activeSkills =>
@@ -118,6 +138,7 @@ class SkillTrackerService {
       throw ArgumentError('Skill with id ${skill.id} already exists');
     }
     _skills.add(skill);
+    persistState();
   }
 
   SkillEntry? getSkill(String id) {
@@ -132,10 +153,12 @@ class SkillTrackerService {
     final idx = _skills.indexWhere((s) => s.id == updated.id);
     if (idx < 0) throw ArgumentError('Skill ${updated.id} not found');
     _skills[idx] = updated;
+    persistState();
   }
 
   void removeSkill(String id) {
     _skills.removeWhere((s) => s.id == id);
+    persistState();
   }
 
   void archiveSkill(String id) {
