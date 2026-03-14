@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/grocery_list_service.dart';
 import '../../models/grocery_item.dart';
 
@@ -13,6 +14,7 @@ class GroceryListScreen extends StatefulWidget {
 
 class _GroceryListScreenState extends State<GroceryListScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'grocery_list_data';
   late final GroceryListService _service;
   late TabController _tabController;
   String? _selectedListId;
@@ -22,12 +24,45 @@ class _GroceryListScreenState extends State<GroceryListScreen>
     super.initState();
     _service = GroceryListService();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.importFromJson(data);
+        if (_service.lists.isNotEmpty) {
+          _selectedListId = _service.lists.first.id;
+          if (mounted) setState(() {});
+          return;
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
+  }
+
+  /// Wrapper that calls setState and persists changes.
+  void _mutate(VoidCallback fn) {
+    setState(fn);
+    _saveData();
   }
 
   void _createList() {

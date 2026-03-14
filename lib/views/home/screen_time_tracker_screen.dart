@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/screen_time_tracker_service.dart';
 import '../../models/screen_time_entry.dart';
 
@@ -14,6 +15,7 @@ class ScreenTimeTrackerScreen extends StatefulWidget {
 
 class _ScreenTimeTrackerScreenState extends State<ScreenTimeTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'screen_time_tracker_data';
   final ScreenTimeTrackerService _service = ScreenTimeTrackerService();
   late TabController _tabController;
   DateTime _selectedDate = DateTime.now();
@@ -23,7 +25,29 @@ class _ScreenTimeTrackerScreenState extends State<ScreenTimeTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadPersistedData();
+  }
+
+  Future<void> _loadPersistedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.importFromJson(data);
+        if (_service.entries.isNotEmpty) {
+          _initialized = true;
+          if (mounted) setState(() {});
+          return;
+        }
+      } catch (_) {}
+    }
     _loadDemoData();
+    await _saveData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
   }
 
   void _loadDemoData() {
@@ -76,6 +100,12 @@ class _ScreenTimeTrackerScreenState extends State<ScreenTimeTrackerScreen>
   }
 
   @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
@@ -100,11 +130,11 @@ class _ScreenTimeTrackerScreenState extends State<ScreenTimeTrackerScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _LogTab(service: _service, onLogged: () => setState(() {})),
+          _LogTab(service: _service, onLogged: () { setState(() {}); _saveData(); }),
           _TodayTab(
             service: _service, selectedDate: _selectedDate,
             onDateChanged: (d) => setState(() => _selectedDate = d),
-            onChanged: () => setState(() {}),
+            onChanged: () { setState(() {}); _saveData(); },
           ),
           _BreakdownTab(service: _service),
           _InsightsTab(service: _service),
