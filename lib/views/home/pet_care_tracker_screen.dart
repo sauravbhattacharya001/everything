@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/pet_care_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/pet_entry.dart';
 
 /// Pet Care Tracker — manage pets, log care activities, track health records,
@@ -14,6 +15,21 @@ class PetCareTrackerScreen extends StatefulWidget {
 class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
     with SingleTickerProviderStateMixin {
   final PetCareService _service = const PetCareService();
+  final _petPersistence = ScreenPersistence<Pet>(
+    storageKey: 'pet_care_pets',
+    toJson: (e) => e.toJson(),
+    fromJson: Pet.fromJson,
+  );
+  final _carePersistence = ScreenPersistence<CareEntry>(
+    storageKey: 'pet_care_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: CareEntry.fromJson,
+  );
+  final _healthPersistence = ScreenPersistence<HealthRecord>(
+    storageKey: 'pet_care_health',
+    toJson: (e) => e.toJson(),
+    fromJson: HealthRecord.fromJson,
+  );
   late TabController _tabController;
 
   final List<Pet> _pets = [];
@@ -28,6 +44,30 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final savedPets = await _petPersistence.load();
+    final savedCare = await _carePersistence.load();
+    final savedHealth = await _healthPersistence.load();
+    if (savedPets.isNotEmpty || savedCare.isNotEmpty || savedHealth.isNotEmpty) {
+      setState(() {
+        _pets.addAll(savedPets);
+        _careEntries.addAll(savedCare);
+        _healthRecords.addAll(savedHealth);
+        _nextPetId = _pets.length + 1;
+        _nextCareId = _careEntries.length + 1;
+        _nextHealthId = _healthRecords.length + 1;
+        if (_pets.isNotEmpty) _selectedPetId = _pets.first.id;
+      });
+    }
+  }
+
+  void _saveAll() {
+    _petPersistence.save(_pets);
+    _carePersistence.save(_careEntries);
+    _healthPersistence.save(_healthRecords);
   }
 
   @override
@@ -146,6 +186,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
                   _pets.add(pet);
                   _selectedPetId ??= pet.id;
                 });
+                _saveAll();
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),
@@ -165,6 +206,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
         _selectedPetId = _pets.isNotEmpty ? _pets.first.id : null;
       }
     });
+    _saveAll();
   }
 
   // ─── Care Logging ───────────────────────────────────────────
@@ -254,6 +296,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
                     cost: double.tryParse(costCtrl.text),
                   ));
                 });
+                _saveAll();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -276,6 +319,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
     final globalIndex = _careEntries.indexOf(entry);
     if (globalIndex < 0) return;
     setState(() => _careEntries.removeAt(globalIndex));
+    _saveAll();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Removed ${entry.category.label} entry'),
@@ -373,6 +417,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
                     nextDue: nextDue,
                   ));
                 });
+                _saveAll();
                 Navigator.pop(ctx);
               },
               child: const Text('Save'),
@@ -610,6 +655,7 @@ class _PetCareTrackerScreenState extends State<PetCareTrackerScreen>
             category: category,
           ));
         });
+        _saveAll();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${category.emoji} ${category.label} logged!'),

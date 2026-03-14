@@ -93,6 +93,66 @@ class WishlistItem {
     this.isFavorite = false,
   });
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'category': category.name,
+    'urgency': urgency.name,
+    'estimatedPrice': estimatedPrice,
+    'url': url,
+    'imageUrl': imageUrl,
+    'priceHistory': priceHistory.map((p) => {
+      'date': p.date.toIso8601String(),
+      'price': p.price,
+      'note': p.note,
+    }).toList(),
+    'createdAt': createdAt.toIso8601String(),
+    'purchasedAt': purchasedAt?.toIso8601String(),
+    'purchasedPrice': purchasedPrice,
+    'isPurchased': isPurchased,
+    'rating': rating,
+    'tags': tags,
+    'notes': notes,
+    'isFavorite': isFavorite,
+  };
+
+  factory WishlistItem.fromJson(Map<String, dynamic> json) => WishlistItem(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    description: json['description'] as String?,
+    category: WishlistCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => WishlistCategory.other),
+    urgency: WishlistUrgency.values.firstWhere(
+        (e) => e.name == json['urgency'],
+        orElse: () => WishlistUrgency.considering),
+    estimatedPrice: (json['estimatedPrice'] as num?)?.toDouble(),
+    url: json['url'] as String?,
+    imageUrl: json['imageUrl'] as String?,
+    priceHistory: (json['priceHistory'] as List<dynamic>?)
+            ?.map((p) => PricePoint(
+                  date: DateTime.parse(p['date'] as String),
+                  price: (p['price'] as num).toDouble(),
+                  note: p['note'] as String?,
+                ))
+            .toList() ??
+        const [],
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    purchasedAt: json['purchasedAt'] != null
+        ? DateTime.parse(json['purchasedAt'] as String)
+        : null,
+    purchasedPrice: (json['purchasedPrice'] as num?)?.toDouble(),
+    isPurchased: json['isPurchased'] as bool? ?? false,
+    rating: json['rating'] as int? ?? 0,
+    tags: (json['tags'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+    notes: json['notes'] as String?,
+    isFavorite: json['isFavorite'] as bool? ?? false,
+  );
+
   /// Days since this item was added.
   int get daysOnList =>
       DateTime.now().difference(createdAt).inDays;
