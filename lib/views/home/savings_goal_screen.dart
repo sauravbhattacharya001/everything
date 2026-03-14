@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/savings_goal_service.dart';
 import '../../models/savings_goal.dart';
 
@@ -13,6 +14,7 @@ class SavingsGoalScreen extends StatefulWidget {
 
 class _SavingsGoalScreenState extends State<SavingsGoalScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'savings_goal_data';
   final SavingsGoalService _service = SavingsGoalService();
   late TabController _tabController;
   SavingsGoalCategory? _filterCategory;
@@ -22,6 +24,29 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.importJson(data);
+        if (mounted) setState(() {});
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportJson());
+  }
+
+  @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
   }
 
   @override

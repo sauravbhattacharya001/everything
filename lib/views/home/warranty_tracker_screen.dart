@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/warranty_tracker_service.dart';
 import '../../models/warranty_entry.dart';
 
@@ -13,6 +14,7 @@ class WarrantyTrackerScreen extends StatefulWidget {
 
 class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'warranty_tracker_data';
   final WarrantyTrackerService _service = WarrantyTrackerService();
   late TabController _tabController;
   WarrantyCategory? _filterCategory;
@@ -23,7 +25,35 @@ class _WarrantyTrackerScreenState extends State<WarrantyTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.importFromJson(data);
+        if (_service.warranties.isNotEmpty) {
+          _nextId = _service.warranties.length + 1;
+          if (mounted) setState(() {});
+          return;
+        }
+      } catch (_) {}
+    }
     _loadSampleData();
+    _saveData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
+  }
+
+  @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
   }
 
   @override

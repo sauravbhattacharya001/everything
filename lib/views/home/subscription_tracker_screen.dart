@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/subscription_tracker_service.dart';
 import '../../models/subscription_entry.dart';
 
@@ -14,6 +15,7 @@ class SubscriptionTrackerScreen extends StatefulWidget {
 
 class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'subscription_tracker_data';
   final SubscriptionTrackerService _service = SubscriptionTrackerService();
   late TabController _tabController;
   SubscriptionCategory? _filterCategory;
@@ -25,13 +27,44 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadSampleData();
+    _loadData();
+  }
+
+  @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.loadFromJson(data);
+        final subs = _service.subscriptions;
+        if (subs.isNotEmpty) {
+          _nextId = subs.length + 1;
+          if (mounted) setState(() {});
+          return;
+        }
+      } catch (_) {
+        // Fall through to sample data on parse error.
+      }
+    }
+    _loadSampleData();
+    await _saveData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.toJson());
   }
 
   void _loadSampleData() {
@@ -329,6 +362,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
       }
     });
     if (action != 'edit') {
+      _saveData();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${sub.name}: $action'),
@@ -837,6 +871,7 @@ class _SubscriptionTrackerScreenState extends State<SubscriptionTrackerScreen>
                     ));
                   }
                 });
+                _saveData();
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

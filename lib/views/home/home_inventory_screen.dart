@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/home_inventory_service.dart';
 import '../../models/inventory_item.dart';
 
@@ -13,6 +14,7 @@ class HomeInventoryScreen extends StatefulWidget {
 
 class _HomeInventoryScreenState extends State<HomeInventoryScreen>
     with SingleTickerProviderStateMixin {
+  static const _storageKey = 'home_inventory_data';
   final HomeInventoryService _service = HomeInventoryService();
   late TabController _tabController;
   InventoryRoom? _filterRoom;
@@ -24,7 +26,35 @@ class _HomeInventoryScreenState extends State<HomeInventoryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_storageKey);
+    if (data != null && data.isNotEmpty) {
+      try {
+        _service.importFromJson(data);
+        if (_service.items.isNotEmpty) {
+          _nextId = _service.items.length + 1;
+          if (mounted) setState(() {});
+          return;
+        }
+      } catch (_) {}
+    }
     _loadSampleData();
+    _saveData();
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, _service.exportToJson());
+  }
+
+  @override
+  void deactivate() {
+    _saveData();
+    super.deactivate();
   }
 
   @override
