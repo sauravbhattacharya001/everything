@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/chore_tracker_service.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/chore_entry.dart';
 
 /// Chore Tracker screen — manage household chores, log completions,
@@ -14,6 +15,16 @@ class ChoreTrackerScreen extends StatefulWidget {
 class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
     with SingleTickerProviderStateMixin {
   final ChoreTrackerService _service = const ChoreTrackerService();
+  final _chorePersistence = ScreenPersistence<Chore>(
+    storageKey: 'chore_tracker_chores',
+    toJson: (e) => e.toJson(),
+    fromJson: Chore.fromJson,
+  );
+  final _completionPersistence = ScreenPersistence<ChoreCompletion>(
+    storageKey: 'chore_tracker_completions',
+    toJson: (e) => e.toJson(),
+    fromJson: ChoreCompletion.fromJson,
+  );
   late TabController _tabController;
   final List<Chore> _chores = [];
   final List<ChoreCompletion> _completions = [];
@@ -26,6 +37,25 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final savedChores = await _chorePersistence.load();
+    final savedCompletions = await _completionPersistence.load();
+    if (mounted) {
+      setState(() {
+        _chores.addAll(savedChores);
+        _completions.addAll(savedCompletions);
+        _nextChoreId = _chores.length + 1;
+        _nextCompId = _completions.length + 1;
+      });
+    }
+  }
+
+  void _saveAll() {
+    _chorePersistence.save(_chores);
+    _completionPersistence.save(_completions);
   }
 
   @override
@@ -47,6 +77,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
 
   void _addChore(Chore chore) {
     setState(() => _chores.add(chore));
+    _saveAll();
   }
 
   void _toggleArchive(int index) {
@@ -54,6 +85,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
       final c = _chores[index];
       _chores[index] = c.copyWith(archived: !c.archived);
     });
+    _saveAll();
   }
 
   void _logCompletion(String choreId, {int duration = 0, int rating = 3, String? note}) {
@@ -67,6 +99,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
         note: note,
       ));
     });
+    _saveAll();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('✅ Chore completed!'),
