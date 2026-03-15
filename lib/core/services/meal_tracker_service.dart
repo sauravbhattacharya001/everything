@@ -419,9 +419,14 @@ class MealTrackerService {
 
   int getLoggingStreak({DateTime? asOf}) {
     final today = asOf ?? DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
+    var check = DateTime(today.year, today.month, today.day);
     int streak = 0;
-    var check = todayDate;
+
+    // 1-day grace: if today has no meals yet, start counting from yesterday.
+    // The streak only breaks when an entire day is missed.
+    if (getMealsForDate(check).isEmpty) {
+      check = check.subtract(const Duration(days: 1));
+    }
 
     while (true) {
       final meals = getMealsForDate(check);
