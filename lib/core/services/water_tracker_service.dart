@@ -429,7 +429,7 @@ class WaterTrackerService {
   // ── Full Report ──
 
   HydrationReport report(List<WaterEntry> entries, DateTime now) {
-    final todaySummary = HydrationDailySummary(entries, now);
+    final todaySummary = getDailySummary(entries, now);
     final todayPacing = pacing(entries, now);
     final todayStreak = streak(entries, now);
     final trend = weeklyTrend(entries, now);

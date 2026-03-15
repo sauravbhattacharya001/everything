@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/gift_item.dart';
 import '../../core/services/gift_service.dart';
+import '../../core/services/screen_persistence.dart';
 
 /// Gift Tracker Screen — 4-tab UI for tracking gifts to give and receive.
 ///
@@ -22,6 +23,11 @@ class _GiftTrackerScreenState extends State<GiftTrackerScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _service = const GiftService();
+  final _persistence = ScreenPersistence<GiftItem>(
+    storageKey: 'gift_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: GiftItem.fromJson,
+  );
   final List<GiftItem> _items = [];
   String _searchQuery = '';
   GiftDirection? _filterDirection;
@@ -47,7 +53,17 @@ class _GiftTrackerScreenState extends State<GiftTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadItems();
   }
+
+  Future<void> _loadItems() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() => _items.addAll(saved));
+    }
+  }
+
+  Future<void> _saveItems() => _persistence.save(_items);
 
   @override
   void dispose() {
@@ -106,16 +122,20 @@ class _GiftTrackerScreenState extends State<GiftTrackerScreen>
       SnackBar(content: Text('Added "${item.name}" for ${item.recipientOrGiver}')),
     );
     _tabController.animateTo(1);
+    _saveItems();
   }
 
-  void _deleteItem(String id) =>
-      setState(() => _items.removeWhere((i) => i.id == id));
+  void _deleteItem(String id) {
+    setState(() => _items.removeWhere((i) => i.id == id));
+    _saveItems();
+  }
 
   void _updateStatus(String id, GiftStatus newStatus) {
     setState(() {
       final idx = _items.indexWhere((i) => i.id == id);
       if (idx >= 0) _items[idx] = _items[idx].copyWith(status: newStatus);
     });
+    _saveItems();
   }
 
   void _toggleThankYou(String id) {
@@ -123,6 +143,7 @@ class _GiftTrackerScreenState extends State<GiftTrackerScreen>
       final idx = _items.indexWhere((i) => i.id == id);
       if (idx >= 0) _items[idx] = _items[idx].toggleThankYou();
     });
+    _saveItems();
   }
 
   void _rateGift(String id, int rating) {
@@ -130,6 +151,7 @@ class _GiftTrackerScreenState extends State<GiftTrackerScreen>
       final idx = _items.indexWhere((i) => i.id == id);
       if (idx >= 0) _items[idx] = _items[idx].copyWith(rating: rating);
     });
+    _saveItems();
   }
 
   List<GiftItem> get _filteredItems {

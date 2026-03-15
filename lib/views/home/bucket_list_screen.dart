@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/bucket_item.dart';
 import '../../core/services/bucket_list_service.dart';
+import '../../core/services/screen_persistence.dart';
 
 /// Bucket List screen — 4-tab UI for tracking life dreams and experiences.
 class BucketListScreen extends StatefulWidget {
@@ -13,6 +14,11 @@ class _BucketListScreenState extends State<BucketListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _service = const BucketListService();
+  final _persistence = ScreenPersistence<BucketItem>(
+    storageKey: 'bucket_list_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: BucketItem.fromJson,
+  );
   final List<BucketItem> _items = [];
   String _searchQuery = '';
   BucketCategory? _filterCategory;
@@ -22,7 +28,17 @@ class _BucketListScreenState extends State<BucketListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadItems();
   }
+
+  Future<void> _loadItems() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() => _items.addAll(saved));
+    }
+  }
+
+  Future<void> _saveItems() => _persistence.save(_items);
 
   @override
   void dispose() {
@@ -30,10 +46,15 @@ class _BucketListScreenState extends State<BucketListScreen>
     super.dispose();
   }
 
-  void _addItem(BucketItem item) => setState(() => _items.add(item));
+  void _addItem(BucketItem item) {
+    setState(() => _items.add(item));
+    _saveItems();
+  }
 
-  void _deleteItem(String id) =>
-      setState(() => _items.removeWhere((i) => i.id == id));
+  void _deleteItem(String id) {
+    setState(() => _items.removeWhere((i) => i.id == id));
+    _saveItems();
+  }
 
   void _completeItem(String id, {String? notes, int? rating}) {
     setState(() {
@@ -42,6 +63,7 @@ class _BucketListScreenState extends State<BucketListScreen>
         _items[idx] = _items[idx].markComplete(notes: notes, rating: rating);
       }
     });
+    _saveItems();
   }
 
   @override

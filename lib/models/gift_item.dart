@@ -131,4 +131,51 @@ class GiftItem {
   int? get daysUntil => occasionDate != null
       ? occasionDate!.difference(DateTime.now()).inDays
       : null;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'recipientOrGiver': recipientOrGiver,
+        'occasion': occasion.name,
+        'status': status.name,
+        'direction': direction.name,
+        'budget': budget,
+        'actualCost': actualCost,
+        'occasionDate': occasionDate?.toIso8601String(),
+        'createdAt': createdAt.toIso8601String(),
+        'notes': notes,
+        'thankYouSent': thankYouSent,
+        'rating': rating,
+        'tags': tags,
+        'url': url,
+      };
+
+  factory GiftItem.fromJson(Map<String, dynamic> json) => GiftItem(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        recipientOrGiver: json['recipientOrGiver'] as String,
+        occasion: GiftOccasion.values.firstWhere(
+            (e) => e.name == json['occasion'],
+            orElse: () => GiftOccasion.other),
+        status: GiftStatus.values.firstWhere(
+            (e) => e.name == json['status'],
+            orElse: () => GiftStatus.idea),
+        direction: GiftDirection.values.firstWhere(
+            (e) => e.name == json['direction'],
+            orElse: () => GiftDirection.giving),
+        budget: (json['budget'] as num?)?.toDouble(),
+        actualCost: (json['actualCost'] as num?)?.toDouble(),
+        occasionDate: json['occasionDate'] != null
+            ? DateTime.parse(json['occasionDate'] as String)
+            : null,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        notes: json['notes'] as String?,
+        thankYouSent: json['thankYouSent'] as bool? ?? false,
+        rating: json['rating'] as int? ?? 0,
+        tags: (json['tags'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList() ??
+            const [],
+        url: json['url'] as String?,
+      );
 }
