@@ -95,10 +95,20 @@ class GoalTrackerService {
 
     // Auto-complete goal if all milestones done.
     final allDone = milestones.every((m) => m.isCompleted);
+
+    // Compute progress from milestones so it stays in sync.
+    // Previously, untoggling a milestone after auto-complete kept
+    // progress at 100 because the old value was carried forward.
+    final completedCount =
+        milestones.where((m) => m.isCompleted).length;
+    final milestoneProgress = milestones.isEmpty
+        ? goal.progress
+        : (completedCount / milestones.length * 100).round();
+
     _goals[idx] = goal.copyWith(
       milestones: milestones,
       isCompleted: allDone,
-      progress: allDone ? 100 : goal.progress,
+      progress: milestoneProgress,
     );
   }
 
@@ -117,7 +127,21 @@ class GoalTrackerService {
         .milestones
         .where((m) => m.id != milestoneId)
         .toList();
-    _goals[idx] = _goals[idx].copyWith(milestones: milestones);
+
+    // Recalculate progress after removing a milestone.
+    final allDone = milestones.isNotEmpty &&
+        milestones.every((m) => m.isCompleted);
+    final completedCount =
+        milestones.where((m) => m.isCompleted).length;
+    final newProgress = milestones.isEmpty
+        ? _goals[idx].progress
+        : (completedCount / milestones.length * 100).round();
+
+    _goals[idx] = _goals[idx].copyWith(
+      milestones: milestones,
+      progress: newProgress,
+      isCompleted: allDone,
+    );
   }
 
   // ── Progress ──────────────────────────────────────────────────────

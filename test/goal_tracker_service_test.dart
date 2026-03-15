@@ -180,6 +180,39 @@ void main() {
       expect(goal.isCompleted, true);
       expect(goal.progress, 100);
     });
+
+    test('toggling one milestone shows 50% progress', () {
+      service.toggleMilestone('g1', 'm1');
+      final goal = service.allGoals.first;
+      expect(goal.progress, 50);
+      expect(goal.isCompleted, false);
+    });
+
+    test('uncompleting milestone after auto-complete reduces progress', () {
+      // Complete all → auto-complete at 100%
+      service.toggleMilestone('g1', 'm1');
+      service.toggleMilestone('g1', 'm2');
+      expect(service.allGoals.first.progress, 100);
+      expect(service.allGoals.first.isCompleted, true);
+
+      // Untoggle one → should drop to 50%, not stay at 100%
+      service.toggleMilestone('g1', 'm2');
+      final goal = service.allGoals.first;
+      expect(goal.progress, 50);
+      expect(goal.isCompleted, false);
+    });
+
+    test('removeMilestone recalculates progress', () {
+      service.toggleMilestone('g1', 'm1');
+      // m1 completed, m2 pending → 50%
+      expect(service.allGoals.first.progress, 50);
+
+      // Remove the pending one → only completed m1 remains → 100%
+      service.removeMilestone('g1', 'm2');
+      final goal = service.allGoals.first;
+      expect(goal.progress, 100);
+      expect(goal.isCompleted, true);
+    });
   });
 
   group('GoalTrackerService progress', () {
