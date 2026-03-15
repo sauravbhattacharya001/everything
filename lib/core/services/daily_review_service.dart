@@ -1,4 +1,4 @@
-/// Daily Review Service — aggregates a day's events into a structured
+/// Daily Review Service - aggregates a day's events into a structured
 /// end-of-day review with completion stats, mood/energy tracking,
 /// highlights, and day-over-day comparison.
 ///
@@ -9,11 +9,13 @@
 /// Key concepts:
 ///   - **Completion Rate**: fraction of scheduled events that were
 ///     completed (have checklists or are past their time).
-///   - **Day Rating**: user-provided 1–5 star rating for the day.
-///   - **Mood & Energy**: simple 1–5 scales tracked alongside events.
+///   - **Day Rating**: user-provided 1-5 star rating for the day.
+///   - **Mood & Energy**: simple 1-5 scales tracked alongside events.
 ///   - **Highlights / Lowlights**: user-selected notable moments.
 ///   - **Streak**: consecutive days with a review entry.
 
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/event_model.dart';
 import '../utils/formatting_utils.dart';
 
@@ -24,13 +26,13 @@ class DailyReview {
   /// The date this review covers.
   final DateTime date;
 
-  /// Star rating for the day (1–5).
+  /// Star rating for the day (1-5).
   final int rating;
 
-  /// Mood score (1–5): 1=terrible, 5=amazing.
+  /// Mood score (1-5): 1=terrible, 5=amazing.
   final int mood;
 
-  /// Energy level (1–5): 1=exhausted, 5=energized.
+  /// Energy level (1-5): 1=exhausted, 5=energized.
   final int energy;
 
   /// Free-text notes for the day.
@@ -92,6 +94,40 @@ class DailyReview {
 
   @override
   int get hashCode => Object.hash(date.year, date.month, date.day);
+
+  Map<String, dynamic> toJson() => {
+        'date': date.toIso8601String(),
+        'rating': rating,
+        'mood': mood,
+        'energy': energy,
+        'notes': notes,
+        'highlights': highlights,
+        'lowlights': lowlights,
+        'tomorrowFocus': tomorrowFocus,
+        'createdAt': createdAt.toIso8601String(),
+      };
+
+  factory DailyReview.fromJson(Map<String, dynamic> json) {
+    return DailyReview(
+      date: DateTime.parse(json['date'] as String),
+      rating: json['rating'] as int? ?? 3,
+      mood: json['mood'] as int? ?? 3,
+      energy: json['energy'] as int? ?? 3,
+      notes: json['notes'] as String? ?? '',
+      highlights: (json['highlights'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      lowlights: (json['lowlights'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      tomorrowFocus: json['tomorrowFocus'] as String? ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+    );
+  }
 }
 
 /// Summary statistics for a single day's events.
@@ -123,11 +159,11 @@ class DaySummary {
   /// The latest event end time.
   final DateTime? lastEventTime;
 
-  /// Completion rate as a percentage (0–100).
+  /// Completion rate as a percentage (0-100).
   double get completionRate =>
       totalEvents > 0 ? (completedEvents / totalEvents) * 100 : 0;
 
-  /// Checklist completion rate as a percentage (0–100).
+  /// Checklist completion rate as a percentage (0-100).
   double get checklistRate => totalChecklistItems > 0
       ? (completedChecklistItems / totalChecklistItems) * 100
       : 0;
@@ -247,13 +283,46 @@ class ReviewTrend {
 
 /// Service that computes daily summaries and manages review entries.
 class DailyReviewService {
+  static const String _storageKey = 'daily_review_entries';
   final List<EventModel> events;
   final List<DailyReview> _reviews;
+  bool _initialized = false;
 
   DailyReviewService({
     required this.events,
     List<DailyReview>? reviews,
   }) : _reviews = reviews ?? [];
+
+  /// Initialize by loading persisted reviews.
+  Future<void> init() async {
+    if (_initialized) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(_storageKey);
+      if (data != null && data.isNotEmpty) {
+        final list = jsonDecode(data) as List<dynamic>;
+        for (final item in list) {
+          final review = DailyReview.fromJson(item as Map<String, dynamic>);
+          // Avoid duplicates if reviews were passed via constructor
+          if (!_reviews.any((r) => FormattingUtils.sameDay(r.date, review.date))) {
+            _reviews.add(review);
+          }
+        }
+      }
+    } catch (_) {}
+    _initialized = true;
+  }
+
+  /// Persist reviews to SharedPreferences.
+  Future<void> _save() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _storageKey,
+        jsonEncode(_reviews.map((r) => r.toJson()).toList()),
+      );
+    } catch (_) {}
+  }
 
   /// Get all stored reviews.
   List<DailyReview> get reviews => List.unmodifiable(_reviews);
@@ -339,9 +408,10 @@ class DailyReviewService {
   }
 
   /// Save or update a review for a date.
-  void saveReview(DailyReview review) {
+  Future<void> saveReview(DailyReview review) async {
     _reviews.removeWhere((r) => FormattingUtils.sameDay(r.date, review.date));
     _reviews.add(review);
+    await _save();
   }
 
   /// Get mood/energy trends for the last N days.

@@ -22,18 +22,31 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   int _totalSeconds = 25 * 60;
   Timer? _timer;
   late AnimationController _pulseController;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _service = PomodoroService(settings: _settings);
-    _currentPhase = _service.nextPhase();
     _totalSeconds = _settings.workMinutes * 60;
     _remainingSeconds = _totalSeconds;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
     );
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    await _service.init();
+    if (mounted) {
+      setState(() {
+        _currentPhase = _service.nextPhase();
+        _totalSeconds = _service.phaseDuration(_currentPhase) * 60;
+        _remainingSeconds = _totalSeconds;
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -94,7 +107,7 @@ class _PomodoroScreenState extends State<PomodoroScreen>
   }
 
   void _startTimer() {
-    _service.startSession(_currentPhase);
+    _service.startSession(_currentPhase); // fire-and-forget persistence
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_remainingSeconds <= 0) {
         _onTimerComplete();

@@ -39,7 +39,14 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
       events: DailyReviewSampleData.sampleEvents(),
       reviews: DailyReviewSampleData.sampleReviews(),
     );
-    _loadDay();
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    await _service.init();
+    if (mounted) {
+      setState(() => _loadDay());
+    }
   }
 
   @override
@@ -99,7 +106,7 @@ class _DailyReviewScreenState extends State<DailyReviewScreen> {
       tomorrowFocus: _focusController.text,
       createdAt: DateTime.now(),
     );
-    _service.saveReview(review);
+    _service.saveReview(review); // fire-and-forget persistence
     setState(() {
       _review = review;
       _isSaved = true;

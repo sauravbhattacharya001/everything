@@ -7,6 +7,9 @@
 ///   - Short break: 5 minutes
 ///   - Long break: 15 minutes (every 4 pomodoros)
 
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class PomodoroSettings {
   final int workMinutes;
   final int shortBreakMinutes;
@@ -64,6 +67,26 @@ class PomodoroSession {
       completed: completed ?? this.completed,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'startedAt': startedAt.toIso8601String(),
+        'completedAt': completedAt?.toIso8601String(),
+        'phase': phase.index,
+        'durationMinutes': durationMinutes,
+        'completed': completed,
+      };
+
+  factory PomodoroSession.fromJson(Map<String, dynamic> json) {
+    return PomodoroSession(
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
+      phase: PomodoroPhase.values[json['phase'] as int],
+      durationMinutes: json['durationMinutes'] as int,
+      completed: json['completed'] as bool? ?? false,
+    );
+  }
 }
 
 class PomodoroStats {
@@ -83,12 +106,41 @@ class PomodoroStats {
 }
 
 class PomodoroService {
+  static const String _storageKey = 'pomodoro_sessions';
   final PomodoroSettings settings;
   final List<PomodoroSession> _sessions = [];
+  bool _initialized = false;
 
   PomodoroService({this.settings = const PomodoroSettings()});
 
   List<PomodoroSession> get sessions => List.unmodifiable(_sessions);
+
+  /// Initialize service by loading persisted sessions.
+  Future<void> init() async {
+    if (_initialized) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(_storageKey);
+      if (data != null && data.isNotEmpty) {
+        final list = jsonDecode(data) as List<dynamic>;
+        _sessions.addAll(
+          list.map((e) => PomodoroSession.fromJson(e as Map<String, dynamic>)),
+        );
+      }
+    } catch (_) {}
+    _initialized = true;
+  }
+
+  /// Persist sessions to SharedPreferences.
+  Future<void> _save() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _storageKey,
+        jsonEncode(_sessions.map((s) => s.toJson()).toList()),
+      );
+    } catch (_) {}
+  }
 
   /// Determine which phase comes next based on completed work sessions.
   PomodoroPhase nextPhase() {
@@ -137,23 +189,27 @@ class PomodoroService {
   }
 
   /// Start a new session.
-  PomodoroSession startSession(PomodoroPhase phase) {
+  Future<PomodoroSession> startSession(PomodoroPhase phase) async {
+    await init();
     final session = PomodoroSession(
       startedAt: DateTime.now(),
       phase: phase,
       durationMinutes: phaseDuration(phase),
     );
     _sessions.add(session);
+    await _save();
     return session;
   }
 
   /// Mark the current session as completed.
-  void completeCurrentSession() {
+  Future<void> completeCurrentSession() async {
+    await init();
     if (_sessions.isNotEmpty && !_sessions.last.completed) {
       _sessions[_sessions.length - 1] = _sessions.last.copyWith(
         completed: true,
         completedAt: DateTime.now(),
       );
+      await _save();
     }
   }
 
@@ -194,7 +250,8 @@ class PomodoroService {
   }
 
   /// Reset all sessions.
-  void reset() {
+  Future<void> reset() async {
     _sessions.clear();
+    await _save();
   }
 }
