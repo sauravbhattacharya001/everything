@@ -97,6 +97,49 @@ class TravelEntry {
   bool get isUpcoming =>
       startDate.isAfter(DateTime.now()) && !isCompleted;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'destination': destination,
+        'country': country,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+        'type': type.name,
+        'transport': transport.name,
+        'rating': rating?.name,
+        'totalCost': totalCost,
+        'currency': currency,
+        'highlights': highlights,
+        'notes': notes,
+        'isCompleted': isCompleted,
+      };
+
+  factory TravelEntry.fromJson(Map<String, dynamic> json) {
+    return TravelEntry(
+      id: json['id'] as String,
+      destination: json['destination'] as String,
+      country: json['country'] as String?,
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+      type: TripType.values.firstWhere((e) => e.name == json['type'],
+          orElse: () => TripType.leisure),
+      transport: TripTransport.values.firstWhere(
+          (e) => e.name == json['transport'],
+          orElse: () => TripTransport.mixed),
+      rating: json['rating'] != null
+          ? TripRating.values.firstWhere((e) => e.name == json['rating'],
+              orElse: () => TripRating.good)
+          : null,
+      totalCost: (json['totalCost'] as num?)?.toDouble(),
+      currency: json['currency'] as String?,
+      highlights: (json['highlights'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      notes: json['notes'] as String?,
+      isCompleted: json['isCompleted'] as bool? ?? true,
+    );
+  }
+
   TravelEntry copyWith({
     String? destination,
     String? country,

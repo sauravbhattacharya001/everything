@@ -45,6 +45,35 @@ class TimeEntry {
 
   bool get isRunning => endTime == null;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'activity': activity,
+        'category': category.name,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime?.toIso8601String(),
+        'notes': notes,
+        'tags': tags,
+      };
+
+  factory TimeEntry.fromJson(Map<String, dynamic> json) {
+    return TimeEntry(
+      id: json['id'] as String,
+      activity: json['activity'] as String,
+      category: TimeCategory.values.firstWhere(
+          (e) => e.name == json['category'],
+          orElse: () => TimeCategory.other),
+      startTime: DateTime.parse(json['startTime'] as String),
+      endTime: json['endTime'] != null
+          ? DateTime.parse(json['endTime'] as String)
+          : null,
+      notes: json['notes'] as String?,
+      tags: (json['tags'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+    );
+  }
+
   TimeEntry copyWith({
     String? activity,
     TimeCategory? category,

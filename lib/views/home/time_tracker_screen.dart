@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../core/services/screen_persistence.dart';
 import '../../core/services/time_tracker_service.dart';
 import '../../models/time_entry.dart';
 
@@ -17,6 +18,11 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
   final TimeTrackerService _service = const TimeTrackerService();
   late TabController _tabController;
   final List<TimeEntry> _entries = [];
+  final _persistence = ScreenPersistence<TimeEntry>(
+    storageKey: 'time_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: TimeEntry.fromJson,
+  );
   int _nextId = 1;
   Timer? _ticker;
   DateTime _selectedDate = DateTime.now();
@@ -25,6 +31,27 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadEntries();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_entries.any((e) => e.isRunning)) setState(() {});
+    });
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        // Ensure _nextId doesn't collide with loaded entries
+        for (final e in saved) {
+          final numPart = int.tryParse(e.id.replaceAll(RegExp(r'[^0-9]'), ''));
+          if (numPart != null && numPart >= _nextId) _nextId = numPart + 1;
+        }
+      });
+    }
+  }
+
+  void _saveEntries() => _persistence.save(_entries);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_entries.any((e) => e.isRunning)) setState(() {});
     });
@@ -56,6 +83,7 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
         notes: notes,
       ));
     });
+    _saveEntries();
   }
 
   void _stopActiveTimer() {
@@ -67,11 +95,13 @@ class _TimeTrackerScreenState extends State<TimeTrackerScreen>
           _entries[idx] = active.copyWith(endTime: DateTime.now());
         }
       });
+      _saveEntries();
     }
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _saveEntries();
   }
 
   void _showNewEntryDialog() {

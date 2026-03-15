@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../core/services/commute_tracker_service.dart';
 import '../../models/commute_entry.dart';
 
@@ -16,6 +17,11 @@ class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
   final CommuteTrackerService _service = const CommuteTrackerService();
   late TabController _tabController;
   final List<CommuteEntry> _entries = [];
+  final _persistence = ScreenPersistence<CommuteEntry>(
+    storageKey: 'commute_tracker_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: CommuteEntry.fromJson,
+  );
   int _nextId = 1;
   DateTime _selectedDate = DateTime.now();
 
@@ -23,6 +29,20 @@ class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() {
+        _entries.addAll(saved);
+        for (final e in saved) {
+          final numPart = int.tryParse(e.id.replaceAll(RegExp(r'[^0-9]'), ''));
+          if (numPart != null && numPart >= _nextId) _nextId = numPart + 1;
+        }
+      });
+    }
   }
 
   @override
@@ -33,10 +53,12 @@ class _CommuteTrackerScreenState extends State<CommuteTrackerScreen>
 
   void _addEntry(CommuteEntry entry) {
     setState(() => _entries.add(entry));
+    _persistence.save(_entries);
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _persistence.save(_entries);
   }
 
   void _showLogDialog({bool isReturn = false}) {

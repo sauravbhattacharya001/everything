@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/screen_persistence.dart';
 import '../../models/travel_entry.dart';
 import '../../core/services/travel_log_service.dart';
 
@@ -14,12 +15,25 @@ class _TravelLogScreenState extends State<TravelLogScreen>
   late TabController _tabController;
   final _service = const TravelLogService();
   final List<TravelEntry> _entries = [];
+  final _persistence = ScreenPersistence<TravelEntry>(
+    storageKey: 'travel_log_entries',
+    toJson: (e) => e.toJson(),
+    fromJson: TravelEntry.fromJson,
+  );
   int? _filterYear;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    final saved = await _persistence.load();
+    if (saved.isNotEmpty) {
+      setState(() => _entries.addAll(saved));
+    }
   }
 
   @override
@@ -30,10 +44,12 @@ class _TravelLogScreenState extends State<TravelLogScreen>
 
   void _addEntry(TravelEntry entry) {
     setState(() => _entries.add(entry));
+    _persistence.save(_entries);
   }
 
   void _deleteEntry(String id) {
     setState(() => _entries.removeWhere((e) => e.id == id));
+    _persistence.save(_entries);
   }
 
   @override

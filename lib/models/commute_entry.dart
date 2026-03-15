@@ -63,6 +63,37 @@ class CommuteEntry {
   /// Estimated CO₂ emissions in kg.
   double get co2Kg => (distanceKm ?? 0) * mode.co2PerKm;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'date': date.toIso8601String(),
+        'mode': mode.name,
+        'durationMinutes': durationMinutes,
+        'distanceKm': distanceKm,
+        'cost': cost,
+        'comfort': comfort?.name,
+        'notes': notes,
+        'isReturn': isReturn,
+      };
+
+  factory CommuteEntry.fromJson(Map<String, dynamic> json) {
+    return CommuteEntry(
+      id: json['id'] as String,
+      date: DateTime.parse(json['date'] as String),
+      mode: CommuteMode.values.firstWhere((e) => e.name == json['mode'],
+          orElse: () => CommuteMode.car),
+      durationMinutes: json['durationMinutes'] as int,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+      cost: (json['cost'] as num?)?.toDouble(),
+      comfort: json['comfort'] != null
+          ? CommuteComfort.values.firstWhere(
+              (e) => e.name == json['comfort'],
+              orElse: () => CommuteComfort.okay)
+          : null,
+      notes: json['notes'] as String?,
+      isReturn: json['isReturn'] as bool? ?? false,
+    );
+  }
+
   CommuteEntry copyWith({
     DateTime? date,
     CommuteMode? mode,
