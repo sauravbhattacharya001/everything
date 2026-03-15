@@ -139,9 +139,10 @@ class PlantCareService {
   }
 
   bool removePlant(String id) {
-    final removed = _plants.removeWhere((p) => p.id == id);
+    final before = _plants.length;
+    _plants.removeWhere((p) => p.id == id);
     _careLog.removeWhere((e) => e.plantId == id);
-    return true;
+    return _plants.length < before;
   }
 
   // ─── Care Logging ───

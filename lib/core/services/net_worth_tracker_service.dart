@@ -205,7 +205,9 @@ class NetWorthTrackerService {
 
   /// Permanently remove an account.
   bool removeAccount(String accountId) {
-    return _accounts.removeWhere((a) => a.id == accountId) != null;
+    final before = _accounts.length;
+    _accounts.removeWhere((a) => a.id == accountId);
+    return _accounts.length < before;
   }
 
   /// Find account by ID.

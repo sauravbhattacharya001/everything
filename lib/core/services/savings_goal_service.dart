@@ -77,7 +77,9 @@ class SavingsGoalService {
 
   /// Remove a goal entirely.
   bool removeGoal(String goalId) {
-    return _goals.removeWhere((g) => g.id == goalId) != null;
+    final before = _goals.length;
+    _goals.removeWhere((g) => g.id == goalId);
+    return _goals.length < before;
   }
 
   /// Archive/unarchive a goal.

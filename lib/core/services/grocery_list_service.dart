@@ -77,7 +77,9 @@ class GroceryListService {
 
   /// Delete a list.
   bool deleteList(String listId) {
-    return _lists.removeWhere((l) => l.id == listId) != null || true;
+    final before = _lists.length;
+    _lists.removeWhere((l) => l.id == listId);
+    return _lists.length < before;
   }
 
   /// Add an item to a list.
@@ -168,9 +170,10 @@ class GroceryListService {
     if (listIndex < 0) return false;
 
     final items = List<GroceryItem>.from(_lists[listIndex].items);
-    final removed = items.removeWhere((i) => i.id == itemId);
+    final before = items.length;
+    items.removeWhere((i) => i.id == itemId);
     _lists[listIndex] = _lists[listIndex].copyWith(items: items);
-    return true;
+    return items.length < before;
   }
 
   /// Remove all checked items from a list.
