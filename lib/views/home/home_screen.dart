@@ -54,6 +54,7 @@ import 'warranty_tracker_screen.dart';
 import 'home_inventory_screen.dart';
 import 'meditation_tracker_screen.dart';
 import 'grocery_list_screen.dart';
+import 'packing_list_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -812,6 +813,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Grocery lists',
+          ),
+          // Packing list button
+          IconButton(
+            icon: const Icon(Icons.luggage),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PackingListScreen()),
+              );
+            },
+            tooltip: 'Packing lists',
           ),
           // Sort button
           IconButton(
