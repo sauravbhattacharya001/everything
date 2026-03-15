@@ -55,6 +55,7 @@ import 'home_inventory_screen.dart';
 import 'meditation_tracker_screen.dart';
 import 'grocery_list_screen.dart';
 import 'packing_list_screen.dart';
+import 'vehicle_maintenance_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -563,6 +564,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Warranty tracker',
+          ),
+          // Vehicle maintenance button
+          IconButton(
+            icon: const Icon(Icons.car_repair),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const VehicleMaintenanceScreen()),
+              );
+            },
+            tooltip: 'Vehicle maintenance',
           ),
           // Home inventory button
           IconButton(
