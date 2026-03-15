@@ -55,6 +55,7 @@ import 'home_inventory_screen.dart';
 import 'meditation_tracker_screen.dart';
 import 'grocery_list_screen.dart';
 import 'packing_list_screen.dart';
+import 'recipe_book_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -803,6 +804,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Wishlist',
+          ),
+          // Recipe book button
+          IconButton(
+            icon: const Icon(Icons.menu_book),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RecipeBookScreen()),
+              );
+            },
+            tooltip: 'Recipe Book',
           ),
           // Grocery list button
           IconButton(
