@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import '../../models/budget_entry.dart';
 import '../../models/expense_entry.dart';
@@ -335,6 +336,18 @@ class BudgetPlannerService {
   }
 
   // ── Serialization ─────────────────────────────────────────────────
+
+  /// Export all budgets as a JSON string.
+  String exportToJson() => jsonEncode(
+      _budgets.map((b) => b.toJson()).toList());
+
+  /// Import budgets from a JSON string, replacing current state.
+  void importFromJson(String json) {
+    final data = jsonDecode(json) as List<dynamic>;
+    _budgets.clear();
+    _budgets.addAll(
+        data.map((b) => MonthlyBudget.fromJson(b as Map<String, dynamic>)));
+  }
 
   void loadBudgets(List<MonthlyBudget> budgets) {
     _budgets.clear();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/budget_planner_service.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../models/budget_entry.dart';
 import '../../models/expense_entry.dart';
 
@@ -14,7 +15,7 @@ class BudgetPlannerScreen extends StatefulWidget {
 }
 
 class _BudgetPlannerScreenState extends State<BudgetPlannerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
   final BudgetPlannerService _service = BudgetPlannerService();
   late TabController _tabController;
   int _selectedYear = DateTime.now().year;
@@ -24,11 +25,24 @@ class _BudgetPlannerScreenState extends State<BudgetPlannerScreen>
   final List<ExpenseEntry> _demoEntries = [];
 
   @override
+  String get storageKey => 'budget_planner_data';
+
+  @override
+  String exportData() => _service.exportToJson();
+
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _service.generateDemoData();
-    _generateDemoExpenses();
+    initPersistence().then((_) {
+      if (_service.budgets.isEmpty) {
+        _service.generateDemoData();
+      }
+      _generateDemoExpenses();
+    });
   }
 
   @override

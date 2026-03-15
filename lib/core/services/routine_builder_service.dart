@@ -4,6 +4,8 @@
 /// RoutineRun, RoutineAnalytics) live in models/routine.dart and are
 /// re-exported here for backward compatibility.
 
+import 'dart:convert';
+
 import '../../models/routine.dart';
 
 // Re-export models so existing imports of this file continue to work.
@@ -478,7 +480,34 @@ class RoutineBuilderService {
   static List<String> get templateNames =>
       const ['morning', 'evening', 'workout', 'study'];
 
-  // ΓöÇΓöÇ Private Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Import / Export ──────────────────────────────────────
+
+  /// Export all routines and runs as a JSON string.
+  String exportToJson() => jsonEncode({
+        'routines': _routines.map((r) => r.toJson()).toList(),
+        'runs': _runs.map((r) => r.toJson()).toList(),
+      });
+
+  /// Import routines and runs from a JSON string, replacing current state.
+  void importFromJson(String json) {
+    final data = jsonDecode(json) as Map<String, dynamic>;
+    final rawRoutines = data['routines'] as List<dynamic>? ?? [];
+    final rawRuns = data['runs'] as List<dynamic>? ?? [];
+
+    final parsedRoutines = rawRoutines
+        .map((r) => Routine.fromJson(r as Map<String, dynamic>))
+        .toList();
+    final parsedRuns = rawRuns
+        .map((r) => RoutineRun.fromJson(r as Map<String, dynamic>))
+        .toList();
+
+    _routines.clear();
+    _routines.addAll(parsedRoutines);
+    _runs.clear();
+    _runs.addAll(parsedRuns);
+  }
+
+  // ── Private Helpers ───────────────────────────────────────
 
   int _findRunIndex(String routineId, DateTime date) {
     final dateOnly = DateTime(date.year, date.month, date.day);

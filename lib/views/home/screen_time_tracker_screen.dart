@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/screen_time_tracker_service.dart';
 import '../../models/screen_time_entry.dart';
 
@@ -13,17 +14,33 @@ class ScreenTimeTrackerScreen extends StatefulWidget {
 }
 
 class _ScreenTimeTrackerScreenState extends State<ScreenTimeTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
   final ScreenTimeTrackerService _service = ScreenTimeTrackerService();
   late TabController _tabController;
   DateTime _selectedDate = DateTime.now();
   bool _initialized = false;
 
   @override
+  String get storageKey => 'screen_time_tracker_data';
+
+  @override
+  String exportData() => _service.exportToJson();
+
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadDemoData();
+    initPersistence().then((_) {
+      // Only load demo data if no persisted data was restored
+      if (_service.entries.isEmpty) {
+        _loadDemoData();
+      } else {
+        _initialized = true;
+      }
+    });
   }
 
   void _loadDemoData() {

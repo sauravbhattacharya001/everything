@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/capture_item.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/quick_capture_service.dart';
 
 /// Quick Capture Inbox screen — GTD-style rapid thought capture with
@@ -11,16 +12,26 @@ class QuickCaptureScreen extends StatefulWidget {
 }
 
 class _QuickCaptureScreenState extends State<QuickCaptureScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
   late TabController _tabController;
   final _service = QuickCaptureService();
   final _captureController = TextEditingController();
   CaptureCategory? _filterCategory;
 
   @override
+  String get storageKey => 'quick_capture_data';
+
+  @override
+  String exportData() => _service.exportJson();
+
+  @override
+  void importData(String json) => _service.importJson(json);
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    initPersistence();
   }
 
   @override

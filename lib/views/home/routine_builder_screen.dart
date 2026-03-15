@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/persistent_state_mixin.dart';
 import '../../core/services/routine_builder_service.dart';
 import '../../models/routine.dart';
 
@@ -14,16 +15,29 @@ class RoutineBuilderScreen extends StatefulWidget {
 }
 
 class _RoutineBuilderScreenState extends State<RoutineBuilderScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PersistentStateMixin {
   final RoutineBuilderService _service = RoutineBuilderService();
   late TabController _tabController;
   DateTime _selectedDate = DateTime.now();
 
   @override
+  String get storageKey => 'routine_builder_data';
+
+  @override
+  String exportData() => _service.exportToJson();
+
+  @override
+  void importData(String json) => _service.importFromJson(json);
+
+  @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadDemoData();
+    initPersistence().then((_) {
+      if (_service.routines.isEmpty) {
+        _loadDemoData();
+      }
+    });
   }
 
   @override
