@@ -57,6 +57,7 @@ import 'grocery_list_screen.dart';
 import 'packing_list_screen.dart';
 import 'recipe_book_screen.dart';
 import 'watchlist_screen.dart';
+import 'eisenhower_matrix_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -845,6 +846,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Packing lists',
+          ),
+          // Eisenhower Matrix button
+          IconButton(
+            icon: const Icon(Icons.grid_view_rounded),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const EisenhowerMatrixScreen()),
+              );
+            },
+            tooltip: 'Eisenhower Matrix',
           ),
           // Sort button
           IconButton(
