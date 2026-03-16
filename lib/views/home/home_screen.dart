@@ -48,6 +48,7 @@ import 'wishlist_screen.dart';
 import 'quick_capture_screen.dart';
 import 'quick_capture_screen.dart';
 import 'emergency_card_screen.dart';
+import 'home_maintenance_screen.dart';
 import 'gift_tracker_screen.dart';
 import 'net_worth_tracker_screen.dart';
 import 'debt_payoff_screen.dart';
@@ -901,6 +902,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Learning Tracker',
+          ),
+          // Home Maintenance button
+          IconButton(
+            icon: const Icon(Icons.home_repair_service),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const HomeMaintenanceScreen()),
+              );
+            },
+            tooltip: 'Home Maintenance',
           ),
           // Document Expiry Tracker button
           IconButton(
