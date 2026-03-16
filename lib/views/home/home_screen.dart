@@ -47,6 +47,7 @@ import 'bucket_list_screen.dart';
 import 'wishlist_screen.dart';
 import 'quick_capture_screen.dart';
 import 'quick_capture_screen.dart';
+import 'emergency_card_screen.dart';
 import 'gift_tracker_screen.dart';
 import 'net_worth_tracker_screen.dart';
 import 'debt_payoff_screen.dart';
@@ -878,6 +879,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Quote Collection',
+          ),
+          // Emergency Card button
+          IconButton(
+            icon: const Icon(Icons.emergency),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const EmergencyCardScreen()),
+              );
+            },
+            tooltip: 'Emergency Card',
           ),
           // Sort button
           IconButton(
