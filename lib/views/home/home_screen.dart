@@ -62,6 +62,7 @@ import 'eisenhower_matrix_screen.dart';
 import 'kanban_board_screen.dart';
 import 'quote_collection_screen.dart';
 import 'learning_tracker_screen.dart';
+import 'document_expiry_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -900,6 +901,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Learning Tracker',
+          ),
+          // Document Expiry Tracker button
+          IconButton(
+            icon: const Icon(Icons.assignment_late),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DocumentExpiryScreen()),
+              );
+            },
+            tooltip: 'Document Expiry Tracker',
           ),
           // Sort button
           IconButton(
