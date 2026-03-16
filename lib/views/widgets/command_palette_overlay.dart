@@ -42,6 +42,7 @@ import '../home/commute_tracker_screen.dart';
 import '../home/bucket_list_screen.dart';
 import '../home/travel_log_screen.dart';
 import '../home/wishlist_screen.dart';
+import '../home/watchlist_screen.dart';
 import '../home/gift_tracker_screen.dart';
 
 /// Spotlight-style command palette overlay.
@@ -128,6 +129,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     'nav_bucket_list': () => BucketListScreen(),
     'nav_travel': () => TravelLogScreen(),
     'nav_wishlist': () => WishlistScreen(),
+    'nav_watchlist': () => WatchlistScreen(),
     'nav_gifts': () => GiftTrackerScreen(),
   };
 

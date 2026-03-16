@@ -169,6 +169,8 @@ class CommandPaletteService {
           ['trips', 'vacation', 'travel']),
       _nav('nav_wishlist', 'Wishlist', Icons.card_giftcard, 'Lists',
           ['wish', 'want', 'buy']),
+      _nav('nav_watchlist', 'Watchlist', Icons.movie_outlined, 'Lists',
+          ['movies', 'tv', 'shows', 'watch', 'film', 'series']),
       _nav('nav_gifts', 'Gift Tracker', Icons.redeem, 'Lists',
           ['gifts', 'presents', 'birthday']),
 
