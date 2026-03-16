@@ -64,6 +64,7 @@ import 'kanban_board_screen.dart';
 import 'quote_collection_screen.dart';
 import 'learning_tracker_screen.dart';
 import 'document_expiry_screen.dart';
+import 'productivity_score_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
 
@@ -922,6 +923,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Document Expiry Tracker',
+          ),
+          // Productivity score button
+          IconButton(
+            icon: const Icon(Icons.speed),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProductivityScoreScreen()),
+              );
+            },
+            tooltip: 'Productivity Score',
           ),
           // Sort button
           IconButton(
