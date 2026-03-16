@@ -58,6 +58,7 @@ import 'packing_list_screen.dart';
 import 'recipe_book_screen.dart';
 import 'watchlist_screen.dart';
 import 'eisenhower_matrix_screen.dart';
+import 'kanban_board_screen.dart';
 import 'quote_collection_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
@@ -847,6 +848,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             tooltip: 'Packing lists',
+          ),
+          // Kanban Board button
+          IconButton(
+            icon: const Icon(Icons.view_kanban),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const KanbanBoardScreen()),
+              );
+            },
+            tooltip: 'Kanban Board',
           ),
           // Eisenhower Matrix button
           IconButton(
