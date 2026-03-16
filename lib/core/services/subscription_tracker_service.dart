@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../models/subscription_entry.dart';
 
+/// Alert for an upcoming subscription billing event.
 class BillingAlert {
   final SubscriptionEntry subscription;
   final int daysUntil;
@@ -8,6 +9,7 @@ class BillingAlert {
   const BillingAlert({required this.subscription, required this.daysUntil, required this.message});
 }
 
+/// Spending breakdown for a single [SubscriptionCategory].
 class CategoryBreakdown {
   final SubscriptionCategory category;
   final int count;
@@ -17,6 +19,7 @@ class CategoryBreakdown {
   const CategoryBreakdown({required this.category, required this.count, required this.monthlyTotal, required this.annualTotal, required this.percentOfTotal});
 }
 
+/// High-level subscription portfolio summary with cost metrics and alerts.
 class SubscriptionSummary {
   final int totalActive, totalPaused, totalCancelled, totalTrial;
   final double monthlySpend, annualSpend, dailySpend, averagePerSubscription, totalLifetimeSpent, totalPriceIncreaseAmount;

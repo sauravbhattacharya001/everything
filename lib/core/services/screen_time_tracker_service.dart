@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import '../../models/screen_time_entry.dart';
 
+/// Breakdown of screen time for a single [AppCategory].
 class CategoryBreakdownST {
   final AppCategory category;
   final int totalMinutes;
@@ -17,6 +18,7 @@ class CategoryBreakdownST {
   });
 }
 
+/// Aggregated screen-time metrics for a single calendar day.
 class ScreenTimeDailySummary {
   final DateTime date;
   final int totalMinutes;
@@ -38,6 +40,7 @@ class ScreenTimeDailySummary {
   });
 }
 
+/// A screen-time limit violation for a specific app or category.
 class LimitViolation {
   final String target;
   final int limitMinutes;
@@ -51,6 +54,7 @@ class LimitViolation {
   });
 }
 
+/// Aggregated screen-time statistics for a seven-day window.
 class ScreenTimeWeeklySummary {
   final DateTime weekStart;
   final int totalMinutes;
@@ -76,6 +80,7 @@ class ScreenTimeWeeklySummary {
   });
 }
 
+/// A single actionable insight derived from screen-time patterns.
 class ScreenTimeInsight {
   final String type;
   final String message;
@@ -83,6 +88,7 @@ class ScreenTimeInsight {
   const ScreenTimeInsight({required this.type, required this.message, required this.severity});
 }
 
+/// Comprehensive screen-time report combining daily, weekly, and insight data.
 class ScreenTimeReport {
   final int totalDaysTracked;
   final int totalMinutes;

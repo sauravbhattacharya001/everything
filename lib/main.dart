@@ -9,6 +9,10 @@ import 'state/providers/event_provider.dart';
 import 'views/home/home_screen.dart';
 import 'views/login/login_screen.dart';
 
+/// Application entry point.
+///
+/// Initializes Flutter bindings and Firebase, then launches [MyApp].
+/// Firebase failures are non-fatal — the app continues in offline-only mode.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -20,6 +24,10 @@ void main() async {
   runApp(const MyApp());
 }
 
+/// Root application widget.
+///
+/// Sets up [MultiProvider] with [UserProvider] and [EventProvider],
+/// and configures routing with [AuthGate] as the initial screen.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
