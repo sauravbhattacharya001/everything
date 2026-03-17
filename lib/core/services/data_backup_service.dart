@@ -104,7 +104,31 @@ class DataBackupService {
     String json, {
     BackupStrategy strategy = BackupStrategy.replace,
   }) async {
-    final data = jsonDecode(json) as Map<String, dynamic>;
+    final dynamic decoded;
+    try {
+      decoded = jsonDecode(json);
+    } on FormatException catch (e) {
+      return BackupResult(
+        success: false,
+        error: 'Invalid JSON: ${e.message}',
+        restored: 0,
+        skipped: 0,
+        services: {},
+      );
+    }
+
+    if (decoded is! Map<String, dynamic>) {
+      return BackupResult(
+        success: false,
+        error: 'Invalid backup format: expected a JSON object but got '
+            '${decoded.runtimeType}.',
+        restored: 0,
+        skipped: 0,
+        services: {},
+      );
+    }
+
+    final data = decoded;
 
     // Version check
     final version = data['version'] as int? ?? 0;
