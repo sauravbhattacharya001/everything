@@ -58,6 +58,7 @@ import '../../views/home/watchlist_screen.dart';
 import '../../views/home/water_tracker_screen.dart';
 import '../../views/home/weekly_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
+import '../../views/home/bookmark_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 
@@ -446,6 +447,12 @@ class FeatureRegistry {
       icon: Icons.card_giftcard,
       category: FeatureCategory.organization,
       builder: (_) => const GiftTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Bookmarks',
+      icon: Icons.bookmark_outlined,
+      category: FeatureCategory.organization,
+      builder: (_) => const BookmarkScreen(),
     ),
 
     // ── Tracking ──
