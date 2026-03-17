@@ -29,12 +29,23 @@ class _NextUpBannerState extends State<NextUpBanner> {
   Timer? _timer;
   DateTime _now = DateTime.now();
 
+  /// Cached next event to avoid O(n) scan every second.
+  /// Only recomputed when the event list identity changes.
+  EventModel? _cachedNextEvent;
+  List<EventModel>? _cachedEventList;
+
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
-        setState(() => _now = DateTime.now());
+        final now = DateTime.now();
+        // If the cached next event has passed, invalidate the cache
+        // so the next build picks up the new nearest event.
+        if (_cachedNextEvent != null && _cachedNextEvent!.date.isBefore(now)) {
+          _cachedEventList = null;
+        }
+        setState(() => _now = now);
       }
     });
   }
@@ -46,7 +57,15 @@ class _NextUpBannerState extends State<NextUpBanner> {
   }
 
   /// Finds the nearest future event from the list.
+  ///
+  /// Caches the result and only rescans when the event list reference
+  /// changes or the cached event has passed, avoiding an O(n) scan
+  /// every second on the timer tick.
   EventModel? _findNextEvent() {
+    if (identical(_cachedEventList, widget.events) && _cachedNextEvent != null) {
+      return _cachedNextEvent;
+    }
+    _cachedEventList = widget.events;
     EventModel? nearest;
     for (final event in widget.events) {
       if (event.date.isAfter(_now)) {
@@ -55,6 +74,7 @@ class _NextUpBannerState extends State<NextUpBanner> {
         }
       }
     }
+    _cachedNextEvent = nearest;
     return nearest;
   }
 

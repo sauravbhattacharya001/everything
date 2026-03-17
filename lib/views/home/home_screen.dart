@@ -151,22 +151,26 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
 
-    filtered.sort((a, b) {
-      switch (_currentSort) {
-        case EventSortBy.dateAsc:
-          return a.date.compareTo(b.date);
-        case EventSortBy.dateDesc:
-          return b.date.compareTo(a.date);
-        case EventSortBy.priorityHighFirst:
-          return b.priority.index.compareTo(a.priority.index);
-        case EventSortBy.priorityLowFirst:
-          return a.priority.index.compareTo(b.priority.index);
-        case EventSortBy.titleAZ:
-          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
-        case EventSortBy.titleZA:
-          return b.title.toLowerCase().compareTo(a.title.toLowerCase());
-      }
-    });
+    switch (_currentSort) {
+      case EventSortBy.dateAsc:
+        filtered.sort((a, b) => a.date.compareTo(b.date));
+      case EventSortBy.dateDesc:
+        filtered.sort((a, b) => b.date.compareTo(a.date));
+      case EventSortBy.priorityHighFirst:
+        filtered.sort((a, b) => b.priority.index.compareTo(a.priority.index));
+      case EventSortBy.priorityLowFirst:
+        filtered.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+      case EventSortBy.titleAZ:
+      case EventSortBy.titleZA:
+        // Pre-compute lowercased titles once (O(n)) instead of calling
+        // toLowerCase() inside the comparator (O(n log n) calls).
+        final keys = {for (final e in filtered) e: e.title.toLowerCase()};
+        if (_currentSort == EventSortBy.titleAZ) {
+          filtered.sort((a, b) => keys[a]!.compareTo(keys[b]!));
+        } else {
+          filtered.sort((a, b) => keys[b]!.compareTo(keys[a]!));
+        }
+    }
 
     _filteredCache = filtered;
     _cachedEventHash = eventHash;

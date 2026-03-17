@@ -60,6 +60,17 @@ class LocalStorage {
           ''',
         );
       },
+      onOpen: (db) async {
+        // Create indexes if they don't exist. Using onOpen instead of
+        // onCreate/onUpgrade so indexes are always present regardless
+        // of which version the database was created at.
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_events_priority ON events(priority)',
+        );
+      },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           // Add new columns for existing databases
@@ -153,6 +164,28 @@ class LocalStorage {
     _validateTable(table);
     final db = await database;
     await db.delete(table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Returns rows from [table] matching a WHERE clause.
+  ///
+  /// Uses parameterized queries to prevent SQL injection.
+  /// Throws [ArgumentError] if [table] is not a recognized table name.
+  static Future<List<Map<String, dynamic>>> query(
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+    String? orderBy,
+    int? limit,
+  }) async {
+    _validateTable(table);
+    final db = await database;
+    return db.query(
+      table,
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: orderBy,
+      limit: limit,
+    );
   }
 
   /// Closes the database connection and clears the cached instance.

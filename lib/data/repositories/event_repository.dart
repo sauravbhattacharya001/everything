@@ -33,6 +33,37 @@ class EventRepository {
     await LocalStorage.delete('events', id);
   }
 
+  /// Returns events within a date range, ordered by date.
+  ///
+  /// Uses the `idx_events_date` index for efficient range scans instead
+  /// of loading all events into memory and filtering in Dart.
+  /// Dates should be ISO-8601 strings matching the stored format.
+  Future<List<Map<String, dynamic>>> getEventsByDateRange(
+    String startDate,
+    String endDate,
+  ) async {
+    return await LocalStorage.query(
+      'events',
+      where: 'date >= ? AND date <= ?',
+      whereArgs: [startDate, endDate],
+      orderBy: 'date ASC',
+    );
+  }
+
+  /// Returns events with a specific priority, ordered by date.
+  ///
+  /// Uses the `idx_events_priority` index for efficient lookups.
+  Future<List<Map<String, dynamic>>> getEventsByPriority(
+    String priority,
+  ) async {
+    return await LocalStorage.query(
+      'events',
+      where: 'priority = ?',
+      whereArgs: [priority],
+      orderBy: 'date ASC',
+    );
+  }
+
   /// Updates an existing event in local storage.
   ///
   /// Uses insert with replace conflict algorithm, so this effectively
