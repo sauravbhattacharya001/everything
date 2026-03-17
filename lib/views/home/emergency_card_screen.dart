@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/emergency_profile.dart';
 import '../../core/services/emergency_card_service.dart';
+import '../../core/services/secure_storage_service.dart';
 
 /// Emergency Card Screen — 4-tab UI for managing emergency medical information.
 ///
@@ -43,8 +44,28 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen>
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    // Emergency data contains PII/PHI (name, DOB, blood type, allergies,
+    // insurance numbers, contacts). Use SecureStorageService instead of
+    // SharedPreferences which stores data as plaintext XML readable on
+    // rooted/jailbroken devices or via unencrypted device backups.
+    var data = await SecureStorageService.read(_storageKey);
+
+    // Migrate from SharedPreferences if data exists there but not in
+    // secure storage (one-time migration for existing users).
+    if (data == null || data.isEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final legacyData = prefs.getString(_storageKey);
+        if (legacyData != null && legacyData.isNotEmpty) {
+          await SecureStorageService.write(_storageKey, legacyData);
+          await prefs.remove(_storageKey);
+          data = legacyData;
+        }
+      } catch (_) {
+        // SharedPreferences unavailable — skip migration.
+      }
+    }
+
     if (data != null && data.isNotEmpty) {
       final parsed = EmergencyProfile.fromJsonString(data);
       if (parsed != null) {
@@ -67,8 +88,7 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen>
   }
 
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, _profile.toJsonString());
+    await SecureStorageService.write(_storageKey, _profile.toJsonString());
   }
 
   void _updateProfile(EmergencyProfile updated) {
