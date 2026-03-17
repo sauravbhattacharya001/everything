@@ -34,6 +34,7 @@ import '../../views/home/meditation_tracker_screen.dart';
 import '../../views/home/mood_journal_screen.dart';
 import '../../views/home/net_worth_tracker_screen.dart';
 import '../../views/home/packing_list_screen.dart';
+import '../../views/home/parking_spot_screen.dart';
 import '../../views/home/pet_care_tracker_screen.dart';
 import '../../views/home/plant_care_tracker_screen.dart';
 import '../../views/home/pomodoro_screen.dart';
@@ -353,6 +354,12 @@ class FeatureRegistry {
       icon: Icons.commute,
       category: FeatureCategory.lifestyle,
       builder: (_) => const CommuteTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Parking Spot',
+      icon: Icons.local_parking,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ParkingSpotScreen(),
     ),
     FeatureEntry(
       label: 'Contacts',
