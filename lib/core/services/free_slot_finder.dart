@@ -186,9 +186,18 @@ class FreeSlotFinder {
     final buffer = Duration(minutes: bufferMinutes);
     final allSlots = <FreeSlot>[];
 
+    // Pre-compute end times once instead of re-deriving them per-day.
+    final relevantEnds = relevant
+        .map((e) => e.endDate ?? e.date.add(const Duration(hours: 1)))
+        .toList();
+
     // Iterate day by day
     var current = DateTime(rangeStart.year, rangeStart.month, rangeStart.day);
     final endDay = DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day);
+
+    // Sliding index: since both days and events are sorted, we can
+    // avoid re-scanning from the start of `relevant` on each day.
+    var scanStart = 0;
 
     while (!current.isAfter(endDay)) {
       final dayHours = hours[current.weekday];
@@ -196,13 +205,24 @@ class FreeSlotFinder {
         final dayStart = dayHours.startOn(current);
         final dayEnd = dayHours.endOn(current);
 
-        // Get events for this day
-        final dayEvents = relevant
-            .where((e) {
-              final eEnd = e.endDate ?? e.date.add(const Duration(hours: 1));
-              return e.date.isBefore(dayEnd) && eEnd.isAfter(dayStart);
-            })
-            .toList();
+        // Advance scanStart past events whose end is at or before dayStart.
+        // These events can never overlap any future day either, so we can
+        // permanently skip them.
+        while (scanStart < relevant.length &&
+            !relevantEnds[scanStart].isAfter(dayStart)) {
+          scanStart++;
+        }
+
+        // Collect day events starting from scanStart; stop as soon as
+        // an event starts at or after dayEnd (sorted order guarantees
+        // all subsequent events are also past dayEnd).
+        final dayEvents = <EventModel>[];
+        for (var ei = scanStart; ei < relevant.length; ei++) {
+          if (!relevant[ei].date.isBefore(dayEnd)) break;
+          if (relevantEnds[ei].isAfter(dayStart)) {
+            dayEvents.add(relevant[ei]);
+          }
+        }
 
         // Find gaps
         var cursor = dayStart;
