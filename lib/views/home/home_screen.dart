@@ -6,67 +6,10 @@ import '../../models/event_model.dart';
 import '../../models/event_tag.dart';
 import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
-import 'calendar_screen.dart';
-import 'event_detail_screen.dart';
-import 'agenda_timeline_screen.dart';
-import 'heatmap_screen.dart';
-import 'stats_screen.dart';
-import 'weekly_report_screen.dart';
-import 'countdown_screen.dart';
-import 'habit_tracker_screen.dart';
-import 'daily_review_screen.dart';
-import 'pomodoro_screen.dart';
-import 'goals_screen.dart';
-import 'mood_journal_screen.dart';
-import 'commute_tracker_screen.dart';
-import 'sleep_tracker_screen.dart';
-import 'expense_tracker_screen.dart';
-import 'contact_tracker_screen.dart';
-import 'workout_tracker_screen.dart';
-import 'water_tracker_screen.dart';
-import 'meal_tracker_screen.dart';
-import 'skill_tracker_screen.dart';
-import 'subscription_tracker_screen.dart';
-import 'time_tracker_screen.dart';
-import 'decision_journal_screen.dart';
-import 'energy_tracker_screen.dart';
-import 'screen_time_tracker_screen.dart';
-import 'routine_builder_screen.dart';
-import 'life_dashboard_screen.dart';
-import 'medication_tracker_screen.dart';
-import 'pet_care_tracker_screen.dart';
-import 'plant_care_tracker_screen.dart';
-import 'savings_goal_screen.dart';
-import 'budget_planner_screen.dart';
-import 'focus_time_screen.dart';
-import 'weekly_planner_screen.dart';
-import 'chore_tracker_screen.dart';
-import 'time_budget_screen.dart';
-import 'travel_log_screen.dart';
-import 'bucket_list_screen.dart';
-import 'wishlist_screen.dart';
-import 'quick_capture_screen.dart';
-import 'quick_capture_screen.dart';
-import 'emergency_card_screen.dart';
-import 'home_maintenance_screen.dart';
-import 'gift_tracker_screen.dart';
-import 'net_worth_tracker_screen.dart';
-import 'debt_payoff_screen.dart';
-import 'warranty_tracker_screen.dart';
-import 'home_inventory_screen.dart';
-import 'meditation_tracker_screen.dart';
-import 'grocery_list_screen.dart';
-import 'packing_list_screen.dart';
-import 'recipe_book_screen.dart';
-import 'watchlist_screen.dart';
-import 'eisenhower_matrix_screen.dart';
-import 'kanban_board_screen.dart';
-import 'quote_collection_screen.dart';
-import 'learning_tracker_screen.dart';
-import 'document_expiry_screen.dart';
-import 'productivity_score_screen.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
+import '../widgets/feature_drawer.dart';
+import 'event_detail_screen.dart';
 
 /// Sort criteria for the event list.
 enum EventSortBy {
@@ -125,13 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final Set<EventPriority> _activePriorityFilters = {};
-  final Set<String> _activeTagFilters = {}; // Filter by tag names
+  final Set<String> _activeTagFilters = {};
   EventSortBy _currentSort = EventSortBy.dateDesc;
   bool _showFilters = false;
 
   // Cached filtered results to avoid re-sorting on every build.
-  // Invalidated when the event list identity, search query, filters,
-  // or sort order change.
   List<EventModel>? _filteredCache;
   int _cachedEventHash = 0;
   String _cachedSearchQuery = '';
@@ -170,12 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Applies search query, priority filters, and sort order to the event list.
+  /// Applies search query, priority filters, tag filters, and sort order.
   ///
-  /// Results are cached and only recomputed when the event list (by hashCode),
-  /// search query, priority filters, or sort order change. This avoids an
-  /// O(n log n) sort on every frame rebuild when the user scrolls or the
-  /// widget tree rebuilds for unrelated reasons.
+  /// Results are cached and only recomputed when inputs change.
   List<EventModel> _getFilteredEvents(List<EventModel> events) {
     final eventHash = Object.hashAll(events);
     final filtersMatch = _cachedSearchQuery == _searchQuery &&
@@ -192,7 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     var filtered = events.toList();
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((event) {
         return event.title.toLowerCase().contains(_searchQuery) ||
@@ -201,14 +138,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
 
-    // Apply priority filters
     if (_activePriorityFilters.isNotEmpty) {
       filtered = filtered
           .where((event) => _activePriorityFilters.contains(event.priority))
           .toList();
     }
 
-    // Apply tag filters
     if (_activeTagFilters.isNotEmpty) {
       filtered = filtered
           .where((event) => event.tags.any(
@@ -216,7 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
 
-    // Apply sorting
     filtered.sort((a, b) {
       switch (_currentSort) {
         case EventSortBy.dateAsc:
@@ -234,7 +168,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
-    // Cache results
     _filteredCache = filtered;
     _cachedEventHash = eventHash;
     _cachedSearchQuery = _searchQuery;
@@ -297,7 +230,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag handle
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Container(
@@ -354,6 +286,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final filteredEvents = _getFilteredEvents(allEvents.toList());
 
     return Scaffold(
+      // Navigation drawer replaces the 50+ AppBar IconButtons.
+      // All feature screens are registered in FeatureRegistry and rendered
+      // as a searchable, categorized list in FeatureDrawer.
+      drawer: const FeatureDrawer(),
       appBar: AppBar(
         title: const Text('My Events'),
         elevation: 0,
@@ -363,576 +299,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.search),
             onPressed: () => CommandPaletteOverlay.show(context),
             tooltip: 'Command Palette',
-          ),
-          // Agenda timeline button
-          IconButton(
-            icon: const Icon(Icons.view_timeline),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AgendaTimelineScreen()),
-              );
-            },
-            tooltip: 'Daily agenda',
-          ),
-          // Calendar view button
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              );
-            },
-            tooltip: 'Calendar view',
-          ),
-          // Analytics button
-          IconButton(
-            icon: const Icon(Icons.bar_chart),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const StatsScreen()),
-              );
-            },
-            tooltip: 'Event analytics',
-          ),
-          // Weekly report button
-          IconButton(
-            icon: const Icon(Icons.assessment),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WeeklyReportScreen()),
-              );
-            },
-            tooltip: 'Weekly report',
-          ),
-          // Countdown button
-          IconButton(
-            icon: const Icon(Icons.timer),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CountdownScreen()),
-              );
-            },
-            tooltip: 'Event countdowns',
-          ),
-          // Habit tracker button
-          IconButton(
-            icon: const Icon(Icons.track_changes),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HabitTrackerScreen()),
-              );
-            },
-            tooltip: 'Habit tracker',
-          ),
-          // Heatmap button
-          IconButton(
-            icon: const Icon(Icons.grid_view),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HeatmapScreen()),
-              );
-            },
-            tooltip: 'Activity heatmap',
-          ),
-          // Daily review button
-          IconButton(
-            icon: const Icon(Icons.rate_review),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DailyReviewScreen()),
-              );
-            },
-            tooltip: 'Daily review',
-          ),
-          // Pomodoro timer button
-          IconButton(
-            icon: const Icon(Icons.av_timer),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PomodoroScreen()),
-              );
-            },
-            tooltip: 'Pomodoro timer',
-          ),
-          // Goals tracker button
-          IconButton(
-            icon: const Icon(Icons.flag),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const GoalsScreen()),
-              );
-            },
-            tooltip: 'Goals tracker',
-          ),
-          // Mood journal button
-          IconButton(
-            icon: const Icon(Icons.mood),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MoodJournalScreen()),
-              );
-            },
-            tooltip: 'Mood journal',
-          ),
-          // Sleep tracker button
-          IconButton(
-            icon: const Icon(Icons.bedtime),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SleepTrackerScreen()),
-              );
-            },
-            tooltip: 'Sleep tracker',
-          ),
-          // Meditation tracker button
-          IconButton(
-            icon: const Icon(Icons.self_improvement),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MeditationTrackerScreen()),
-              );
-            },
-            tooltip: 'Meditation tracker',
-          ),
-          // Expense tracker button
-          IconButton(
-            icon: const Icon(Icons.account_balance_wallet),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ExpenseTrackerScreen()),
-              );
-            },
-            tooltip: 'Expense tracker',
-          ),
-          // Contact tracker button
-          IconButton(
-            icon: const Icon(Icons.contacts),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ContactTrackerScreen()),
-              );
-            },
-            tooltip: 'Contact tracker',
-          ),
-          // Workout tracker button
-          IconButton(
-            icon: const Icon(Icons.fitness_center),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WorkoutTrackerScreen()),
-              );
-            },
-            tooltip: 'Workout tracker',
-          ),
-          // Water tracker button
-          IconButton(
-            icon: const Icon(Icons.water_drop),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WaterTrackerScreen()),
-              );
-            },
-            tooltip: 'Water tracker',
-          ),
-          // Meal tracker button
-          IconButton(
-            icon: const Icon(Icons.restaurant_menu),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MealTrackerScreen()),
-              );
-            },
-            tooltip: 'Meal tracker',
-          ),
-          // Skill tracker button
-          IconButton(
-            icon: const Icon(Icons.school),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SkillTrackerScreen()),
-              );
-            },
-            tooltip: 'Skill tracker',
-          ),
-          // Subscription tracker button
-          IconButton(
-            icon: const Icon(Icons.subscriptions),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SubscriptionTrackerScreen()),
-              );
-            },
-            tooltip: 'Subscription tracker',
-          ),
-          // Warranty tracker button
-          IconButton(
-            icon: const Icon(Icons.verified_user),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WarrantyTrackerScreen()),
-              );
-            },
-            tooltip: 'Warranty tracker',
-          ),
-          // Home inventory button
-          IconButton(
-            icon: const Icon(Icons.inventory_2),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HomeInventoryScreen()),
-              );
-            },
-            tooltip: 'Home inventory',
-          ),
-          // Time tracker button
-          IconButton(
-            icon: const Icon(Icons.timer),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TimeTrackerScreen()),
-              );
-            },
-            tooltip: 'Time tracker',
-          ),
-          // Decision journal button
-          IconButton(
-            icon: const Icon(Icons.balance),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DecisionJournalScreen()),
-              );
-            },
-            tooltip: 'Decision journal',
-          ),
-          // Energy tracker button
-          IconButton(
-            icon: const Icon(Icons.bolt),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EnergyTrackerScreen()),
-              );
-            },
-            tooltip: 'Energy tracker',
-          ),
-          // Screen time tracker button
-          IconButton(
-            icon: const Icon(Icons.phone_android),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ScreenTimeTrackerScreen()),
-              );
-            },
-            tooltip: 'Screen time tracker',
-          ),
-          // Routine builder button
-          IconButton(
-            icon: const Icon(Icons.self_improvement),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const RoutineBuilderScreen()),
-              );
-            },
-            tooltip: 'Routine builder',
-          ),
-          // Life dashboard button
-          IconButton(
-            icon: const Icon(Icons.dashboard),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LifeDashboardScreen()),
-              );
-            },
-            tooltip: 'Life dashboard',
-          ),
-          // Pet care tracker button
-          IconButton(
-            icon: const Icon(Icons.pets),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PetCareTrackerScreen()),
-              );
-            },
-            tooltip: 'Pet care tracker',
-          ),
-          // Plant care tracker button
-          IconButton(
-            icon: const Icon(Icons.local_florist),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PlantCareTrackerScreen()),
-              );
-            },
-            tooltip: 'Plant care tracker',
-          ),
-          // Savings goal tracker button
-          IconButton(
-            icon: const Icon(Icons.savings),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SavingsGoalScreen()),
-              );
-            },
-            tooltip: 'Savings goals',
-          ),
-          // Debt payoff planner button
-          IconButton(
-            icon: const Icon(Icons.money_off),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DebtPayoffScreen()),
-              );
-            },
-            tooltip: 'Debt payoff planner',
-          ),
-          // Net worth tracker button
-          IconButton(
-            icon: const Icon(Icons.account_balance_wallet),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NetWorthTrackerScreen()),
-              );
-            },
-            tooltip: 'Net worth tracker',
-          ),
-          // Commute tracker button
-          IconButton(
-            icon: const Icon(Icons.commute),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CommuteTrackerScreen()),
-              );
-            },
-            tooltip: 'Commute tracker',
-          ),
-          // Medication tracker button
-          IconButton(
-            icon: const Icon(Icons.medication),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MedicationTrackerScreen()),
-              );
-            },
-            tooltip: 'Medication tracker',
-          ),
-          // Budget planner button
-          IconButton(
-            icon: const Icon(Icons.account_balance),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BudgetPlannerScreen()),
-              );
-            },
-            tooltip: 'Budget planner',
-          ),
-          // Focus time button
-          IconButton(
-            icon: const Icon(Icons.center_focus_strong),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FocusTimeScreen()),
-              );
-            },
-            tooltip: 'Focus time',
-          ),
-          // Weekly planner button
-          IconButton(
-            icon: const Icon(Icons.view_week),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WeeklyPlannerScreen()),
-              );
-            },
-            tooltip: 'Weekly planner',
-          ),
-          // Chore tracker button
-          IconButton(
-            icon: const Icon(Icons.cleaning_services),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ChoreTrackerScreen()),
-              );
-            },
-            tooltip: 'Chore tracker',
-          ),
-          // Time budget button
-          IconButton(
-            icon: const Icon(Icons.timer_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TimeBudgetScreen()),
-              );
-            },
-            tooltip: 'Time budget',
-          ),
-          // Travel log button
-          IconButton(
-            icon: const Icon(Icons.flight),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const TravelLogScreen()),
-              );
-            },
-            tooltip: 'Travel log',
-          ),
-          // Bucket list button
-          IconButton(
-            icon: const Icon(Icons.format_list_bulleted_add),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BucketListScreen()),
-              );
-            },
-            tooltip: 'Bucket list',
-          ),
-          // Gift tracker button
-          IconButton(
-            icon: const Icon(Icons.card_giftcard),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const GiftTrackerScreen()),
-              );
-            },
-            tooltip: 'Gift tracker',
-          ),
-          // Quick Capture inbox
-          IconButton(
-            icon: const Icon(Icons.inbox_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const QuickCaptureScreen()),
-              );
-            },
-            tooltip: 'Quick Capture',
-          ),
-          // Wishlist button
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WishlistScreen()),
-              );
-            },
-            tooltip: 'Wishlist',
-          ),
-          // Watchlist button
-          IconButton(
-            icon: const Icon(Icons.movie_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WatchlistScreen()),
-              );
-            },
-            tooltip: 'Watchlist',
-          ),
-          // Recipe book button
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const RecipeBookScreen()),
-              );
-            },
-            tooltip: 'Recipe Book',
-          ),
-          // Grocery list button
-          IconButton(
-            icon: const Icon(Icons.local_grocery_store),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const GroceryListScreen()),
-              );
-            },
-            tooltip: 'Grocery lists',
-          ),
-          // Packing list button
-          IconButton(
-            icon: const Icon(Icons.luggage),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PackingListScreen()),
-              );
-            },
-            tooltip: 'Packing lists',
-          ),
-          // Kanban Board button
-          IconButton(
-            icon: const Icon(Icons.view_kanban),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const KanbanBoardScreen()),
-              );
-            },
-            tooltip: 'Kanban Board',
-          ),
-          // Eisenhower Matrix button
-          IconButton(
-            icon: const Icon(Icons.grid_view_rounded),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EisenhowerMatrixScreen()),
-              );
-            },
-            tooltip: 'Eisenhower Matrix',
-          ),
-          // Quote Collection button
-          IconButton(
-            icon: const Icon(Icons.format_quote),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const QuoteCollectionScreen()),
-              );
-            },
-            tooltip: 'Quote Collection',
-          ),
-          // Emergency Card button
-          IconButton(
-            icon: const Icon(Icons.emergency),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EmergencyCardScreen()),
-              );
-            },
-            tooltip: 'Emergency Card',
-          ),
-          // Learning Tracker button
-          IconButton(
-            icon: const Icon(Icons.school),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LearningTrackerScreen()),
-              );
-            },
-            tooltip: 'Learning Tracker',
-          ),
-          // Home Maintenance button
-          IconButton(
-            icon: const Icon(Icons.home_repair_service),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const HomeMaintenanceScreen()),
-              );
-            },
-            tooltip: 'Home Maintenance',
-          ),
-          // Document Expiry Tracker button
-          IconButton(
-            icon: const Icon(Icons.assignment_late),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DocumentExpiryScreen()),
-              );
-            },
-            tooltip: 'Document Expiry Tracker',
-          ),
-          // Productivity score button
-          IconButton(
-            icon: const Icon(Icons.speed),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProductivityScoreScreen()),
-              );
-            },
-            tooltip: 'Productivity Score',
           ),
           // Sort button
           IconButton(
@@ -945,9 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Badge(
               isLabelVisible: _hasActiveFilters,
               child: Icon(
-                _showFilters
-                    ? Icons.filter_list_off
-                    : Icons.filter_list,
+                _showFilters ? Icons.filter_list_off : Icons.filter_list,
               ),
             ),
             onPressed: allEvents.isNotEmpty
@@ -1040,14 +404,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFilterBar(List<EventModel> allEvents) {
-    // Count events per priority for the badges
     final priorityCounts = <EventPriority, int>{};
     for (final event in allEvents) {
       priorityCounts[event.priority] =
           (priorityCounts[event.priority] ?? 0) + 1;
     }
 
-    // Collect all unique tags from events
     final allTags = <String, EventTag>{};
     final tagCounts = <String, int>{};
     for (final event in allEvents) {
@@ -1064,7 +426,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search field
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -1073,9 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
+                      onPressed: () => _searchController.clear(),
                     )
                   : null,
               filled: true,
@@ -1125,18 +484,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           Icon(
                             priority.icon,
                             size: 14,
-                            color: isSelected
-                                ? Colors.white
-                                : priority.color,
+                            color: isSelected ? Colors.white : priority.color,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${priority.label} ($count)',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isSelected
-                                  ? Colors.white
-                                  : priority.color,
+                              color:
+                                  isSelected ? Colors.white : priority.color,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1155,8 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
                         });
                       },
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                     ),
                   );
@@ -1165,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Tag filter chips (only shown if events have tags)
+          // Tag filter chips
           if (allTags.isNotEmpty) ...[
             const SizedBox(height: 8),
             SingleChildScrollView(
@@ -1196,9 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Colors.white
-                                    : tag.color,
+                                color: isSelected ? Colors.white : tag.color,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -1207,9 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               '${tag.name} ($count)',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isSelected
-                                    ? Colors.white
-                                    : tag.color,
+                                color: isSelected ? Colors.white : tag.color,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1299,4 +650,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
