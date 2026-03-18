@@ -63,6 +63,7 @@ import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 import '../../views/home/random_decision_screen.dart';
+import '../../views/home/unit_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
 
 /// A single navigable feature in the app.
@@ -506,6 +507,12 @@ class FeatureRegistry {
       icon: Icons.directions_car,
       category: FeatureCategory.tracking,
       builder: (_) => const VehicleMaintenanceScreen(),
+    ),
+    FeatureEntry(
+      label: 'Unit Converter',
+      icon: Icons.calculate,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const UnitConverterScreen(),
     ),
   ];
 
