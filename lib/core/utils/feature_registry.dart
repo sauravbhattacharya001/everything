@@ -62,6 +62,7 @@ import '../../views/home/bookmark_screen.dart';
 import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
+import '../../views/home/random_decision_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -492,6 +493,12 @@ class FeatureRegistry {
       icon: Icons.lock_clock,
       category: FeatureCategory.lifestyle,
       builder: (_) => const TimeCapsuleScreen(),
+    ),
+    FeatureEntry(
+      label: 'Random Decision Maker',
+      icon: Icons.casino,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const RandomDecisionScreen(),
     ),
   ];
 
