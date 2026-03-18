@@ -468,6 +468,12 @@ class AchievementSummary {
 /// Manages achievement definitions, progress evaluation, and earned records.
 class AchievementService {
   final List<AchievementDefinition> _definitions;
+
+  /// O(1) lookup index from achievement ID → definition.
+  ///
+  /// Rebuilt whenever definitions are added via [register].
+  final Map<String, AchievementDefinition> _definitionIndex;
+
   final Map<String, EarnedAchievement> _earned;
 
   /// Current progress values keyed by achievement ID.
@@ -478,8 +484,10 @@ class AchievementService {
     List<AchievementDefinition>? definitions,
     List<EarnedAchievement>? earned,
   })  : _definitions = definitions ?? List.of(builtInAchievements),
+        _definitionIndex = {},
         _earned = {},
         _progressValues = {} {
+    _rebuildIndex();
     if (earned != null) {
       for (final e in earned) {
         _earned[e.achievementId] = e;
@@ -487,13 +495,25 @@ class AchievementService {
     }
   }
 
+  /// Rebuild the ID → definition index from the current definitions list.
+  void _rebuildIndex() {
+    _definitionIndex.clear();
+    for (final def in _definitions) {
+      _definitionIndex[def.id] = def;
+    }
+  }
+
+  /// Look up a definition by ID, or null if not registered.
+  AchievementDefinition? _findDefinition(String id) => _definitionIndex[id];
+
   // ── Registration ──
 
   /// Register a custom achievement definition.
   /// Returns false if an achievement with that ID already exists.
   bool register(AchievementDefinition definition) {
-    if (_definitions.any((d) => d.id == definition.id)) return false;
+    if (_definitionIndex.containsKey(definition.id)) return false;
     _definitions.add(definition);
+    _definitionIndex[definition.id] = definition;
     return true;
   }
 
@@ -525,10 +545,7 @@ class AchievementService {
 
   /// Get detailed progress for a specific achievement.
   AchievementProgress? getAchievementProgress(String achievementId) {
-    final def = _definitions.cast<AchievementDefinition?>().firstWhere(
-          (d) => d!.id == achievementId,
-          orElse: () => null,
-        );
+    final def = _findDefinition(achievementId);
     if (def == null) return null;
     final earnedRecord = _earned[achievementId];
     return AchievementProgress(
@@ -621,10 +638,7 @@ class AchievementService {
   /// Manually award a boolean (threshold-less) achievement.
   /// Returns true if newly awarded, false if already earned.
   bool award(String achievementId, {DateTime? now}) {
-    final def = _definitions.cast<AchievementDefinition?>().firstWhere(
-          (d) => d!.id == achievementId,
-          orElse: () => null,
-        );
+    final def = _findDefinition(achievementId);
     if (def == null) return false;
     if (_earned.containsKey(achievementId) && !def.repeatable) return false;
 
@@ -656,10 +670,7 @@ class AchievementService {
   int get totalPoints {
     int points = 0;
     for (final entry in _earned.entries) {
-      final def = _definitions.cast<AchievementDefinition?>().firstWhere(
-            (d) => d!.id == entry.key,
-            orElse: () => null,
-          );
+      final def = _findDefinition(entry.key);
       if (def != null) {
         points += def.tier.points * entry.value.timesEarned;
       }
@@ -750,11 +761,7 @@ class AchievementService {
     if (summary.recentUnlocks.isNotEmpty) {
       buf.writeln('── Recent Unlocks ──');
       for (final unlock in summary.recentUnlocks) {
-        final def =
-            _definitions.cast<AchievementDefinition?>().firstWhere(
-                  (d) => d!.id == unlock.achievementId,
-                  orElse: () => null,
-                );
+        final def = _findDefinition(unlock.achievementId);
         if (def != null) {
           buf.writeln(
               '  ${def.displayIcon} ${def.name} — ${def.description}');
