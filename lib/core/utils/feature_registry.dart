@@ -63,6 +63,7 @@ import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 import '../../views/home/random_decision_screen.dart';
+import '../../views/home/vehicle_maintenance_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -499,6 +500,12 @@ class FeatureRegistry {
       icon: Icons.casino,
       category: FeatureCategory.lifestyle,
       builder: (_) => const RandomDecisionScreen(),
+    ),
+    FeatureEntry(
+      label: 'Vehicle Maintenance',
+      icon: Icons.directions_car,
+      category: FeatureCategory.tracking,
+      builder: (_) => const VehicleMaintenanceScreen(),
     ),
   ];
 
