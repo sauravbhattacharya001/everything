@@ -71,4 +71,13 @@ class EventRepository {
   Future<void> updateEvent(Map<String, dynamic> event) async {
     await LocalStorage.insert('events', event);
   }
+
+  /// Saves multiple events in a single transaction.
+  ///
+  /// Uses [LocalStorage.insertAll] to batch all inserts into one
+  /// transaction, which is dramatically faster than individual inserts
+  /// when persisting many events (e.g. initial sync or import).
+  Future<void> saveAllEvents(List<Map<String, dynamic>> events) async {
+    await LocalStorage.insertAll('events', events);
+  }
 }
