@@ -59,6 +59,7 @@ import '../../views/home/water_tracker_screen.dart';
 import '../../views/home/weekly_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
 import '../../views/home/bookmark_screen.dart';
+import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 
@@ -485,6 +486,12 @@ class FeatureRegistry {
       icon: Icons.emergency,
       category: FeatureCategory.tracking,
       builder: (_) => const EmergencyCardScreen(),
+    ),
+    FeatureEntry(
+      label: 'Time Capsules',
+      icon: Icons.lock_clock,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const TimeCapsuleScreen(),
     ),
   ];
 
