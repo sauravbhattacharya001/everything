@@ -80,6 +80,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<String> _cachedTagFilters = {};
   EventSortBy _cachedSort = EventSortBy.dateDesc;
 
+  // Cached filter bar aggregations (priority counts, tag counts).
+  // Only recomputed when the event list identity changes, avoiding
+  // O(n·t) work on every widget rebuild while filters are visible.
+  int _cachedFilterBarHash = 0;
+  Map<EventPriority, int> _cachedPriorityCounts = {};
+  Map<String, EventTag> _cachedAllTags = {};
+  Map<String, int> _cachedTagCounts = {};
+
   @override
   void initState() {
     super.initState();
@@ -407,22 +415,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFilterBar(List<EventModel> allEvents) {
-    final priorityCounts = <EventPriority, int>{};
-    for (final event in allEvents) {
-      priorityCounts[event.priority] =
-          (priorityCounts[event.priority] ?? 0) + 1;
-    }
+  /// Recomputes priority counts and tag aggregations only when the
+  /// underlying event list changes, avoiding O(n·t) work per build.
+  void _ensureFilterBarCache(List<EventModel> allEvents) {
+    final hash = Object.hashAll(allEvents);
+    if (hash == _cachedFilterBarHash) return;
+    _cachedFilterBarHash = hash;
 
+    final priorityCounts = <EventPriority, int>{};
     final allTags = <String, EventTag>{};
     final tagCounts = <String, int>{};
     for (final event in allEvents) {
+      priorityCounts[event.priority] =
+          (priorityCounts[event.priority] ?? 0) + 1;
       for (final tag in event.tags) {
         final key = tag.name.toLowerCase();
         allTags[key] = tag;
         tagCounts[key] = (tagCounts[key] ?? 0) + 1;
       }
     }
+    _cachedPriorityCounts = priorityCounts;
+    _cachedAllTags = allTags;
+    _cachedTagCounts = tagCounts;
+  }
+
+  Widget _buildFilterBar(List<EventModel> allEvents) {
+    _ensureFilterBarCache(allEvents);
+    final priorityCounts = _cachedPriorityCounts;
+    final allTags = _cachedAllTags;
+    final tagCounts = _cachedTagCounts;
 
     return Container(
       color: Colors.grey[50],

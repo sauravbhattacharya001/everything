@@ -510,7 +510,13 @@ class FeatureRegistry {
   ];
 
   /// Returns features grouped by category, preserving category enum order.
-  static Map<FeatureCategory, List<FeatureEntry>> get grouped {
+  ///
+  /// The result is computed once and cached since [features] is immutable.
+  /// Previously this rebuilt the map on every access, which was wasteful
+  /// when called from hot paths like the navigation drawer build method.
+  static final Map<FeatureCategory, List<FeatureEntry>> grouped = _buildGrouped();
+
+  static Map<FeatureCategory, List<FeatureEntry>> _buildGrouped() {
     final map = <FeatureCategory, List<FeatureEntry>>{};
     for (final category in FeatureCategory.values) {
       final entries = features.where((f) => f.category == category).toList();
@@ -518,6 +524,6 @@ class FeatureRegistry {
         map[category] = entries;
       }
     }
-    return map;
+    return Map.unmodifiable(map);
   }
 }
