@@ -127,13 +127,35 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate SHA256 checksums
+        run: |
+          sha256sum everything-web-${{ github.ref_name }}.zip > SHA256SUMS.txt
+          for apk in apk-artifacts/*.apk; do
+            sha256sum "$apk" >> SHA256SUMS.txt
+          done
+
+      - name: Build release body
+        id: body
+        run: |
+          {
+            echo "body<<BODY_EOF"
+            echo "${{ steps.changelog.outputs.body }}"
+            echo ""
+            echo "## SHA256 Checksums"
+            echo '```'
+            cat SHA256SUMS.txt
+            echo '```'
+            echo "BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.body }}
+          body: ${{ steps.body.outputs.body }}
           files: |
             everything-web-${{ github.ref_name }}.zip
             apk-artifacts/*.apk
+            SHA256SUMS.txt
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
