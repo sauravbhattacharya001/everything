@@ -84,24 +84,18 @@ jobs:
     needs: coverage
     if: github.event_name == 'pull_request'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v4
         with:
-          flutter-version: '3.22.0'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Run tests with coverage
-        run: flutter test --coverage
+          name: lcov-report
+          path: coverage
 
       - name: Check minimum coverage threshold
         run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::Coverage artifact not found"
+            exit 1
+          fi
           LINES_FOUND=$(grep "^LF:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
           LINES_COVERED=$(grep "^LH:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
           if [ "$LINES_FOUND" -eq 0 ]; then
