@@ -66,6 +66,7 @@ import '../../views/home/random_decision_screen.dart';
 import '../../views/home/unit_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
 import '../../views/home/coupon_tracker_screen.dart';
+import '../../views/home/price_tracker_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -352,6 +353,12 @@ class FeatureRegistry {
       icon: Icons.local_offer,
       category: FeatureCategory.finance,
       builder: (_) => const CouponTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Price Tracker',
+      icon: Icons.price_check,
+      category: FeatureCategory.finance,
+      builder: (_) => const PriceTrackerScreen(),
     ),
 
     // ── Lifestyle ──
