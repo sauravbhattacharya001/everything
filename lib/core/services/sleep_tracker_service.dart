@@ -1,3 +1,4 @@
+import 'dart:math' show sqrt;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/sleep_entry.dart';
 
@@ -196,13 +197,20 @@ class SleepTrackerService {
   }
 
   /// Current streak of consecutive days with sleep logs.
+  ///
+  /// Uses a pre-built set of dates for O(1) lookups instead of
+  /// scanning the full entry list for each of the last 365 days.
   int currentStreak() {
+    if (_entries.isEmpty) return 0;
+    final dates = _entries
+        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+        .toSet();
     final now = DateTime.now();
     int streak = 0;
     for (int i = 0; i < 365; i++) {
       final date = DateTime(now.year, now.month, now.day)
           .subtract(Duration(days: i));
-      if (entriesForDate(date).isNotEmpty) {
+      if (dates.contains(date)) {
         streak++;
       } else {
         break;
@@ -269,11 +277,6 @@ class SleepTrackerService {
 
   double _stdDev(double variance) {
     if (variance <= 0) return 0;
-    // Simple Newton's method sqrt
-    double x = variance;
-    for (int i = 0; i < 20; i++) {
-      x = (x + variance / x) / 2;
-    }
-    return x;
+    return sqrt(variance);
   }
 }

@@ -120,12 +120,19 @@ class MoodJournalService {
   }
 
   /// Current streak of days with at least one entry.
+  ///
+  /// Uses a pre-built set of dates for O(1) lookups instead of
+  /// scanning the full entry list for each of the last 365 days.
   int currentStreak() {
+    if (_entries.isEmpty) return 0;
+    final dates = _entries
+        .map((e) => DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
+        .toSet();
     final now = DateTime.now();
     int streak = 0;
     for (int i = 0; i < 365; i++) {
       final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
-      if (entriesForDate(date).isNotEmpty) {
+      if (dates.contains(date)) {
         streak++;
       } else {
         break;
