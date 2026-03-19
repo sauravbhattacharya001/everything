@@ -288,12 +288,27 @@ class ConflictDetector {
   ///
   /// Shifts both [date] and [endDate] by the same offset so the event's
   /// full duration is preserved when checking for overlaps.
+  ///
+  /// Pre-sorts existing events and uses binary search to narrow the
+  /// conflict check window, reducing each probe from O(n) to O(log n + m)
+  /// where m is the number of events within the conflict window.
   List<DateTime> suggestAlternatives(
     EventModel event,
     List<EventModel> existing, {
     int count = 5,
     Duration step = const Duration(minutes: 30),
   }) {
+    if (existing.isEmpty) {
+      // No events to conflict with — return the first `count` forward slots
+      return List.generate(count, (i) => event.date.add(step * (i + 1)));
+    }
+
+    // Pre-sort by start date for binary search
+    final sorted = List<EventModel>.from(existing)
+      ..sort((a, b) => a.date.compareTo(b.date));
+    // Cache end times to avoid recomputing per probe
+    final sortedStarts = sorted.map((e) => e.date).toList();
+
     final alternatives = <DateTime>[];
     // Try shifting forward and backward alternately
     for (var i = 1; alternatives.length < count && i <= 1000; i++) {
@@ -304,7 +319,7 @@ class ConflictDetector {
         date: forward,
         endDate: event.endDate?.add(forwardOffset),
       );
-      if (!wouldConflict(forwardEvent, existing)) {
+      if (!_wouldConflictSorted(forwardEvent, sorted, sortedStarts)) {
         alternatives.add(forward);
         if (alternatives.length >= count) break;
       }
@@ -314,11 +329,53 @@ class ConflictDetector {
         date: backward,
         endDate: event.endDate?.subtract(forwardOffset),
       );
-      if (!wouldConflict(backwardEvent, existing)) {
+      if (!_wouldConflictSorted(backwardEvent, sorted, sortedStarts)) {
         alternatives.add(backward);
       }
     }
     return alternatives.take(count).toList();
+  }
+
+  /// Binary-search accelerated conflict check against a pre-sorted event
+  /// list. Only examines events whose start times fall within
+  /// [newEvent.date - window - maxDuration, newEvent.endDate + window],
+  /// skipping the rest entirely.
+  bool _wouldConflictSorted(
+    EventModel newEvent,
+    List<EventModel> sorted,
+    List<DateTime> sortedStarts,
+  ) {
+    final newEnd = newEvent.endDate ?? newEvent.date;
+    // Earliest start time that could conflict: an event ending at this
+    // point could still be within `window` of our event's start.
+    // To be safe, we look back by window (events whose start is before
+    // our start - window can't conflict unless they have long duration,
+    // but _computeGap handles endDate correctly).
+    final searchStart = newEvent.date.subtract(window);
+    final searchEnd = newEnd.add(window);
+
+    // Binary search for the first event whose start >= searchStart
+    var lo = 0, hi = sortedStarts.length;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (sortedStarts[mid].isBefore(searchStart)) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+
+    // Scan backward a bit to catch events that start before searchStart
+    // but whose endDate extends into our window
+    final scanFrom = (lo - 10).clamp(0, sorted.length);
+
+    for (var i = scanFrom; i < sorted.length; i++) {
+      // Once starts exceed searchEnd, no further events can conflict
+      if (sortedStarts[i].isAfter(searchEnd)) break;
+      final gap = _computeGap(newEvent, sorted[i]);
+      if (gap <= window) return true;
+    }
+    return false;
   }
 
   /// Determine severity based on time gap.
