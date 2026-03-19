@@ -68,6 +68,7 @@ import '../../views/home/vehicle_maintenance_screen.dart';
 import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
+import '../../views/home/tip_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -360,6 +361,12 @@ class FeatureRegistry {
       icon: Icons.price_check,
       category: FeatureCategory.finance,
       builder: (_) => const PriceTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Tip Calculator',
+      icon: Icons.restaurant,
+      category: FeatureCategory.finance,
+      builder: (_) => const TipCalculatorScreen(),
     ),
 
     // ── Lifestyle ──
