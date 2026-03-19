@@ -260,6 +260,23 @@ Tests cover:
 - **HTTP Utils** — URL validation, SSRF blocking, timeout behavior
 - **Security** — Scheme enforcement, trusted-host verification
 
+## 🔒 Security
+
+This project takes security seriously. See [SECURITY.md](SECURITY.md) for the full security policy, including how to report vulnerabilities.
+
+Key protections: SSRF prevention on all outbound HTTP, encrypted credential storage via platform keychains, error masking, and automated scanning (CodeQL + Dependabot).
+
+## 🔧 Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `flutter pub get` fails | Ensure Flutter SDK ≥3.10: `flutter --version` |
+| Firebase init crash on startup | Verify `google-services.json` (Android) or `GoogleService-Info.plist` (iOS) is in place |
+| `sqflite` not found on web | sqflite doesn't support web — use `flutter run -d chrome` only for UI testing |
+| Microsoft Graph returns 401 | Access token expired — obtain a new one via OAuth2 flow |
+| Tests fail with "no Firebase app" | Tests mock Firebase; ensure Firebase is initialized for integration tests |
+| Docker build OOM | Increase Docker memory limit to ≥4GB (Flutter web build is memory-intensive) |
+
 ## 🗺️ Roadmap
 
 - [ ] **Auth state restoration** — Auto-login returning users via `authStateChanges` ([#17](https://github.com/sauravbhattacharya001/everything/issues/17))
