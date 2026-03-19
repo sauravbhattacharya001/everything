@@ -65,6 +65,7 @@ import '../../views/home/workout_tracker_screen.dart';
 import '../../views/home/random_decision_screen.dart';
 import '../../views/home/unit_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
+import '../../views/home/coupon_tracker_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -345,6 +346,12 @@ class FeatureRegistry {
       icon: Icons.card_membership,
       category: FeatureCategory.finance,
       builder: (_) => const LoyaltyTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Coupon Tracker',
+      icon: Icons.local_offer,
+      category: FeatureCategory.finance,
+      builder: (_) => const CouponTrackerScreen(),
     ),
 
     // ── Lifestyle ──
