@@ -67,6 +67,7 @@ import '../../views/home/unit_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
 import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
+import '../../views/home/world_clock_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -527,6 +528,12 @@ class FeatureRegistry {
       icon: Icons.calculate,
       category: FeatureCategory.lifestyle,
       builder: (_) => const UnitConverterScreen(),
+    ),
+    FeatureEntry(
+      label: 'World Clock',
+      icon: Icons.public,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const WorldClockScreen(),
     ),
   ];
 
