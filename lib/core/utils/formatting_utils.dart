@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'date_utils.dart';
 
 /// Shared formatting utilities extracted from screen widgets and services
 /// to eliminate duplication and ensure consistent behavior.
@@ -31,8 +32,9 @@ class FormattingUtils {
   // ─── Date Comparison ─────────────────────────────────────────
 
   /// Returns `true` if [a] and [b] fall on the same calendar day.
-  static bool sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  ///
+  /// Delegates to [AppDateUtils.isSameDay] to avoid duplication.
+  static bool sameDay(DateTime a, DateTime b) => AppDateUtils.isSameDay(a, b);
 
   // ─── Productivity / Completion Visuals ────────────────────────
 
