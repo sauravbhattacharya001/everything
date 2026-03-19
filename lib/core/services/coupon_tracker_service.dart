@@ -223,8 +223,18 @@ class CouponTrackerService {
   String exportToJson() =>
       jsonEncode(_coupons.map((c) => c.toJson()).toList());
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   void importFromJson(String jsonStr) {
     final list = jsonDecode(jsonStr) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     _coupons.clear();
     for (final item in list) {
       _coupons.add(CouponEntry.fromJson(item as Map<String, dynamic>));

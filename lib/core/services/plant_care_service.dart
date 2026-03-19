@@ -409,16 +409,36 @@ class PlantCareService {
         'nextId': _nextId,
       };
 
+  /// Maximum entries allowed via [loadFromJson] to prevent memory exhaustion.
+  static const int maxImportPlants = 50000;
+  static const int maxImportCareLog = 100000;
+
   void loadFromJson(Map<String, dynamic> json) {
     _plants.clear();
     _careLog.clear();
     if (json['plants'] != null) {
-      for (final p in json['plants'] as List) {
+      final plantList = json['plants'] as List;
+      if (plantList.length > maxImportPlants) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportPlants plants '
+          '(got ${plantList.length}). This limit prevents memory exhaustion '
+          'from corrupted or malicious data.',
+        );
+      }
+      for (final p in plantList) {
         _plants.add(PlantProfile.fromJson(p as Map<String, dynamic>));
       }
     }
     if (json['careLog'] != null) {
-      for (final e in json['careLog'] as List) {
+      final careList = json['careLog'] as List;
+      if (careList.length > maxImportCareLog) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportCareLog care log entries '
+          '(got ${careList.length}). This limit prevents memory exhaustion '
+          'from corrupted or malicious data.',
+        );
+      }
+      for (final e in careList) {
         _careLog.add(PlantCareEntry.fromJson(e as Map<String, dynamic>));
       }
     }

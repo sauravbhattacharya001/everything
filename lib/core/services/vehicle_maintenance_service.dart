@@ -269,17 +269,35 @@ class VehicleMaintenanceService {
     });
   }
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportVehicles = 10000;
+  static const int maxImportRecords = 100000;
+
   void importFromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-    _vehicles.clear();
-    _records.clear();
 
     final vehicleList = data['vehicles'] as List<dynamic>? ?? [];
+    if (vehicleList.length > maxImportVehicles) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportVehicles vehicles '
+        '(got ${vehicleList.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    final recordList = data['records'] as List<dynamic>? ?? [];
+    if (recordList.length > maxImportRecords) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportRecords records '
+        '(got ${recordList.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+
+    _vehicles.clear();
+    _records.clear();
     for (final v in vehicleList) {
       _vehicles.add(Vehicle.fromJson(v as Map<String, dynamic>));
     }
-
-    final recordList = data['records'] as List<dynamic>? ?? [];
     for (final r in recordList) {
       _records.add(MaintenanceRecord.fromJson(r as Map<String, dynamic>));
     }

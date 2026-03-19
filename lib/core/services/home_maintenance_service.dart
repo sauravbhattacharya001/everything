@@ -156,9 +156,19 @@ class HomeMaintenanceService {
   String exportToJson() =>
       jsonEncode(_tasks.map((t) => t.toJson()).toList());
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   void importFromJson(String json) {
-    _tasks.clear();
     final list = jsonDecode(json) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    _tasks.clear();
     _tasks.addAll(list.map((j) =>
         HomeMaintenanceEntry.fromJson(j as Map<String, dynamic>)));
   }

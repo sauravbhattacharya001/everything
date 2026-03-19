@@ -306,9 +306,19 @@ class GroceryListService {
   }
 
   /// Import lists from JSON.
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   int importFromJson(String json) {
     try {
       final decoded = jsonDecode(json) as List<dynamic>;
+      if (decoded.length > maxImportEntries) {
+        throw ArgumentError(
+          'Import exceeds maximum of $maxImportEntries entries '
+          '(got ${decoded.length}). This limit prevents memory exhaustion '
+          'from corrupted or malicious data.',
+        );
+      }
       int count = 0;
       for (final item in decoded) {
         final list = GroceryList.fromJson(item as Map<String, dynamic>);
@@ -316,6 +326,8 @@ class GroceryListService {
         count++;
       }
       return count;
+    } on ArgumentError {
+      rethrow;
     } catch (_) {
       return 0;
     }

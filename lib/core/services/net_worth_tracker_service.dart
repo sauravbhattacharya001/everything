@@ -551,8 +551,18 @@ class NetWorthTrackerService {
   }
 
   /// Import accounts from JSON string.
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   int importFromJson(String jsonStr) {
     final List<dynamic> data = json.decode(jsonStr) as List<dynamic>;
+    if (data.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${data.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     int imported = 0;
     for (final item in data) {
       try {

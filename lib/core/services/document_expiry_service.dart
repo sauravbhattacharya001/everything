@@ -102,9 +102,19 @@ class DocumentExpiryService {
 
   String exportToJson() => jsonEncode(_documents.map((d) => d.toJson()).toList());
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   void importFromJson(String json) {
-    _documents.clear();
     final list = jsonDecode(json) as List;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    _documents.clear();
     _documents.addAll(list.map((e) => DocumentEntry.fromJson(e as Map<String, dynamic>)));
   }
 }

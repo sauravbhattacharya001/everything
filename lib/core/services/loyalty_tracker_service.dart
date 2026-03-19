@@ -323,8 +323,18 @@ class LoyaltyTrackerService {
       const JsonEncoder.withIndent('  ')
           .convert(_cards.map((c) => c.toJson()).toList());
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   int importFromJson(String jsonStr) {
     final list = jsonDecode(jsonStr) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     int imported = 0;
     for (final item in list) {
       final card = LoyaltyCard.fromJson(item as Map<String, dynamic>);

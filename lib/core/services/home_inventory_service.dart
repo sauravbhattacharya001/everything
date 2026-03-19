@@ -192,8 +192,18 @@ class HomeInventoryService {
   }
 
   /// Import inventory from JSON string (appends).
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   int importFromJson(String jsonStr) {
     final list = jsonDecode(jsonStr) as List;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     int count = 0;
     for (final item in list) {
       _items.add(InventoryItem.fromJson(item as Map<String, dynamic>));

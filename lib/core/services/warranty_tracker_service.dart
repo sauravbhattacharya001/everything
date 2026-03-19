@@ -233,8 +233,18 @@ class WarrantyTrackerService {
   String exportToJson() =>
       jsonEncode(_warranties.map((w) => w.toJson()).toList());
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   void importFromJson(String jsonStr) {
     final list = jsonDecode(jsonStr) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     _warranties.clear();
     for (final item in list) {
       _warranties.add(

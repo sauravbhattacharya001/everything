@@ -489,10 +489,29 @@ class RoutineBuilderService {
       });
 
   /// Import routines and runs from a JSON string, replacing current state.
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportRoutines = 50000;
+  static const int maxImportRuns = 100000;
+
   void importFromJson(String json) {
     final data = jsonDecode(json) as Map<String, dynamic>;
     final rawRoutines = data['routines'] as List<dynamic>? ?? [];
     final rawRuns = data['runs'] as List<dynamic>? ?? [];
+
+    if (rawRoutines.length > maxImportRoutines) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportRoutines routines '
+        '(got ${rawRoutines.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    if (rawRuns.length > maxImportRuns) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportRuns runs '
+        '(got ${rawRuns.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
 
     final parsedRoutines = rawRoutines
         .map((r) => Routine.fromJson(r as Map<String, dynamic>))

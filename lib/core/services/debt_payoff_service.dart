@@ -267,8 +267,18 @@ class DebtPayoffService {
         _debts.map((d) => d.toJson()).toList(),
       );
 
+  /// Maximum entries allowed via [importFromJson] to prevent memory exhaustion.
+  static const int maxImportEntries = 50000;
+
   void importFromJson(String json) {
     final list = jsonDecode(json) as List<dynamic>;
+    if (list.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${list.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
     _debts
       ..clear()
       ..addAll(list.map(
