@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/services/chore_tracker_service.dart';
 import '../../core/services/screen_persistence.dart';
+import '../../core/utils/snackbar_helper.dart';
 import '../../models/chore_entry.dart';
 
 /// Chore Tracker screen — manage household chores, log completions,
@@ -100,13 +101,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
       ));
     });
     _saveAll();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('✅ Chore completed!'),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackBarHelper.brief(context, '✅ Chore completed!');
   }
 
   @override
@@ -394,12 +389,7 @@ class _ChoreTrackerScreenState extends State<ChoreTrackerScreen>
       onAdd: (chore) {
         _addChore(chore);
         _tabController.animateTo(0);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Added "${chore.name}"'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        SnackBarHelper.show(context, 'Added "${chore.name}"');
       },
       nextId: _nextChoreId++,
     );
@@ -798,12 +788,7 @@ class _AddChoreFormState extends State<_AddChoreForm> {
           onPressed: () {
             final name = _nameCtrl.text.trim();
             if (name.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please enter a chore name'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              SnackBarHelper.error(context, 'Please enter a chore name');
               return;
             }
             widget.onAdd(Chore(

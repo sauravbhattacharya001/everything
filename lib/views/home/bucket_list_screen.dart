@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/bucket_item.dart';
 import '../../core/services/bucket_list_service.dart';
 import '../../core/services/screen_persistence.dart';
+import '../../core/utils/snackbar_helper.dart';
 
 /// Bucket List screen — 4-tab UI for tracking life dreams and experiences.
 class BucketListScreen extends StatefulWidget {
@@ -140,9 +141,7 @@ class _AddTabState extends State<_AddTab> {
 
   void _submit() {
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
-      );
+      SnackBarHelper.error(context, 'Please enter a title');
       return;
     }
 
@@ -176,9 +175,7 @@ class _AddTabState extends State<_AddTab> {
       _targetDate = null;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Added "${item.title}" to bucket list! 🎯')),
-    );
+    SnackBarHelper.success(context, 'Added "${item.title}" to bucket list! 🎯');
   }
 
   @override
@@ -601,10 +598,7 @@ class _ListTab extends StatelessWidget {
                   rating: rating > 0 ? rating : null,
                 );
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text('Completed "${item.title}"! 🎉')),
-                );
+                SnackBarHelper.success(context, 'Completed "${item.title}"! 🎉');
               },
               child: const Text('Complete!'),
             ),
