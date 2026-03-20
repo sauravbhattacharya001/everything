@@ -73,6 +73,7 @@ import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/expense_splitter_screen.dart';
+import '../../views/home/stopwatch_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -211,6 +212,12 @@ class FeatureRegistry {
       icon: Icons.timer_outlined,
       category: FeatureCategory.productivity,
       builder: (_) => const TimeBudgetScreen(),
+    ),
+    FeatureEntry(
+      label: 'Stopwatch',
+      icon: Icons.timer,
+      category: FeatureCategory.productivity,
+      builder: (_) => const StopwatchScreen(),
     ),
     FeatureEntry(
       label: 'Skill Tracker',
