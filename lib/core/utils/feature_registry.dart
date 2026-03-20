@@ -70,6 +70,7 @@ import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
+import '../../views/home/password_generator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -548,6 +549,12 @@ class FeatureRegistry {
       icon: Icons.public,
       category: FeatureCategory.lifestyle,
       builder: (_) => const WorldClockScreen(),
+    ),
+    FeatureEntry(
+      label: 'Password Generator',
+      icon: Icons.password,
+      category: FeatureCategory.organization,
+      builder: (_) => const PasswordGeneratorScreen(),
     ),
   ];
 
