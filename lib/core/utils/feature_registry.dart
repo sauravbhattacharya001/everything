@@ -71,6 +71,7 @@ import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
+import '../../views/home/color_palette_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -555,6 +556,12 @@ class FeatureRegistry {
       icon: Icons.password,
       category: FeatureCategory.organization,
       builder: (_) => const PasswordGeneratorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Color Palette',
+      icon: Icons.color_lens,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ColorPaletteScreen(),
     ),
   ];
 
