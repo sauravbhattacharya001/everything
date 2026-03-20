@@ -69,6 +69,7 @@ import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
+import '../../views/home/loan_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -367,6 +368,12 @@ class FeatureRegistry {
       icon: Icons.restaurant,
       category: FeatureCategory.finance,
       builder: (_) => const TipCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Loan Calculator',
+      icon: Icons.account_balance,
+      category: FeatureCategory.finance,
+      builder: (_) => const LoanCalculatorScreen(),
     ),
 
     // ── Lifestyle ──
