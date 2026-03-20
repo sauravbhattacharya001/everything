@@ -32,6 +32,16 @@ class EventProvider extends ChangeNotifier {
   /// Rebuilt on bulk operations; maintained incrementally on add/remove/update.
   final Map<String, int> _idIndex = {};
 
+  /// Monotonically increasing version counter, incremented on every mutation.
+  ///
+  /// Consumers can compare this value across builds to detect changes in
+  /// O(1) instead of hashing the entire event list (which is O(n)).
+  /// See [HomeScreen._getFilteredEvents] for the primary consumer.
+  int _version = 0;
+
+  /// The current mutation version. Increments on every add/remove/update/set/clear.
+  int get version => _version;
+
   /// Rebuilds the ID → index map from scratch.
   /// Called after bulk operations (setEvents, clearEvents) where
   /// incremental maintenance would be more complex than a rebuild.
@@ -72,6 +82,7 @@ class EventProvider extends ChangeNotifier {
       ..clear()
       ..addAll(newEvents);
     _rebuildIndex();
+    _version++;
     notifyListeners();
   }
 
@@ -79,6 +90,7 @@ class EventProvider extends ChangeNotifier {
   void addEvent(EventModel event) {
     _idIndex[event.id] = _events.length;
     _events.add(event);
+    _version++;
     notifyListeners();
   }
 
@@ -91,6 +103,7 @@ class EventProvider extends ChangeNotifier {
     if (index == null) return;
     _events.removeAt(index);
     _rebuildIndex();
+    _version++;
     notifyListeners();
   }
 
@@ -101,6 +114,7 @@ class EventProvider extends ChangeNotifier {
     final index = _idIndex[updatedEvent.id];
     if (index == null) return;
     _events[index] = updatedEvent;
+    _version++;
     notifyListeners();
   }
 
@@ -108,6 +122,7 @@ class EventProvider extends ChangeNotifier {
   void clearEvents() {
     _events.clear();
     _idIndex.clear();
+    _version++;
     notifyListeners();
   }
 }

@@ -122,15 +122,18 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Applies search query, priority filters, tag filters, and sort order.
   ///
   /// Results are cached and only recomputed when inputs change.
+  /// Uses [EventProvider.version] for O(1) change detection instead of
+  /// hashing the entire event list (which was O(n) on every build).
   List<EventModel> _getFilteredEvents(List<EventModel> events) {
-    final eventHash = Object.hashAll(events);
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+    final eventVersion = eventProvider.version;
     final filtersMatch = _cachedSearchQuery == _searchQuery &&
         _cachedPriorityFilters.length == _activePriorityFilters.length &&
         _cachedPriorityFilters.containsAll(_activePriorityFilters) &&
         _cachedTagFilters.length == _activeTagFilters.length &&
         _cachedTagFilters.containsAll(_activeTagFilters) &&
         _cachedSort == _currentSort &&
-        _cachedEventHash == eventHash;
+        _cachedEventHash == eventVersion;
 
     if (filtersMatch && _filteredCache != null) {
       return _filteredCache!;
@@ -181,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _filteredCache = filtered;
-    _cachedEventHash = eventHash;
+    _cachedEventHash = eventVersion;
     _cachedSearchQuery = _searchQuery;
     _cachedPriorityFilters = Set.of(_activePriorityFilters);
     _cachedTagFilters = Set.of(_activeTagFilters);
