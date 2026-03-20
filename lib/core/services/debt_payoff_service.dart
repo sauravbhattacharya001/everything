@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:math';
 import '../../models/debt_entry.dart';
+import 'crud_service.dart';
 
 /// Payoff strategy type.
 enum PayoffStrategy { snowball, avalanche }
@@ -49,18 +49,41 @@ class PayoffPlan {
 }
 
 /// Service for managing debts and computing payoff strategies.
-class DebtPayoffService {
-  final List<DebtEntry> _debts = [];
+///
+/// Extends [CrudService] to eliminate duplicated CRUD/serialization
+/// boilerplate — add, remove, getById, exportToJson, importFromJson
+/// are all inherited.
+class DebtPayoffService extends CrudService<DebtEntry> {
+  int _nextPaymentId = 1;
 
-  List<DebtEntry> get debts => List.unmodifiable(_debts);
+  // ── CrudService overrides ─────────────────────────────────────
+
+  @override
+  String getId(DebtEntry item) => item.id;
+
+  @override
+  Map<String, dynamic> toJson(DebtEntry item) => item.toJson();
+
+  @override
+  DebtEntry fromJson(Map<String, dynamic> json) => DebtEntry.fromJson(json);
+
+  // ── Convenience accessors (preserved for API compatibility) ───
+
+  /// Alias for [items] to maintain backward compatibility.
+  List<DebtEntry> get debts => items;
+
   List<DebtEntry> get activeDebts =>
-      _debts.where((d) => !d.isPaidOff).toList();
-  List<DebtEntry> get paidOffDebts =>
-      _debts.where((d) => d.isPaidOff).toList();
+      items.where((d) => !d.isPaidOff).toList();
 
-  double get totalDebt => activeDebts.fold(0.0, (s, d) => s + d.currentBalance);
+  List<DebtEntry> get paidOffDebts =>
+      items.where((d) => d.isPaidOff).toList();
+
+  double get totalDebt =>
+      activeDebts.fold(0.0, (s, d) => s + d.currentBalance);
+
   double get totalMinimumPayments =>
       activeDebts.fold(0.0, (s, d) => s + d.minimumPayment);
+
   double get weightedAverageRate {
     final total = totalDebt;
     if (total == 0) return 0;
@@ -69,8 +92,9 @@ class DebtPayoffService {
         total;
   }
 
-  // ── CRUD ──────────────────────────────────────────────────────
+  // ── Domain operations ─────────────────────────────────────────
 
+  /// Add a new debt with validation. Returns the created entry.
   DebtEntry addDebt({
     required String name,
     required double balance,
@@ -81,7 +105,9 @@ class DebtPayoffService {
   }) {
     if (name.trim().isEmpty) throw ArgumentError('Name cannot be empty');
     if (balance <= 0) throw ArgumentError('Balance must be positive');
-    if (interestRate < 0) throw ArgumentError('Interest rate cannot be negative');
+    if (interestRate < 0) {
+      throw ArgumentError('Interest rate cannot be negative');
+    }
     if (minimumPayment <= 0) {
       throw ArgumentError('Minimum payment must be positive');
     }
@@ -95,24 +121,26 @@ class DebtPayoffService {
       minimumPayment: minimumPayment,
       category: category,
     );
-    _debts.add(debt);
+    add(debt); // inherited from CrudService
     return debt;
   }
 
-  void removeDebt(String debtId) {
-    _debts.removeWhere((d) => d.id == debtId);
-  }
+  /// Remove a debt by id.
+  ///
+  /// Named [removeDebt] to avoid shadowing [CrudService.remove] while
+  /// keeping the original public API intact.
+  void removeDebt(String debtId) => remove(debtId);
 
   DebtEntry? markPaidOff(String debtId) {
-    final idx = _debts.indexWhere((d) => d.id == debtId);
+    final idx = indexById(debtId);
     if (idx < 0) return null;
-    final updated = _debts[idx].copyWith(isPaidOff: true);
-    _debts[idx] = updated;
+    final updated = items[idx].copyWith(isPaidOff: true);
+    updateAt(idx, updated);
     return updated;
   }
 
   DebtPayment? addPayment(String debtId, double amount, {String? note}) {
-    final idx = _debts.indexWhere((d) => d.id == debtId);
+    final idx = indexById(debtId);
     if (idx < 0) return null;
     if (amount <= 0) throw ArgumentError('Payment must be positive');
 
@@ -121,9 +149,9 @@ class DebtPayoffService {
       amount: amount,
       note: note,
     );
-    final debt = _debts[idx];
+    final debt = items[idx];
     final updatedPayments = [...debt.payments, payment];
-    _debts[idx] = debt.copyWith(payments: updatedPayments);
+    updateAt(idx, debt.copyWith(payments: updatedPayments));
     return payment;
   }
 
@@ -170,8 +198,6 @@ class DebtPayoffService {
     var totalPaid = 0.0;
     var month = 0;
     const maxMonths = 600;
-    // Track freed minimums from paid-off debts so they snowball
-    // into future months (the core mechanic of debt snowball/avalanche).
     var freedMinimums = 0.0;
 
     while (balances.values.any((b) => b > 0.01) && month < maxMonths) {
@@ -199,10 +225,7 @@ class DebtPayoffService {
 
         if (balances[id]! <= 0.01 && !payoffOrder.contains(id)) {
           payoffOrder.add(id);
-          // Freed minimum is permanently available for future months.
           freedMinimums += mins[id]!;
-          // Also make the surplus available this month: the actual payment
-          // was min(mins[id], bal), so the unused portion is freed now.
           extraLeft += mins[id]! - payment;
         }
       }
@@ -246,10 +269,10 @@ class DebtPayoffService {
   /// Compare snowball vs avalanche side-by-side.
   Map<String, PayoffPlan> compareStrategies({double extraPayment = 0}) {
     return {
-      'snowball': computePlan(PayoffStrategy.snowball,
-          extraPayment: extraPayment),
-      'avalanche': computePlan(PayoffStrategy.avalanche,
-          extraPayment: extraPayment),
+      'snowball':
+          computePlan(PayoffStrategy.snowball, extraPayment: extraPayment),
+      'avalanche':
+          computePlan(PayoffStrategy.avalanche, extraPayment: extraPayment),
     };
   }
 
@@ -260,20 +283,7 @@ class DebtPayoffService {
         plans['avalanche']!.totalInterest;
   }
 
-  // ── Persistence ───────────────────────────────────────────────
-
-  String exportToJson() =>
-      const JsonEncoder.withIndent('  ').convert(
-        _debts.map((d) => d.toJson()).toList(),
-      );
-
-  void importFromJson(String json) {
-    final list = jsonDecode(json) as List<dynamic>;
-    _debts
-      ..clear()
-      ..addAll(list.map(
-          (e) => DebtEntry.fromJson(e as Map<String, dynamic>)));
-  }
+  // ── Private ───────────────────────────────────────────────────
 
   String _generateId() =>
       '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
