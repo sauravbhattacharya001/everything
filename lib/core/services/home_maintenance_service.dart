@@ -1,26 +1,37 @@
-import 'dart:convert';
 import '../../models/home_maintenance_entry.dart';
+import 'crud_service.dart';
 
 /// Service for managing home maintenance tasks — CRUD, scheduling, analytics.
-class HomeMaintenanceService {
-  final List<HomeMaintenanceEntry> _tasks = [];
+///
+/// Extends [CrudService] for standard CRUD + JSON persistence,
+/// adding maintenance-specific scheduling, completion tracking, and
+/// spending analytics.
+class HomeMaintenanceService extends CrudService<HomeMaintenanceEntry> {
+  @override
+  String getId(HomeMaintenanceEntry item) => item.id;
+  @override
+  Map<String, dynamic> toJson(HomeMaintenanceEntry item) => item.toJson();
+  @override
+  HomeMaintenanceEntry fromJson(Map<String, dynamic> json) =>
+      HomeMaintenanceEntry.fromJson(json);
 
-  List<HomeMaintenanceEntry> get tasks => List.unmodifiable(_tasks);
+  /// Backward-compatible accessor.
+  List<HomeMaintenanceEntry> get tasks => items;
 
   /// Tasks sorted by urgency (overdue first, then by days until due).
   List<HomeMaintenanceEntry> get sortedByUrgency {
-    final sorted = List<HomeMaintenanceEntry>.from(_tasks);
+    final sorted = List<HomeMaintenanceEntry>.from(items);
     sorted.sort((a, b) => a.daysUntilDue.compareTo(b.daysUntilDue));
     return sorted;
   }
 
   /// Tasks that are overdue.
   List<HomeMaintenanceEntry> get overdueTasks =>
-      _tasks.where((t) => t.status == MaintenanceStatus.overdue).toList();
+      items.where((t) => t.status == MaintenanceStatus.overdue).toList();
 
   /// Tasks due within 7 days.
   List<HomeMaintenanceEntry> get dueSoonTasks =>
-      _tasks.where((t) => t.status == MaintenanceStatus.dueSoon).toList();
+      items.where((t) => t.status == MaintenanceStatus.dueSoon).toList();
 
   /// Tasks needing attention (overdue or due soon).
   List<HomeMaintenanceEntry> get alertTasks =>
@@ -30,25 +41,25 @@ class HomeMaintenanceService {
 
   /// Filter by category.
   List<HomeMaintenanceEntry> byCategory(MaintenanceCategory category) =>
-      _tasks.where((t) => t.category == category).toList();
+      items.where((t) => t.category == category).toList();
 
   /// Filter by priority.
   List<HomeMaintenanceEntry> byPriority(MaintenancePriority priority) =>
-      _tasks.where((t) => t.priority == priority).toList();
+      items.where((t) => t.priority == priority).toList();
 
   /// Filter by status.
   List<HomeMaintenanceEntry> byStatus(MaintenanceStatus status) =>
-      _tasks.where((t) => t.status == status).toList();
+      items.where((t) => t.status == status).toList();
 
   /// Filter by location.
   List<HomeMaintenanceEntry> byLocation(String location) =>
-      _tasks.where((t) =>
+      items.where((t) =>
           t.location?.toLowerCase() == location.toLowerCase()).toList();
 
   /// Search tasks by name, description, or location.
   List<HomeMaintenanceEntry> search(String query) {
     final q = query.toLowerCase();
-    return _tasks.where((t) =>
+    return items.where((t) =>
         t.name.toLowerCase().contains(q) ||
         (t.description?.toLowerCase().contains(q) ?? false) ||
         (t.location?.toLowerCase().contains(q) ?? false)
@@ -57,7 +68,7 @@ class HomeMaintenanceService {
 
   /// All unique locations.
   List<String> get locations {
-    final locs = _tasks
+    final locs = items
         .where((t) => t.location != null && t.location!.isNotEmpty)
         .map((t) => t.location!)
         .toSet()
@@ -66,20 +77,22 @@ class HomeMaintenanceService {
     return locs;
   }
 
-  void addTask(HomeMaintenanceEntry task) => _tasks.add(task);
+  // ── Legacy CRUD wrappers ──
+
+  void addTask(HomeMaintenanceEntry task) => add(task);
 
   void updateTask(String id, HomeMaintenanceEntry updated) {
-    final idx = _tasks.indexWhere((t) => t.id == id);
-    if (idx >= 0) _tasks[idx] = updated;
+    final idx = indexById(id);
+    if (idx >= 0) updateAt(idx, updated);
   }
 
-  void removeTask(String id) => _tasks.removeWhere((t) => t.id == id);
+  void removeTask(String id) => remove(id);
 
   /// Mark a task as completed and advance the next due date.
   void completeTask(String id, {double? cost, String? vendor, String? notes}) {
-    final idx = _tasks.indexWhere((t) => t.id == id);
+    final idx = indexById(id);
     if (idx < 0) return;
-    final task = _tasks[idx];
+    final task = itemsMutable[idx];
     final completion = MaintenanceCompletion(
       completedDate: DateTime.now(),
       cost: cost,
@@ -87,22 +100,22 @@ class HomeMaintenanceService {
       notes: notes,
     );
     final nextDue = DateTime.now().add(Duration(days: task.recurrenceDays));
-    _tasks[idx] = task.copyWith(
+    updateAt(idx, task.copyWith(
       completions: [...task.completions, completion],
       nextDueDate: nextDue,
-    );
+    ));
   }
 
   // --- Analytics ---
 
   /// Total spent across all tasks.
   double get totalSpent =>
-      _tasks.fold(0.0, (sum, t) => sum + t.totalSpent);
+      items.fold(0.0, (sum, t) => sum + t.totalSpent);
 
   /// Spending by category.
   Map<MaintenanceCategory, double> get spendingByCategory {
     final map = <MaintenanceCategory, double>{};
-    for (final t in _tasks) {
+    for (final t in items) {
       map[t.category] = (map[t.category] ?? 0) + t.totalSpent;
     }
     return map;
@@ -111,7 +124,7 @@ class HomeMaintenanceService {
   /// Count by status.
   Map<MaintenanceStatus, int> get countByStatus {
     final map = <MaintenanceStatus, int>{};
-    for (final t in _tasks) {
+    for (final t in items) {
       map[t.status] = (map[t.status] ?? 0) + 1;
     }
     return map;
@@ -126,7 +139,7 @@ class HomeMaintenanceService {
       final key = '${month.year}-${month.month.toString().padLeft(2, '0')}';
       map[key] = 0;
     }
-    for (final t in _tasks) {
+    for (final t in items) {
       for (final c in t.completions) {
         final key = '${c.completedDate.year}-${c.completedDate.month.toString().padLeft(2, '0')}';
         if (map.containsKey(key)) {
@@ -143,23 +156,11 @@ class HomeMaintenanceService {
 
   /// Tasks that have never been completed.
   List<HomeMaintenanceEntry> get neverCompleted =>
-      _tasks.where((t) => t.completions.isEmpty).toList();
+      items.where((t) => t.completions.isEmpty).toList();
 
   /// Completion rate (tasks completed at least once / total tasks).
   double get completionRate {
-    if (_tasks.isEmpty) return 0;
-    return _tasks.where((t) => t.completions.isNotEmpty).length / _tasks.length;
-  }
-
-  // --- Serialization ---
-
-  String exportToJson() =>
-      jsonEncode(_tasks.map((t) => t.toJson()).toList());
-
-  void importFromJson(String json) {
-    _tasks.clear();
-    final list = jsonDecode(json) as List<dynamic>;
-    _tasks.addAll(list.map((j) =>
-        HomeMaintenanceEntry.fromJson(j as Map<String, dynamic>)));
+    if (isEmpty) return 0;
+    return items.where((t) => t.completions.isNotEmpty).length / length;
   }
 }
