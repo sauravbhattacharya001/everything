@@ -357,14 +357,30 @@ class EventDependencyTracker {
     return depths;
   }
 
+  /// Returns dependency info for a single event.
+  ///
+  /// Prefer [getInfoCached] when querying multiple events to avoid
+  /// recomputing circular-dependency detection and depth maps each call.
   EventDependencyInfo getInfo(String eventId) {
-    final blockers = getBlockers(eventId);
-    final dependents = getDependents(eventId);
     final circular = findCircularDependencies();
     final depths = computeDepths();
+    return getInfoCached(eventId, circular.toSet(), depths);
+  }
+
+  /// Returns dependency info using pre-computed circular IDs and depth map.
+  ///
+  /// Use this inside loops or batch operations to avoid redundant O(V+E)
+  /// graph traversals per call.
+  EventDependencyInfo getInfoCached(
+    String eventId,
+    Set<String> circularIds,
+    Map<String, int> depths,
+  ) {
+    final blockers = getBlockers(eventId);
+    final dependents = getDependents(eventId);
 
     DependencyStatus status;
-    if (circular.contains(eventId)) {
+    if (circularIds.contains(eventId)) {
       status = DependencyStatus.circular;
     } else if (_completedEvents.contains(eventId)) {
       status = DependencyStatus.completed;
@@ -437,24 +453,80 @@ class EventDependencyTracker {
     return blocked..sort();
   }
 
+  /// Analyzes the full dependency graph.
+  ///
+  /// Computes circular dependencies and depths once, then derives all
+  /// other metrics from the cached results instead of calling
+  /// [findCircularDependencies] / [computeDepths] multiple times.
   DependencyGraphSummary analyze(List<EventModel> events) {
     final circular = findCircularDependencies();
+    final circularSet = circular.toSet();
     final depths = computeDepths();
     final allIds = _allEventIds();
+
     final rootEvents = <String>[];
     final leafEvents = <String>[];
+    final readyEvents = <String>[];
+    final blockedEvents = <String>[];
+
     for (final id in allIds) {
-      if (getBlockers(id).isEmpty) rootEvents.add(id);
-      if (getDependents(id).isEmpty) leafEvents.add(id);
+      final blockers = getBlockers(id);
+      final dependents = getDependents(id);
+
+      if (blockers.isEmpty) rootEvents.add(id);
+      if (dependents.isEmpty) leafEvents.add(id);
+
+      if (!_completedEvents.contains(id) && !circularSet.contains(id)) {
+        if (blockers.isEmpty || blockers.every((b) => _completedEvents.contains(b))) {
+          readyEvents.add(id);
+        } else {
+          blockedEvents.add(id);
+        }
+      }
     }
+
+    // Critical path from pre-computed depths (avoids re-calling
+    // findCircularDependencies + computeDepths inside findCriticalPath).
+    final nonCircularIds = allIds.where((id) => !circularSet.contains(id));
+    CriticalPath criticalPath;
+    if (nonCircularIds.isEmpty) {
+      criticalPath = const CriticalPath(path: []);
+    } else {
+      String? deepest;
+      int maxDepth = -1;
+      for (final id in nonCircularIds) {
+        final d = depths[id] ?? 0;
+        if (d > maxDepth) { maxDepth = d; deepest = id; }
+      }
+      if (deepest == null) {
+        criticalPath = const CriticalPath(path: []);
+      } else {
+        final path = <String>[deepest];
+        var current = deepest;
+        while (true) {
+          final blockers = getBlockers(current);
+          if (blockers.isEmpty) break;
+          String? best; int bestD = -1;
+          for (final b in blockers) {
+            final d = depths[b] ?? 0;
+            if (d > bestD) { bestD = d; best = b; }
+          }
+          if (best == null) break;
+          path.insert(0, best);
+          current = best;
+        }
+        criticalPath = CriticalPath(path: path);
+      }
+    }
+
     return DependencyGraphSummary(
       totalEvents: allIds.length,
       totalDependencies: _dependencies.length,
       rootEvents: rootEvents..sort(),
       leafEvents: leafEvents..sort(),
-      blockedEvents: findBlockedEvents(),
-      readyEvents: findReadyEvents(),
-      criticalPath: findCriticalPath(),
+      blockedEvents: blockedEvents..sort(),
+      readyEvents: readyEvents..sort(),
+      criticalPath: criticalPath,
       maxDepth: depths.values.isEmpty ? 0 : depths.values.reduce((a, b) => a > b ? a : b),
       hasCircularDependencies: circular.isNotEmpty,
       circularEventIds: circular,
