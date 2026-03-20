@@ -299,19 +299,34 @@ class EventSearchService {
     int matchedTerms = 0;
 
     for (final term in queryTerms) {
-      final index = lower.indexOf(term);
-      if (index >= 0) {
-        matchedTerms++;
-        if (lower == term) {
-          score += 1.0;
-        } else if (lower.startsWith(term)) {
-          score += 0.8;
+      // Find ALL occurrences of the term, not just the first.
+      // A title like "Meeting about meeting notes" should score higher
+      // than "Meeting agenda" for query "meeting" because it demonstrates
+      // stronger topical relevance.
+      int searchFrom = 0;
+      int occurrences = 0;
+      while (searchFrom < lower.length) {
+        final index = lower.indexOf(term, searchFrom);
+        if (index < 0) break;
+        occurrences++;
+        if (occurrences == 1) {
+          // Score based on match quality (first occurrence determines type)
+          matchedTerms++;
+          if (lower == term) {
+            score += 1.0;
+          } else if (lower.startsWith(term)) {
+            score += 0.8;
+          } else {
+            score += 0.5;
+          }
         } else {
-          score += 0.5;
+          // Diminishing returns for repeated occurrences (0.15 each)
+          score += 0.15;
         }
         final snippetStart = (index - 20).clamp(0, lower.length);
         final snippetEnd = (index + term.length + 20).clamp(0, text.length);
         matches.add(SearchMatch(field: field, snippet: text.substring(snippetStart, snippetEnd), start: index, length: term.length));
+        searchFrom = index + term.length;
       }
     }
     if (queryTerms.isNotEmpty) score *= matchedTerms / queryTerms.length;
