@@ -75,6 +75,7 @@ import '../../views/home/color_palette_screen.dart';
 import '../../views/home/expense_splitter_screen.dart';
 import '../../views/home/stopwatch_screen.dart';
 import '../../views/home/bmi_calculator_screen.dart';
+import '../../views/home/flash_card_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -231,6 +232,12 @@ class FeatureRegistry {
       icon: Icons.school,
       category: FeatureCategory.productivity,
       builder: (_) => const LearningTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Flash Cards',
+      icon: Icons.style,
+      category: FeatureCategory.productivity,
+      builder: (_) => const FlashCardScreen(),
     ),
     FeatureEntry(
       label: 'Productivity Score',
