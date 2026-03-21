@@ -260,10 +260,18 @@ class EventDependencyTracker {
   }
 
   /// Checks if adding blockerId→dependentId would create a cycle.
+  ///
+  /// A cycle exists iff blockerId is reachable from dependentId by
+  /// following existing dependency edges forward. A single forward BFS
+  /// from dependentId is sufficient — the previous backward BFS from
+  /// blockerId was redundant because reachability in a directed graph
+  /// is symmetric with respect to cycle detection through the proposed
+  /// edge (if blockerId is reachable from dependentId going forward,
+  /// that's the cycle; if not, no backward search can find one either).
   bool wouldCreateCycle(String blockerId, String dependentId) {
     if (blockerId == dependentId) return true;
 
-    // BFS forward from dependentId
+    // BFS forward from dependentId — check if blockerId is reachable
     final visited = <String>{};
     final queue = <String>[dependentId];
     while (queue.isNotEmpty) {
@@ -274,21 +282,6 @@ class EventDependencyTracker {
       for (final dep in (_byBlocker[current] ?? const [])) {
         if (!visited.contains(dep.dependentId)) {
           queue.add(dep.dependentId);
-        }
-      }
-    }
-
-    // BFS backward from blockerId
-    final visited2 = <String>{};
-    final queue2 = <String>[blockerId];
-    while (queue2.isNotEmpty) {
-      final current = queue2.removeAt(0);
-      if (current == dependentId) return true;
-      if (visited2.contains(current)) continue;
-      visited2.add(current);
-      for (final dep in (_byDependent[current] ?? const [])) {
-        if (!visited2.contains(dep.blockerId)) {
-          queue2.add(dep.blockerId);
         }
       }
     }
