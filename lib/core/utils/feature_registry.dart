@@ -74,6 +74,7 @@ import '../../views/home/password_generator_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/expense_splitter_screen.dart';
 import '../../views/home/stopwatch_screen.dart';
+import '../../views/home/bmi_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -316,6 +317,12 @@ class FeatureRegistry {
       icon: Icons.favorite,
       category: FeatureCategory.health,
       builder: (_) => const GratitudeJournalScreen(),
+    ),
+    FeatureEntry(
+      label: 'BMI Calculator',
+      icon: Icons.accessibility_new,
+      category: FeatureCategory.health,
+      builder: (_) => const BmiCalculatorScreen(),
     ),
 
     // ── Finance ──
