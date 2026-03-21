@@ -302,8 +302,14 @@ class EventDeduplicationService {
     // trim().toLowerCase() calls in the O(n²) comparison loop.
     // For 1000 events this eliminates ~500K string allocations.
     final titleCache = <String, String>{};
+    // Pre-compute lowercased tag sets once per event to avoid
+    // repeated Set creation in the O(n²) _contentSimilarity calls.
+    final tagCache = <String, Set<String>>{};
     for (final e in sorted) {
       titleCache[e.id] = e.title.trim().toLowerCase();
+      if (e.tags.isNotEmpty) {
+        tagCache[e.id] = e.tags.map((t) => t.name.toLowerCase()).toSet();
+      }
     }
 
     final matches = <DuplicateMatch>[];
@@ -334,7 +340,7 @@ class EventDeduplicationService {
         final pairKey = _pairKey(a.id, b.id);
         if (seen.contains(pairKey)) continue;
 
-        final match = _compareEvents(a, b, gapMinutes, titleCache);
+        final match = _compareEvents(a, b, gapMinutes, titleCache, tagCache);
         if (match != null && match.similarity >= config.minimumOverallScore) {
           matches.add(match);
           seen.add(pairKey);
@@ -345,11 +351,10 @@ class EventDeduplicationService {
     // Sort by similarity descending
     matches.sort((a, b) => b.similarity.compareTo(a.similarity));
 
-    // Build kind breakdown
+    // Build kind breakdown in a single pass instead of O(matches × kinds).
     final kindBreakdown = <DuplicateKind, int>{};
-    for (final kind in DuplicateKind.values) {
-      final count = matches.where((m) => m.kind == kind).length;
-      if (count > 0) kindBreakdown[kind] = count;
+    for (final match in matches) {
+      kindBreakdown[match.kind] = (kindBreakdown[match.kind] ?? 0) + 1;
     }
 
     // Find frequent duplicate IDs
@@ -427,12 +432,13 @@ class EventDeduplicationService {
     EventModel b,
     int gapMinutes, [
     Map<String, String>? titleCache,
+    Map<String, Set<String>>? tagCache,
   ]) {
     final titleSim = titleCache != null
         ? _titleSimilarityPrecomputed(titleCache[a.id]!, titleCache[b.id]!)
         : _titleSimilarity(a.title, b.title);
     final timeSim = _timeSimilarity(gapMinutes);
-    final contentSim = _contentSimilarity(a, b);
+    final contentSim = _contentSimilarity(a, b, tagCache);
     final sameDay = AppDateUtils.isSameDay(a.date, b.date);
 
     // ── Exact duplicate: identical title + overlapping time ──
@@ -665,7 +671,7 @@ class EventDeduplicationService {
   }
 
   /// Content similarity based on description and location.
-  double _contentSimilarity(EventModel a, EventModel b) {
+  double _contentSimilarity(EventModel a, EventModel b, [Map<String, Set<String>>? tagCache]) {
     double score = 0.0;
     int factors = 0;
 
@@ -698,10 +704,10 @@ class EventDeduplicationService {
       factors++;
     }
 
-    // Tag overlap
+    // Tag overlap — use pre-computed tag sets when available
     if (a.tags.isNotEmpty && b.tags.isNotEmpty) {
-      final tagsA = a.tags.map((t) => t.name.toLowerCase()).toSet();
-      final tagsB = b.tags.map((t) => t.name.toLowerCase()).toSet();
+      final tagsA = tagCache?[a.id] ?? a.tags.map((t) => t.name.toLowerCase()).toSet();
+      final tagsB = tagCache?[b.id] ?? b.tags.map((t) => t.name.toLowerCase()).toSet();
       final intersection = tagsA.intersection(tagsB).length;
       final union = tagsA.union(tagsB).length;
       score += union > 0 ? intersection / union : 0.0;
