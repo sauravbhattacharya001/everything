@@ -76,6 +76,7 @@ import '../../views/home/expense_splitter_screen.dart';
 import '../../views/home/stopwatch_screen.dart';
 import '../../views/home/bmi_calculator_screen.dart';
 import '../../views/home/flash_card_screen.dart';
+import '../../views/home/score_keeper_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -590,6 +591,12 @@ class FeatureRegistry {
       icon: Icons.color_lens,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorPaletteScreen(),
+    ),
+    FeatureEntry(
+      label: 'Score Keeper',
+      icon: Icons.scoreboard,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ScoreKeeperScreen(),
     ),
   ];
 
