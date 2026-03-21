@@ -77,6 +77,7 @@ import '../../views/home/stopwatch_screen.dart';
 import '../../views/home/bmi_calculator_screen.dart';
 import '../../views/home/flash_card_screen.dart';
 import '../../views/home/score_keeper_screen.dart';
+import '../../views/home/age_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -597,6 +598,12 @@ class FeatureRegistry {
       icon: Icons.scoreboard,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ScoreKeeperScreen(),
+    ),
+    FeatureEntry(
+      label: 'Age Calculator',
+      icon: Icons.cake,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const AgeCalculatorScreen(),
     ),
   ];
 
