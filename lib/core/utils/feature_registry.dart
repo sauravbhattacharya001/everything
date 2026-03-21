@@ -58,6 +58,7 @@ import '../../views/home/watchlist_screen.dart';
 import '../../views/home/water_tracker_screen.dart';
 import '../../views/home/weekly_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
+import '../../views/home/body_measurement_screen.dart';
 import '../../views/home/bookmark_screen.dart';
 import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
@@ -332,6 +333,12 @@ class FeatureRegistry {
       icon: Icons.accessibility_new,
       category: FeatureCategory.health,
       builder: (_) => const BmiCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Body Measurements',
+      icon: Icons.straighten,
+      category: FeatureCategory.health,
+      builder: (_) => const BodyMeasurementScreen(),
     ),
 
     // ── Finance ──
