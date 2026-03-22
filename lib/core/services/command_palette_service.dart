@@ -10,7 +10,17 @@ class PaletteAction {
   final List<String> keywords;
   final void Function(BuildContext context) onExecute;
 
-  const PaletteAction({
+  /// Pre-lowercased fields for matching — computed once at construction
+  /// instead of on every [matchScore] call. With 50+ palette actions
+  /// scored on every keystroke, this eliminates O(actions × fields)
+  /// redundant [String.toLowerCase] allocations per input event.
+  late final String _labelLower = label.toLowerCase();
+  late final String _subtitleLower = (subtitle ?? '').toLowerCase();
+  late final String _categoryLower = category.toLowerCase();
+  late final List<String> _keywordsLower =
+      keywords.map((kw) => kw.toLowerCase()).toList(growable: false);
+
+  PaletteAction({
     required this.id,
     required this.label,
     this.subtitle,
@@ -21,30 +31,31 @@ class PaletteAction {
   });
 
   /// Fuzzy match against a query string.
+  ///
+  /// Expects [query] to already be lowercased by the caller for best
+  /// performance when scoring multiple actions against the same query.
+  /// Falls back to lowercasing internally if not.
   double matchScore(String query) {
     if (query.isEmpty) return 1.0;
     final q = query.toLowerCase();
-    final l = label.toLowerCase();
-    final s = (subtitle ?? '').toLowerCase();
-    final cat = category.toLowerCase();
 
     // Exact prefix match on label is highest
-    if (l.startsWith(q)) return 1.0;
+    if (_labelLower.startsWith(q)) return 1.0;
     // Contains in label
-    if (l.contains(q)) return 0.9;
+    if (_labelLower.contains(q)) return 0.9;
     // Keyword match
-    for (final kw in keywords) {
-      if (kw.toLowerCase().startsWith(q)) return 0.85;
-      if (kw.toLowerCase().contains(q)) return 0.75;
+    for (final kw in _keywordsLower) {
+      if (kw.startsWith(q)) return 0.85;
+      if (kw.contains(q)) return 0.75;
     }
     // Category match
-    if (cat.contains(q)) return 0.7;
+    if (_categoryLower.contains(q)) return 0.7;
     // Subtitle match
-    if (s.contains(q)) return 0.6;
+    if (_subtitleLower.contains(q)) return 0.6;
     // Character-by-character fuzzy
     int qi = 0;
-    for (int i = 0; i < l.length && qi < q.length; i++) {
-      if (l[i] == q[qi]) qi++;
+    for (int i = 0; i < _labelLower.length && qi < q.length; i++) {
+      if (_labelLower[i] == q[qi]) qi++;
     }
     if (qi == q.length) return 0.4;
     return 0.0;
