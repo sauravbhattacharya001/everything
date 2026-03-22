@@ -1,4 +1,6 @@
+import 'dart:convert';
 import '../../models/book.dart';
+import 'crud_service.dart';
 
 /// Reading challenge / annual goal.
 class ReadingChallenge {
@@ -186,37 +188,40 @@ class ReadingReport {
 }
 
 /// Reading list tracker service.
-class ReadingListService {
-  final List<Book> _books = [];
+///
+/// Extends [CrudService] for standard add/update/remove/getById/serialization,
+/// keeping only domain-specific logic here.
+class ReadingListService extends CrudService<Book> {
   ReadingChallenge? _challenge;
 
-  List<Book> get books => List.unmodifiable(_books);
+  List<Book> get books => items;
 
-  // ── CRUD ──────────────────────────────────────────
+  @override
+  String getId(Book item) => item.id;
+
+  @override
+  Map<String, dynamic> toJson(Book item) => item.toJson();
+
+  @override
+  Book fromJson(Map<String, dynamic> json) => Book.fromJson(json);
+
+  // ── CRUD (domain wrappers) ────────────────────────
 
   void addBook(Book book) {
-    if (_books.any((b) => b.id == book.id)) {
+    if (getById(book.id) != null) {
       throw ArgumentError('Book with id ${book.id} already exists');
     }
-    _books.add(book);
+    add(book);
   }
 
-  void removeBook(String bookId) {
-    _books.removeWhere((b) => b.id == bookId);
-  }
+  void removeBook(String bookId) => remove(bookId);
 
-  Book? getBook(String bookId) {
-    try {
-      return _books.firstWhere((b) => b.id == bookId);
-    } catch (_) {
-      return null;
-    }
-  }
+  Book? getBook(String bookId) => getById(bookId);
 
   void updateBook(Book updated) {
-    final idx = _books.indexWhere((b) => b.id == updated.id);
-    if (idx < 0) throw ArgumentError('Book ${updated.id} not found');
-    _books[idx] = updated;
+    if (!update(updated)) {
+      throw ArgumentError('Book ${updated.id} not found');
+    }
   }
 
   // ── Status transitions ───────────────────────────
@@ -271,53 +276,53 @@ class ReadingListService {
   // ── Filtering & search ───────────────────────────
 
   List<Book> byStatus(ReadingStatus status) =>
-      _books.where((b) => b.status == status).toList();
+      itemsMutable.where((b) => b.status == status).toList();
 
   List<Book> byGenre(BookGenre genre) =>
-      _books.where((b) => b.genre == genre).toList();
+      itemsMutable.where((b) => b.genre == genre).toList();
 
   List<Book> byAuthor(String author) =>
-      _books.where((b) => b.author.toLowerCase() == author.toLowerCase())
+      itemsMutable.where((b) => b.author.toLowerCase() == author.toLowerCase())
           .toList();
 
   List<Book> byTag(String tag) =>
-      _books.where((b) => b.tags.contains(tag)).toList();
+      itemsMutable.where((b) => b.tags.contains(tag)).toList();
 
   List<Book> search(String query) {
     final q = query.toLowerCase();
-    return _books.where((b) =>
+    return itemsMutable.where((b) =>
         b.title.toLowerCase().contains(q) ||
         b.author.toLowerCase().contains(q) ||
         b.tags.any((t) => t.toLowerCase().contains(q))).toList();
   }
 
   List<Book> byRating({int minRating = 1, int maxRating = 5}) =>
-      _books.where((b) =>
+      itemsMutable.where((b) =>
           b.rating != null && b.rating! >= minRating && b.rating! <= maxRating)
           .toList();
 
   // ── Sorting ──────────────────────────────────────
 
   List<Book> sortedByTitle({bool ascending = true}) {
-    final sorted = List<Book>.from(_books)
+    final sorted = List<Book>.from(itemsMutable)
       ..sort((a, b) => a.title.compareTo(b.title));
     return ascending ? sorted : sorted.reversed.toList();
   }
 
   List<Book> sortedByDateAdded({bool ascending = false}) {
-    final sorted = List<Book>.from(_books)
+    final sorted = List<Book>.from(itemsMutable)
       ..sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
     return ascending ? sorted : sorted.reversed.toList();
   }
 
   List<Book> sortedByProgress({bool ascending = false}) {
-    final sorted = List<Book>.from(_books)
+    final sorted = List<Book>.from(itemsMutable)
       ..sort((a, b) => a.progressPercent.compareTo(b.progressPercent));
     return ascending ? sorted : sorted.reversed.toList();
   }
 
   List<Book> sortedByRating({bool ascending = false}) {
-    final sorted = List<Book>.from(_books)
+    final sorted = List<Book>.from(itemsMutable)
       ..sort((a, b) => (a.rating ?? 0).compareTo(b.rating ?? 0));
     return ascending ? sorted : sorted.reversed.toList();
   }
@@ -325,7 +330,7 @@ class ReadingListService {
   // ── Reading challenge ────────────────────────────
 
   void setChallenge(int year, int goalBooks) {
-    final finished = _books
+    final finished = itemsMutable
         .where((b) =>
             b.status == ReadingStatus.finished &&
             b.dateFinished != null &&
@@ -341,7 +346,7 @@ class ReadingListService {
   ReadingChallenge? getChallenge(int year) {
     if (_challenge?.year == year) {
       // Recalculate
-      final finished = _books
+      final finished = itemsMutable
           .where((b) =>
               b.status == ReadingStatus.finished &&
               b.dateFinished != null &&
@@ -361,7 +366,7 @@ class ReadingListService {
   ReadingStreak getStreak({DateTime? asOf}) {
     final now = asOf ?? DateTime.now();
     final allDates = <DateTime>{};
-    for (final book in _books) {
+    for (final book in itemsMutable) {
       for (final session in book.sessions) {
         allDates.add(DateTime(
             session.date.year, session.date.month, session.date.day));
@@ -415,9 +420,9 @@ class ReadingListService {
   // ── Genre stats ──────────────────────────────────
 
   List<GenreStats> getGenreBreakdown() {
-    if (_books.isEmpty) return [];
+    if (itemsMutable.isEmpty) return [];
     final counts = <BookGenre, List<Book>>{};
-    for (final b in _books) {
+    for (final b in itemsMutable) {
       counts.putIfAbsent(b.genre, () => []).add(b);
     }
     final stats = counts.entries.map((e) {
@@ -429,7 +434,7 @@ class ReadingListService {
       return GenreStats(
         genre: e.key,
         count: e.value.length,
-        percentage: e.value.length / _books.length * 100,
+        percentage: e.value.length / itemsMutable.length * 100,
         averageRating: avgRating,
       );
     }).toList()
@@ -441,7 +446,7 @@ class ReadingListService {
 
   List<AuthorStats> getTopAuthors({int limit = 10}) {
     final groups = <String, List<Book>>{};
-    for (final b in _books) {
+    for (final b in itemsMutable) {
       groups.putIfAbsent(b.author, () => []).add(b);
     }
     final stats = groups.entries.map((e) {
@@ -465,7 +470,7 @@ class ReadingListService {
   // ── Monthly summaries ────────────────────────────
 
   List<MonthlySummary> getMonthlySummaries({int? year}) {
-    final finished = _books.where((b) =>
+    final finished = itemsMutable.where((b) =>
         b.status == ReadingStatus.finished && b.dateFinished != null);
     final filtered = year != null
         ? finished.where((b) => b.dateFinished!.year == year)
@@ -508,7 +513,7 @@ class ReadingListService {
 
     // Score by genre preference (how many books of that genre user rated highly)
     final genreScores = <BookGenre, double>{};
-    for (final b in _books.where((b) => b.rating != null)) {
+    for (final b in itemsMutable.where((b) => b.rating != null)) {
       genreScores[b.genre] =
           (genreScores[b.genre] ?? 0) + (b.rating! / 5.0);
     }
@@ -517,7 +522,7 @@ class ReadingListService {
       final genreScore = genreScores[b.genre] ?? 0;
       // Also boost by author familiarity
       final authorBooks =
-          _books.where((ob) => ob.author == b.author && ob.rating != null);
+          itemsMutable.where((ob) => ob.author == b.author && ob.rating != null);
       final authorScore = authorBooks.isNotEmpty
           ? authorBooks.map((ob) => ob.rating!).reduce((a, b) => a + b) /
               authorBooks.length /
@@ -539,15 +544,15 @@ class ReadingListService {
         ? rated.map((b) => b.rating!).reduce((a, b) => a + b) / rated.length
         : 0.0;
     final totalPages =
-        _books.fold<int>(0, (s, b) => s + b.currentPage);
+        itemsMutable.fold<int>(0, (s, b) => s + b.currentPage);
     final totalMinutes =
-        _books.fold<int>(0, (s, b) => s + b.totalMinutesRead);
+        itemsMutable.fold<int>(0, (s, b) => s + b.totalMinutesRead);
     final avgPages = finished.isNotEmpty
         ? finished.fold<int>(0, (s, b) => s + b.totalPages) / finished.length
         : 0.0;
 
     return ReadingReport(
-      totalBooks: _books.length,
+      totalBooks: itemsMutable.length,
       booksFinished: finished.length,
       booksReading: byStatus(ReadingStatus.reading).length,
       booksWantToRead: byStatus(ReadingStatus.wantToRead).length,
@@ -566,8 +571,9 @@ class ReadingListService {
 
   // ── Serialization ────────────────────────────────
 
-  Map<String, dynamic> toJson() => {
-        'books': _books.map((b) => b.toJson()).toList(),
+  /// Export the full reading list state including challenge.
+  Map<String, dynamic> toFullJson() => {
+        'books': itemsMutable.map((b) => toJson(b)).toList(),
         if (_challenge != null)
           'challenge': {
             'year': _challenge!.year,
@@ -590,11 +596,11 @@ class ReadingListService {
     // Parse into temporary list first — preserve existing data on error.
     final parsed = <Book>[];
     for (final b in bookList) {
-      parsed.add(Book.fromJson(b as Map<String, dynamic>));
+      parsed.add(fromJson(b as Map<String, dynamic>));
     }
     // All parsed successfully — safe to apply.
-    _books.clear();
-    _books.addAll(parsed);
+    clear();
+    addAll(parsed);
     if (json['challenge'] != null) {
       final c = json['challenge'] as Map<String, dynamic>;
       setChallenge(c['year'] as int, c['goalBooks'] as int);
