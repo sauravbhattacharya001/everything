@@ -15,6 +15,7 @@ import '../../views/home/eisenhower_matrix_screen.dart';
 import '../../views/home/emergency_card_screen.dart';
 import '../../views/home/energy_tracker_screen.dart';
 import '../../views/home/expense_tracker_screen.dart';
+import '../../views/home/fasting_tracker_screen.dart';
 import '../../views/home/focus_time_screen.dart';
 import '../../views/home/gift_tracker_screen.dart';
 import '../../views/home/goals_screen.dart';
@@ -292,6 +293,12 @@ class FeatureRegistry {
       icon: Icons.water_drop,
       category: FeatureCategory.health,
       builder: (_) => const WaterTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Fasting Tracker',
+      icon: Icons.no_food,
+      category: FeatureCategory.health,
+      builder: (_) => const FastingTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Workout Tracker',
