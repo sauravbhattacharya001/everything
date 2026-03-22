@@ -172,7 +172,7 @@ class HeatmapService {
         if (cellDate.year != year) {
           cells.add(null);
         } else {
-          final key = _dateKey(cellDate);
+          final key = _dateKeyInt(cellDate);
           final dayEvents = buckets[key] ?? [];
           final urgentCount = dayEvents.where((e) =>
               e.priority == EventPriority.urgent ||
@@ -219,13 +219,17 @@ class HeatmapService {
     );
   }
 
-  /// Buckets events by date key (YYYY-MM-DD string) for the given year.
-  Map<String, List<EventModel>> _bucketByDate(
+  /// Buckets events by integer date key for the given year.
+  ///
+  /// Uses an integer key (year * 10000 + month * 100 + day) instead of
+  /// a formatted string to avoid per-event string allocations and the
+  /// overhead of [String.padLeft] / concatenation.
+  Map<int, List<EventModel>> _bucketByDate(
     List<EventModel> events,
     int year,
     int maxRecurrence,
   ) {
-    final buckets = <String, List<EventModel>>{};
+    final buckets = <int, List<EventModel>>{};
     final yearStart = DateTime(year, 1, 1);
     final yearEnd = DateTime(year, 12, 31, 23, 59, 59);
 
@@ -248,12 +252,12 @@ class HeatmapService {
   }
 
   void _addToBucket(
-    Map<String, List<EventModel>> buckets,
+    Map<int, List<EventModel>> buckets,
     EventModel event,
     int year,
   ) {
     if (event.date.year != year) return;
-    final key = _dateKey(event.date);
+    final key = _dateKeyInt(event.date);
     buckets.putIfAbsent(key, () => []).add(event);
   }
 
@@ -266,9 +270,11 @@ class HeatmapService {
     return 1;
   }
 
-  /// Generates a date key string for bucketing.
-  static String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  /// Generates an integer date key for bucketing.
+  ///
+  /// Encodes as `year * 10000 + month * 100 + day`, e.g. 2026-03-21 → 20260321.
+  /// Integer keys avoid string allocation and are faster to hash/compare.
+  static int _dateKeyInt(DateTime d) => d.year * 10000 + d.month * 100 + d.day;
 
   /// Computes summary statistics from all heatmap cells.
   HeatmapStats _computeStats(List<HeatmapCell> cells, DateTime today) {
@@ -300,20 +306,17 @@ class HeatmapService {
 
     final avgPerActive = activeDays > 0 ? totalEvents / activeDays : 0.0;
 
-    // Compute streaks from sorted active dates
-    final activeDates = cells
-        .where((c) => c.hasEvents)
-        .map((c) => c.date)
-        .toList()
-      ..sort();
-
+    // Compute streaks from cells (already in chronological order)
+    // instead of extracting + sorting active dates separately.
     int longestStreak = 0;
     int currentStreakLen = 0;
     int runLength = 0;
     DateTime? lastActive;
     DateTime? runEnd;
 
-    for (final d in activeDates) {
+    for (final cell in cells) {
+      if (!cell.hasEvents) continue;
+      final d = cell.date;
       if (lastActive != null &&
           d.difference(lastActive).inDays == 1) {
         runLength++;
