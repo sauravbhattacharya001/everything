@@ -81,6 +81,7 @@ import '../../views/home/bmi_calculator_screen.dart';
 import '../../views/home/flash_card_screen.dart';
 import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
+import '../../views/home/music_practice_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -477,6 +478,12 @@ class FeatureRegistry {
       icon: Icons.format_quote,
       category: FeatureCategory.lifestyle,
       builder: (_) => const QuoteCollectionScreen(),
+    ),
+    FeatureEntry(
+      label: 'Music Practice',
+      icon: Icons.music_note,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MusicPracticeScreen(),
     ),
     FeatureEntry(
       label: 'Decision Journal',
