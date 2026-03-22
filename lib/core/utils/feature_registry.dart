@@ -81,6 +81,7 @@ import '../../views/home/bmi_calculator_screen.dart';
 import '../../views/home/flash_card_screen.dart';
 import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
+import '../../views/home/morse_code_screen.dart';
 import '../../views/home/music_practice_screen.dart';
 
 /// A single navigable feature in the app.
@@ -484,6 +485,12 @@ class FeatureRegistry {
       icon: Icons.music_note,
       category: FeatureCategory.lifestyle,
       builder: (_) => const MusicPracticeScreen(),
+    ),
+    FeatureEntry(
+      label: 'Morse Code',
+      icon: Icons.radio,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MorseCodeScreen(),
     ),
     FeatureEntry(
       label: 'Decision Journal',
