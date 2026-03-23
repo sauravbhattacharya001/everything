@@ -83,6 +83,7 @@ import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
 import '../../views/home/morse_code_screen.dart';
 import '../../views/home/music_practice_screen.dart';
+import '../../views/home/dice_roller_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -639,6 +640,12 @@ class FeatureRegistry {
       icon: Icons.cake,
       category: FeatureCategory.lifestyle,
       builder: (_) => const AgeCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Dice Roller',
+      icon: Icons.casino,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const DiceRollerScreen(),
     ),
   ];
 
