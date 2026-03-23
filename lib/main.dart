@@ -90,9 +90,12 @@ class _AuthGateState extends State<AuthGate> {
         final firebaseUser = snapshot.data;
 
         if (firebaseUser != null) {
-          // User has an active Firebase session — restore their profile
-          // into UserProvider so the rest of the app has access to it.
-          _restoreUserSession(context, firebaseUser);
+          // User has an active Firebase session — defer provider mutation
+          // to after the current build frame to avoid calling
+          // notifyListeners() during build (see issue #91).
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _restoreUserSession(context, firebaseUser);
+          });
           return HomeScreen();
         }
 
