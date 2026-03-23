@@ -93,6 +93,7 @@ import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
+import '../../views/home/invoice_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -457,6 +458,12 @@ class FeatureRegistry {
       icon: Icons.currency_exchange,
       category: FeatureCategory.finance,
       builder: (_) => const CurrencyConverterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Invoice Generator',
+      icon: Icons.receipt_long,
+      category: FeatureCategory.finance,
+      builder: (_) => const InvoiceScreen(),
     ),
 
     // ── Lifestyle ──
