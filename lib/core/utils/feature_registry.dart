@@ -89,6 +89,7 @@ import '../../views/home/dice_roller_screen.dart';
 import '../../views/home/qr_generator_screen.dart';
 import '../../views/home/ambient_sound_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
+import '../../views/home/birthday_tracker_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -565,6 +566,12 @@ class FeatureRegistry {
       icon: Icons.card_giftcard,
       category: FeatureCategory.organization,
       builder: (_) => const GiftTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Birthdays & Anniversaries',
+      icon: Icons.cake,
+      category: FeatureCategory.organization,
+      builder: (_) => const BirthdayTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Bookmarks',
