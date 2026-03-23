@@ -75,6 +75,7 @@ import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/color_palette_screen.dart';
+import '../../views/home/currency_converter_screen.dart';
 import '../../views/home/expense_splitter_screen.dart';
 import '../../views/home/stopwatch_screen.dart';
 import '../../views/home/bmi_calculator_screen.dart';
@@ -433,6 +434,12 @@ class FeatureRegistry {
       icon: Icons.group_work,
       category: FeatureCategory.finance,
       builder: (_) => const ExpenseSplitterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Currency Converter',
+      icon: Icons.currency_exchange,
+      category: FeatureCategory.finance,
+      builder: (_) => const CurrencyConverterScreen(),
     ),
 
     // ── Lifestyle ──
