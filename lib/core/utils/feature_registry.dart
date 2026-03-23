@@ -84,6 +84,7 @@ import '../../views/home/age_calculator_screen.dart';
 import '../../views/home/morse_code_screen.dart';
 import '../../views/home/music_practice_screen.dart';
 import '../../views/home/dice_roller_screen.dart';
+import '../../views/home/qr_generator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -646,6 +647,12 @@ class FeatureRegistry {
       icon: Icons.casino,
       category: FeatureCategory.lifestyle,
       builder: (_) => const DiceRollerScreen(),
+    ),
+    FeatureEntry(
+      label: 'QR Code Generator',
+      icon: Icons.qr_code_2,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const QrGeneratorScreen(),
     ),
   ];
 
