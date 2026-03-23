@@ -49,6 +49,7 @@ import '../../views/home/savings_goal_screen.dart';
 import '../../views/home/screen_time_tracker_screen.dart';
 import '../../views/home/skill_tracker_screen.dart';
 import '../../views/home/sleep_tracker_screen.dart';
+import '../../views/home/symptom_tracker_screen.dart';
 import '../../views/home/stats_screen.dart';
 import '../../views/home/subscription_tracker_screen.dart';
 import '../../views/home/time_budget_screen.dart';
@@ -290,6 +291,12 @@ class FeatureRegistry {
       icon: Icons.bedtime,
       category: FeatureCategory.health,
       builder: (_) => const SleepTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Symptom Tracker',
+      icon: Icons.healing,
+      category: FeatureCategory.health,
+      builder: (_) => const SymptomTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Meditation',
