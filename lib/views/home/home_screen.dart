@@ -420,10 +420,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Recomputes priority counts and tag aggregations only when the
   /// underlying event list changes, avoiding O(n·t) work per build.
+  ///
+  /// Uses [EventProvider.version] for O(1) change detection instead of
+  /// [Object.hashAll] which was O(n) — computing the hash of the entire
+  /// event list on every widget rebuild, defeating the cache purpose.
   void _ensureFilterBarCache(List<EventModel> allEvents) {
-    final hash = Object.hashAll(allEvents);
-    if (hash == _cachedFilterBarHash) return;
-    _cachedFilterBarHash = hash;
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+    final version = eventProvider.version;
+    if (version == _cachedFilterBarHash) return;
+    _cachedFilterBarHash = version;
 
     final priorityCounts = <EventPriority, int>{};
     final allTags = <String, EventTag>{};
