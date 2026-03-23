@@ -86,6 +86,7 @@ import '../../views/home/music_practice_screen.dart';
 import '../../views/home/daily_journal_screen.dart';
 import '../../views/home/dice_roller_screen.dart';
 import '../../views/home/qr_generator_screen.dart';
+import '../../views/home/ambient_sound_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -660,6 +661,12 @@ class FeatureRegistry {
       icon: Icons.qr_code_2,
       category: FeatureCategory.lifestyle,
       builder: (_) => const QrGeneratorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Ambient Sounds',
+      icon: Icons.headphones,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const AmbientSoundScreen(),
     ),
   ];
 
