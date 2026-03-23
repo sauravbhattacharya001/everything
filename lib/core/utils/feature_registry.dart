@@ -94,11 +94,17 @@ class FeatureEntry {
   final WidgetBuilder builder;
   final FeatureCategory category;
 
+  /// Optional search keywords for command palette and deep-link matching.
+  /// Stored here so the feature registry is the single source of truth
+  /// instead of duplicating keyword lists in [CommandPaletteService].
+  final List<String> keywords;
+
   const FeatureEntry({
     required this.label,
     required this.icon,
     required this.builder,
     required this.category,
+    this.keywords = const [],
   });
 }
 
@@ -131,12 +137,14 @@ class FeatureRegistry {
       label: 'Daily Agenda',
       icon: Icons.view_timeline,
       category: FeatureCategory.planning,
+      keywords: const ['agenda', 'timeline', 'today'],
       builder: (_) => const AgendaTimelineScreen(),
     ),
     FeatureEntry(
       label: 'Calendar',
       icon: Icons.calendar_month,
       category: FeatureCategory.planning,
+      keywords: const ['schedule', 'dates', 'month', 'week'],
       builder: (_) => const CalendarScreen(),
     ),
     FeatureEntry(
@@ -680,4 +688,17 @@ class FeatureRegistry {
     }
     return Map.unmodifiable(map);
   }
+
+  /// O(1) label-based lookup index, built once from [features].
+  ///
+  /// Keys are lowercased labels. Use [find] for convenient access.
+  static final Map<String, FeatureEntry> _byLabel = {
+    for (final f in features) f.label.toLowerCase(): f,
+  };
+
+  /// Find a feature by its label (case-insensitive).
+  ///
+  /// Useful for deep-linking, command palette shortcuts, and routing
+  /// without scanning the full [features] list.
+  static FeatureEntry? find(String label) => _byLabel[label.toLowerCase()];
 }
