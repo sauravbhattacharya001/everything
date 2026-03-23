@@ -91,6 +91,7 @@ import '../../views/home/qr_generator_screen.dart';
 import '../../views/home/ambient_sound_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
+import '../../views/home/breathing_exercise_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -369,6 +370,12 @@ class FeatureRegistry {
       icon: Icons.monitor_heart,
       category: FeatureCategory.health,
       builder: (_) => const BloodPressureScreen(),
+    ),
+    FeatureEntry(
+      label: 'Breathing Exercise',
+      icon: Icons.air,
+      category: FeatureCategory.health,
+      builder: (_) => const BreathingExerciseScreen(),
     ),
 
     // ── Finance ──
