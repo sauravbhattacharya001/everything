@@ -92,6 +92,7 @@ import '../../views/home/ambient_sound_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
+import '../../views/home/tally_counter_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -702,6 +703,12 @@ class FeatureRegistry {
       icon: Icons.analytics_outlined,
       category: FeatureCategory.productivity,
       builder: (_) => const TextAnalyzerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Tally Counter',
+      icon: Icons.touch_app,
+      category: FeatureCategory.productivity,
+      builder: (_) => const TallyCounterScreen(),
     ),
   ];
 
