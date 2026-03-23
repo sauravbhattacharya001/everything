@@ -83,6 +83,7 @@ import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
 import '../../views/home/morse_code_screen.dart';
 import '../../views/home/music_practice_screen.dart';
+import '../../views/home/daily_journal_screen.dart';
 import '../../views/home/dice_roller_screen.dart';
 import '../../views/home/qr_generator_screen.dart';
 
@@ -499,6 +500,12 @@ class FeatureRegistry {
       icon: Icons.balance,
       category: FeatureCategory.lifestyle,
       builder: (_) => const DecisionJournalScreen(),
+    ),
+    FeatureEntry(
+      label: 'Daily Journal',
+      icon: Icons.auto_stories,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const DailyJournalScreen(),
     ),
     FeatureEntry(
       label: 'Reading List',
