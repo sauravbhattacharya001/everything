@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../views/home/agenda_timeline_screen.dart';
+import '../../views/home/fuel_log_screen.dart';
 import '../../views/home/bucket_list_screen.dart';
 import '../../views/home/budget_planner_screen.dart';
 import '../../views/home/calendar_screen.dart';
@@ -657,6 +658,12 @@ class FeatureRegistry {
       icon: Icons.directions_car,
       category: FeatureCategory.tracking,
       builder: (_) => const VehicleMaintenanceScreen(),
+    ),
+    FeatureEntry(
+      label: 'Fuel Log',
+      icon: Icons.local_gas_station,
+      category: FeatureCategory.tracking,
+      builder: (_) => const FuelLogScreen(),
     ),
     FeatureEntry(
       label: 'Unit Converter',
