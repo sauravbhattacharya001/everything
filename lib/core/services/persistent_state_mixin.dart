@@ -1,8 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'secure_storage_service.dart';
 
 /// Mixin for StatefulWidget states that need to persist service data
-/// across app restarts via SharedPreferences.
+/// across app restarts using encrypted storage.
+///
+/// Data is stored via [SecureStorageService] (EncryptedSharedPreferences on
+/// Android, Keychain on iOS). On first load, any existing plaintext data in
+/// SharedPreferences is automatically migrated to the encrypted store and
+/// the plaintext copy is deleted.
 ///
 /// Subclasses must implement [storageKey], [exportData], and [importData].
 /// Data is automatically saved when the app goes to background or the
@@ -28,7 +34,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// ```
 mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     implements WidgetsBindingObserver {
-  /// SharedPreferences key for this screen's data.
+  /// Storage key for this screen's data.
   String get storageKey;
 
   /// Serialize current state to JSON string.
@@ -48,8 +54,10 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(storageKey);
+    // Migrate plaintext SharedPreferences → encrypted storage if needed.
+    await _migrateFromPlaintext();
+
+    final json = await SecureStorageService.read(storageKey);
     if (json != null && json.isNotEmpty) {
       try {
         importData(json);
@@ -58,11 +66,31 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     if (mounted) setState(() {});
   }
 
-  /// Save current state to SharedPreferences. Call after mutations.
-  Future<void> saveData() async {
+  /// One-time migration: move data from plaintext SharedPreferences to
+  /// encrypted storage, then delete the plaintext copy.
+  Future<void> _migrateFromPlaintext() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, exportData());
+      final plaintext = prefs.getString(storageKey);
+      if (plaintext != null && plaintext.isNotEmpty) {
+        // Only migrate if encrypted store doesn't already have data.
+        final existing = await SecureStorageService.read(storageKey);
+        if (existing == null || existing.isEmpty) {
+          await SecureStorageService.write(storageKey, plaintext);
+        }
+        // Remove plaintext regardless (idempotent cleanup).
+        await prefs.remove(storageKey);
+      }
+    } catch (_) {
+      // Migration failure is non-fatal; data stays in plaintext until
+      // next successful migration attempt.
+    }
+  }
+
+  /// Save current state to encrypted storage. Call after mutations.
+  Future<void> saveData() async {
+    try {
+      await SecureStorageService.write(storageKey, exportData());
     } catch (_) {}
   }
 
