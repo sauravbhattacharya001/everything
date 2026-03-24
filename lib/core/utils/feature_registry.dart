@@ -96,6 +96,7 @@ import '../../views/home/breathing_exercise_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
 import '../../views/home/invoice_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
+import '../../views/home/sun_moon_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -676,6 +677,12 @@ class FeatureRegistry {
       icon: Icons.public,
       category: FeatureCategory.lifestyle,
       builder: (_) => const WorldClockScreen(),
+    ),
+    FeatureEntry(
+      label: 'Sun & Moon',
+      icon: Icons.brightness_4,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const SunMoonScreen(),
     ),
     FeatureEntry(
       label: 'Password Generator',
