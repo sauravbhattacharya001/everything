@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'encrypted_persistence.dart';
 
-/// Generic persistence helper for tracker screens that store lists of entries
-/// in memory. Provides save/load via SharedPreferences using model
-/// toJson/fromJson serialization.
+/// Generic persistence helper for tracker screens that store lists of entries.
+///
+/// **Security:** Keys listed in [StorageMigration.sensitiveKeys] are
+/// automatically stored in encrypted storage (EncryptedSharedPreferences /
+/// Keychain). Non-sensitive keys still use SharedPreferences for performance.
 ///
 /// Usage:
 /// ```dart
@@ -24,17 +28,24 @@ class ScreenPersistence<T> {
   final Map<String, dynamic> Function(T) toJson;
   final T Function(Map<String, dynamic>) fromJson;
 
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
   const ScreenPersistence({
     required this.storageKey,
     required this.toJson,
     required this.fromJson,
   });
 
-  /// Load all entries from SharedPreferences. Returns empty list if none.
+  bool get _isSensitive =>
+      StorageMigration.sensitiveKeys.contains(storageKey);
+
+  /// Load all entries. Uses encrypted storage for sensitive keys.
   Future<List<T>> load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString(storageKey);
+      final data = await _read();
       if (data == null || data.isEmpty) return [];
       final list = jsonDecode(data) as List<dynamic>;
       return list
@@ -45,12 +56,11 @@ class ScreenPersistence<T> {
     }
   }
 
-  /// Save all entries to SharedPreferences.
+  /// Save all entries. Uses encrypted storage for sensitive keys.
   Future<void> save(List<T> entries) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final data = jsonEncode(entries.map((e) => toJson(e)).toList());
-      await prefs.setString(storageKey, data);
+      await _write(data);
     } catch (_) {
       // Silently fail — don't crash the UI for persistence errors.
     }
@@ -58,15 +68,18 @@ class ScreenPersistence<T> {
 
   /// Delete all persisted entries.
   Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(storageKey);
+    if (_isSensitive) {
+      await _secureStorage.delete(key: storageKey);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(storageKey);
+    }
   }
 
   /// Load a single JSON map (for non-list state like counters, configs).
   Future<Map<String, dynamic>?> loadMap() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString(storageKey);
+      final data = await _read();
       if (data == null || data.isEmpty) return null;
       return jsonDecode(data) as Map<String, dynamic>;
     } catch (_) {
@@ -77,10 +90,26 @@ class ScreenPersistence<T> {
   /// Save a single JSON map.
   Future<void> saveMap(Map<String, dynamic> map) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, jsonEncode(map));
+      await _write(jsonEncode(map));
     } catch (_) {
       // Silently fail.
+    }
+  }
+
+  Future<String?> _read() async {
+    if (_isSensitive) {
+      return await _secureStorage.read(key: storageKey);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(storageKey);
+  }
+
+  Future<void> _write(String data) async {
+    if (_isSensitive) {
+      await _secureStorage.write(key: storageKey, value: data);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(storageKey, data);
     }
   }
 }
