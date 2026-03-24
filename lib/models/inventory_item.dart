@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Room/location where an item is kept.
 enum InventoryRoom {
@@ -285,14 +286,12 @@ class InventoryItem {
         currentValue: json['currentValue'] != null
             ? (json['currentValue'] as num).toDouble()
             : null,
-        purchaseDate: json['purchaseDate'] != null
-            ? DateTime.parse(json['purchaseDate'] as String)
-            : null,
+        purchaseDate: AppDateUtils.safeParseNullable(json['purchaseDate'] as String?),
         brand: json['brand'] as String?,
         model: json['model'] as String?,
         serialNumber: json['serialNumber'] as String?,
         notes: json['notes'] as String?,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
       );
 
   String toJsonString() => jsonEncode(toJson());

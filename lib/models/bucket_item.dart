@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Model classes for the Bucket List feature.
 
 /// Life experience category.
@@ -176,13 +178,9 @@ class BucketItem {
                 ?.map((e) => e as String)
                 .toList() ??
             const [],
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        targetDate: json['targetDate'] != null
-            ? DateTime.parse(json['targetDate'] as String)
-            : null,
-        completedAt: json['completedAt'] != null
-            ? DateTime.parse(json['completedAt'] as String)
-            : null,
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+        targetDate: AppDateUtils.safeParseNullable(json['targetDate'] as String?),
+        completedAt: AppDateUtils.safeParseNullable(json['completedAt'] as String?),
         completionNotes: json['completionNotes'] as String?,
         rating: json['rating'] as int? ?? 0,
         inspiration: json['inspiration'] as String?,

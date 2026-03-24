@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category of coupon/deal.
 enum CouponCategory {
@@ -256,13 +257,9 @@ class CouponEntry {
         ),
         discountValue: (json['discountValue'] as num?)?.toDouble(),
         minimumPurchase: (json['minimumPurchase'] as num?)?.toDouble(),
-        expirationDate: json['expirationDate'] != null
-            ? DateTime.parse(json['expirationDate'] as String)
-            : null,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        redeemedAt: json['redeemedAt'] != null
-            ? DateTime.parse(json['redeemedAt'] as String)
-            : null,
+        expirationDate: AppDateUtils.safeParseNullable(json['expirationDate'] as String?),
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+        redeemedAt: AppDateUtils.safeParseNullable(json['redeemedAt'] as String?),
         savedAmount: (json['savedAmount'] as num?)?.toDouble(),
         isFavorite: json['isFavorite'] as bool? ?? false,
         tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],

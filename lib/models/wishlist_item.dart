@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Model classes for the Wishlist feature.
 
@@ -59,7 +60,7 @@ class PricePoint {
       };
 
   factory PricePoint.fromJson(Map<String, dynamic> json) => PricePoint(
-        date: DateTime.parse(json['date'] as String),
+        date: AppDateUtils.safeParse(json['date'] as String?),
         price: (json['price'] as num).toDouble(),
         note: json['note'] as String?,
       );
@@ -244,10 +245,8 @@ class WishlistItem {
                 ?.map((p) => PricePoint.fromJson(p as Map<String, dynamic>))
                 .toList() ??
             const [],
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        purchasedAt: json['purchasedAt'] != null
-            ? DateTime.parse(json['purchasedAt'] as String)
-            : null,
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+        purchasedAt: AppDateUtils.safeParseNullable(json['purchasedAt'] as String?),
         purchasedPrice: (json['purchasedPrice'] as num?)?.toDouble(),
         isPurchased: json['isPurchased'] as bool? ?? false,
         rating: json['rating'] as int? ?? 0,

@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Learning resource type.
 enum LearningType {
   course,
@@ -156,7 +158,7 @@ class StudySession {
 
   factory StudySession.fromJson(Map<String, dynamic> json) {
     return StudySession(
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       minutesSpent: json['minutesSpent'] as int,
       progressDelta: json['progressDelta'] as int? ?? 0,
       notes: json['notes'] as String?,
@@ -303,13 +305,9 @@ class LearningItem {
       completedUnits: json['completedUnits'] as int? ?? 0,
       rating: json['rating'] as int?,
       notes: json['notes'] as String?,
-      dateAdded: DateTime.parse(json['dateAdded'] as String),
-      dateStarted: json['dateStarted'] != null
-          ? DateTime.parse(json['dateStarted'] as String)
-          : null,
-      dateCompleted: json['dateCompleted'] != null
-          ? DateTime.parse(json['dateCompleted'] as String)
-          : null,
+      dateAdded: AppDateUtils.safeParse(json['dateAdded'] as String?),
+      dateStarted: AppDateUtils.safeParseNullable(json['dateStarted'] as String?),
+      dateCompleted: AppDateUtils.safeParseNullable(json['dateCompleted'] as String?),
       sessions: (json['sessions'] as List<dynamic>?)
               ?.map((s) => StudySession.fromJson(s as Map<String, dynamic>))
               .toList() ??

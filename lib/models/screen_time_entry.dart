@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Screen Time Tracker models for tracking device/app usage.
 
 enum AppCategory {
@@ -67,7 +69,7 @@ class ScreenTimeEntry {
 
   factory ScreenTimeEntry.fromJson(Map<String, dynamic> json) => ScreenTimeEntry(
     id: json['id'],
-    date: DateTime.parse(json['date']),
+    date: AppDateUtils.safeParse(json['date'] as String?),
     appName: json['appName'],
     category: AppCategory.values.firstWhere((c) => c.name == json['category']),
     durationMinutes: json['durationMinutes'],

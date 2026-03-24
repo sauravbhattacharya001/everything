@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Bookmark folder/collection.
 enum BookmarkFolder {
@@ -119,10 +120,8 @@ class Bookmark {
                 ?.map((t) => t as String)
                 .toList() ??
             const [],
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        lastVisited: json['lastVisited'] != null
-            ? DateTime.parse(json['lastVisited'] as String)
-            : null,
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+        lastVisited: AppDateUtils.safeParseNullable(json['lastVisited'] as String?),
         visitCount: json['visitCount'] as int? ?? 0,
         isFavorite: json['isFavorite'] as bool? ?? false,
         isArchived: json['isArchived'] as bool? ?? false,

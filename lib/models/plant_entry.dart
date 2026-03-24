@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Type of plant.
 enum PlantType {
@@ -222,7 +223,7 @@ class PlantProfile {
           orElse: () => SunlightLevel.indirect),
       location: json['location'] as String? ?? '',
       wateringIntervalDays: json['wateringIntervalDays'] as int? ?? 7,
-      dateAdded: DateTime.parse(json['dateAdded'] as String),
+      dateAdded: AppDateUtils.safeParse(json['dateAdded'] as String?),
       notes: json['notes'] as String?,
       isArchived: json['isArchived'] as bool? ?? false,
     );
@@ -263,7 +264,7 @@ class PlantCareEntry {
       action: PlantCareAction.values.firstWhere(
           (e) => e.name == json['action'],
           orElse: () => PlantCareAction.other),
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: AppDateUtils.safeParse(json['timestamp'] as String?),
       healthObserved: json['healthObserved'] != null
           ? PlantHealth.values.firstWhere(
               (e) => e.name == json['healthObserved'],

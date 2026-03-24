@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Difficulty level for a recipe.
 enum RecipeDifficulty {
@@ -301,10 +302,8 @@ class Recipe {
         rating: json['rating'] as int?,
         notes: json['notes'] as String?,
         source: json['source'] as String?,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        lastCookedAt: json['lastCookedAt'] != null
-            ? DateTime.parse(json['lastCookedAt'] as String)
-            : null,
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+        lastCookedAt: AppDateUtils.safeParseNullable(json['lastCookedAt'] as String?),
         timesCookedd: json['timesCookedd'] as int? ?? 0,
         isFavorite: json['isFavorite'] as bool? ?? false,
       );

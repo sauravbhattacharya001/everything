@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Genre categories for movies and TV shows.
 enum WatchlistGenre {
@@ -180,13 +181,9 @@ class WatchlistItem {
         director: json['director'] as String?,
         platform: json['platform'] as String?,
         notes: json['notes'] as String?,
-        addedAt: DateTime.parse(json['addedAt'] as String),
-        startedAt: json['startedAt'] != null
-            ? DateTime.parse(json['startedAt'] as String)
-            : null,
-        completedAt: json['completedAt'] != null
-            ? DateTime.parse(json['completedAt'] as String)
-            : null,
+        addedAt: AppDateUtils.safeParse(json['addedAt'] as String?),
+        startedAt: AppDateUtils.safeParseNullable(json['startedAt'] as String?),
+        completedAt: AppDateUtils.safeParseNullable(json['completedAt'] as String?),
         isFavorite: json['isFavorite'] as bool? ?? false,
         imageUrl: json['imageUrl'] as String?,
       );

@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Model classes for the Packing List feature.
 
 /// Category of packing item.
@@ -202,10 +204,8 @@ class PackingList {
         orElse: () => PackingTemplateType.custom,
       ),
       tripDays: json['tripDays'] as int? ?? 1,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      departureDate: json['departureDate'] != null
-          ? DateTime.parse(json['departureDate'] as String)
-          : null,
+      createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+      departureDate: AppDateUtils.safeParseNullable(json['departureDate'] as String?),
       items: (json['items'] as List<dynamic>?)
               ?.map((i) => PackingItem.fromJson(i as Map<String, dynamic>))
               .toList() ??

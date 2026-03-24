@@ -47,4 +47,16 @@ class AppDateUtils {
   /// on that day.
   static DateTime dateOnly(DateTime dt) =>
       DateTime(dt.year, dt.month, dt.day);
+
+  /// Safely parses a date string, returning [fallback] (default: epoch) on
+  /// malformed or null input instead of throwing [FormatException].
+  ///
+  /// Use this in `fromJson` factories instead of `DateTime.parse` to prevent
+  /// crashes from corrupted or partially-migrated database records.
+  static DateTime safeParse(String? raw, [DateTime? fallback]) =>
+      DateTime.tryParse(raw ?? '') ?? fallback ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Nullable variant — returns `null` when [raw] is null or unparseable.
+  static DateTime? safeParseNullable(String? raw) =>
+      raw == null ? null : DateTime.tryParse(raw);
 }

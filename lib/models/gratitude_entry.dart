@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Categories of gratitude entries.
 enum GratitudeCategory {
@@ -161,7 +162,7 @@ class GratitudeEntry {
   factory GratitudeEntry.fromJson(Map<String, dynamic> json) {
     return GratitudeEntry(
       id: json['id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: AppDateUtils.safeParse(json['timestamp'] as String?),
       text: json['text'] as String,
       category: GratitudeCategory.values[json['category'] as int],
       intensity: GratitudeIntensity.values[json['intensity'] as int],

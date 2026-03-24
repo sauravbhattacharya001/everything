@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category for quotes.
 enum QuoteCategory {
@@ -107,7 +108,7 @@ class QuoteEntry {
                 .toList() ??
             const [],
         isFavorite: json['isFavorite'] as bool? ?? false,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
         notes: json['notes'] as String?,
       );
 }

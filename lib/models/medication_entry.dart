@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Medication frequency schedule.
 enum MedFrequency {
@@ -148,8 +149,8 @@ class Medication {
         .map((t) => DoseTime.values.byName(t as String)).toList(),
     notes: json['notes'] as String?,
     prescribedBy: json['prescribedBy'] as String?,
-    startDate: DateTime.parse(json['startDate'] as String),
-    endDate: json['endDate'] != null ? DateTime.parse(json['endDate'] as String) : null,
+    startDate: AppDateUtils.safeParse(json['startDate'] as String?),
+    endDate: AppDateUtils.safeParseNullable(json['endDate'] as String?),
     active: json['active'] as bool? ?? true,
     color: json['color'] as String? ?? '#2196F3',
   );
@@ -183,7 +184,7 @@ class DoseLog {
   factory DoseLog.fromJson(Map<String, dynamic> json) => DoseLog(
     id: json['id'] as String,
     medicationId: json['medicationId'] as String,
-    timestamp: DateTime.parse(json['timestamp'] as String),
+    timestamp: AppDateUtils.safeParse(json['timestamp'] as String?),
     scheduledTime: DoseTime.values.byName(json['scheduledTime'] as String),
     taken: json['taken'] as bool? ?? true,
     skipped: json['skipped'] as bool? ?? false,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Type of rewards program.
 enum RewardsProgramType {
@@ -101,7 +102,7 @@ class PointsTransaction {
   factory PointsTransaction.fromJson(Map<String, dynamic> json) =>
       PointsTransaction(
         id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
+        date: AppDateUtils.safeParse(json['date'] as String?),
         amount: (json['amount'] as num).toDouble(),
         isEarn: json['isEarn'] as bool,
         description: json['description'] as String,
@@ -205,11 +206,11 @@ class LoyaltyCard {
     lifetimeRedeemed: (json['lifetimeRedeemed'] as num?)?.toDouble() ?? 0,
     tier: TierLevel.values.firstWhere(
         (v) => v.name == json['tier'], orElse: () => TierLevel.none),
-    enrollDate: DateTime.parse(json['enrollDate'] as String),
+    enrollDate: AppDateUtils.safeParse(json['enrollDate'] as String?),
     expirationDate: json['expirationDate'] != null
-        ? DateTime.parse(json['expirationDate'] as String) : null,
+        ? AppDateUtils.safeParse(json['expirationDate'] as String?) : null,
     pointsExpiryDate: json['pointsExpiryDate'] != null
-        ? DateTime.parse(json['pointsExpiryDate'] as String) : null,
+        ? AppDateUtils.safeParse(json['pointsExpiryDate'] as String?) : null,
     pointValue: (json['pointValue'] as num?)?.toDouble() ?? 0.01,
     membershipNumber: json['membershipNumber'] as String?,
     notes: json['notes'] as String?,

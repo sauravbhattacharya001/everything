@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category of the document being tracked.
 enum DocumentCategory {
@@ -181,15 +182,13 @@ class DocumentEntry {
     id: json['id'] as String,
     name: json['name'] as String,
     category: DocumentCategory.values[json['category'] as int],
-    issueDate: DateTime.parse(json['issueDate'] as String),
-    expiryDate: DateTime.parse(json['expiryDate'] as String),
+    issueDate: AppDateUtils.safeParse(json['issueDate'] as String?),
+    expiryDate: AppDateUtils.safeParse(json['expiryDate'] as String?),
     issuer: json['issuer'] as String?,
     documentNumber: json['documentNumber'] as String?,
     notes: json['notes'] as String?,
     reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 30,
     renewed: json['renewed'] as bool? ?? false,
-    renewedDate: json['renewedDate'] != null
-        ? DateTime.parse(json['renewedDate'] as String)
-        : null,
+    renewedDate: AppDateUtils.safeParseNullable(json['renewedDate'] as String?),
   );
 }

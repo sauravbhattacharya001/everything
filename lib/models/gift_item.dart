@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Model classes for the Gift Tracker feature.
 
@@ -165,10 +166,8 @@ class GiftItem {
             orElse: () => GiftDirection.giving),
         budget: (json['budget'] as num?)?.toDouble(),
         actualCost: (json['actualCost'] as num?)?.toDouble(),
-        occasionDate: json['occasionDate'] != null
-            ? DateTime.parse(json['occasionDate'] as String)
-            : null,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        occasionDate: AppDateUtils.safeParseNullable(json['occasionDate'] as String?),
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
         notes: json['notes'] as String?,
         thankYouSent: json['thankYouSent'] as bool? ?? false,
         rating: json['rating'] as int? ?? 0,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Reading status of a book.
 enum ReadingStatus {
@@ -144,7 +145,7 @@ class ReadingSession {
 
   factory ReadingSession.fromJson(Map<String, dynamic> json) {
     return ReadingSession(
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       pagesRead: json['pagesRead'] as int,
       minutesSpent: json['minutesSpent'] as int,
       notes: json['notes'] as String?,
@@ -279,13 +280,9 @@ class Book {
       currentPage: json['currentPage'] as int? ?? 0,
       rating: json['rating'] as int?,
       review: json['review'] as String?,
-      dateAdded: DateTime.parse(json['dateAdded'] as String),
-      dateStarted: json['dateStarted'] != null
-          ? DateTime.parse(json['dateStarted'] as String)
-          : null,
-      dateFinished: json['dateFinished'] != null
-          ? DateTime.parse(json['dateFinished'] as String)
-          : null,
+      dateAdded: AppDateUtils.safeParse(json['dateAdded'] as String?),
+      dateStarted: AppDateUtils.safeParseNullable(json['dateStarted'] as String?),
+      dateFinished: AppDateUtils.safeParseNullable(json['dateFinished'] as String?),
       sessions: (json['sessions'] as List<dynamic>?)
               ?.map((s) => ReadingSession.fromJson(s as Map<String, dynamic>))
               .toList() ??

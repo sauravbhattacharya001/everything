@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Model classes for the Commute Tracker feature.
 
 /// Mode of transportation.
@@ -78,7 +80,7 @@ class CommuteEntry {
   factory CommuteEntry.fromJson(Map<String, dynamic> json) {
     return CommuteEntry(
       id: json['id'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       mode: CommuteMode.values.firstWhere((e) => e.name == json['mode'],
           orElse: () => CommuteMode.car),
       durationMinutes: json['durationMinutes'] as int,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Mood associated with a journal entry.
 enum JournalMood {
@@ -110,17 +111,17 @@ class JournalEntry {
   factory JournalEntry.fromJson(Map<String, dynamic> json) {
     return JournalEntry(
       id: json['id'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       mood: json['mood'] != null ? JournalMood.values[json['mood'] as int] : null,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       isFavorite: json['isFavorite'] as bool? ?? false,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? AppDateUtils.safeParse(json['createdAt'] as String?)
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? AppDateUtils.safeParse(json['updatedAt'] as String?)
           : DateTime.now(),
     );
   }

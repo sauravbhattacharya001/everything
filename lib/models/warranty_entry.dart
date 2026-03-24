@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category of warranted product.
 enum WarrantyCategory {
@@ -142,16 +143,14 @@ class WarrantyClaim {
 
   factory WarrantyClaim.fromJson(Map<String, dynamic> json) => WarrantyClaim(
         id: json['id'] as String,
-        dateSubmitted: DateTime.parse(json['dateSubmitted'] as String),
+        dateSubmitted: AppDateUtils.safeParse(json['dateSubmitted'] as String?),
         issue: json['issue'] as String,
         status: ClaimStatus.values.firstWhere(
           (v) => v.name == json['status'],
           orElse: () => ClaimStatus.submitted,
         ),
         resolution: json['resolution'] as String?,
-        dateResolved: json['dateResolved'] != null
-            ? DateTime.parse(json['dateResolved'] as String)
-            : null,
+        dateResolved: AppDateUtils.safeParseNullable(json['dateResolved'] as String?),
       );
 }
 
@@ -292,8 +291,8 @@ class WarrantyEntry {
           (v) => v.name == json['type'],
           orElse: () => WarrantyType.manufacturer,
         ),
-        purchaseDate: DateTime.parse(json['purchaseDate'] as String),
-        expirationDate: DateTime.parse(json['expirationDate'] as String),
+        purchaseDate: AppDateUtils.safeParse(json['purchaseDate'] as String?),
+        expirationDate: AppDateUtils.safeParse(json['expirationDate'] as String?),
         purchasePrice:
             (json['purchasePrice'] as num?)?.toDouble() ?? 0,
         retailer: json['retailer'] as String?,

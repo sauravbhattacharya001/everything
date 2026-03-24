@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Represents a savings goal with target amount, deadline, and contributions.
 class SavingsGoal {
   final String id;
@@ -107,10 +109,8 @@ class SavingsGoal {
       name: json['name'] as String,
       emoji: json['emoji'] as String? ?? '🎯',
       targetAmount: (json['targetAmount'] as num).toDouble(),
-      deadline: json['deadline'] != null
-          ? DateTime.parse(json['deadline'] as String)
-          : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      deadline: AppDateUtils.safeParseNullable(json['deadline'] as String?),
+      createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
       category: SavingsGoalCategory.values.firstWhere(
         (v) => v.name == json['category'],
         orElse: () => SavingsGoalCategory.general,
@@ -154,7 +154,7 @@ class SavingsContribution {
     return SavingsContribution(
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       note: json['note'] as String?,
     );
   }

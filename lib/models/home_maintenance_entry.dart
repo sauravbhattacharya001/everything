@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category of home maintenance task.
 enum MaintenanceCategory {
@@ -154,7 +155,7 @@ class MaintenanceCompletion {
 
   factory MaintenanceCompletion.fromJson(Map<String, dynamic> json) =>
       MaintenanceCompletion(
-        completedDate: DateTime.parse(json['completedDate'] as String),
+        completedDate: AppDateUtils.safeParse(json['completedDate'] as String?),
         cost: (json['cost'] as num?)?.toDouble(),
         vendor: json['vendor'] as String?,
         notes: json['notes'] as String?,
@@ -272,7 +273,7 @@ class HomeMaintenanceEntry {
         description: json['description'] as String?,
         recurrence: RecurrenceInterval.values[json['recurrence'] as int],
         recurrenceDays: json['recurrenceDays'] as int,
-        nextDueDate: DateTime.parse(json['nextDueDate'] as String),
+        nextDueDate: AppDateUtils.safeParse(json['nextDueDate'] as String?),
         completions: (json['completions'] as List<dynamic>?)
             ?.map((c) => MaintenanceCompletion.fromJson(c as Map<String, dynamic>))
             .toList() ?? [],

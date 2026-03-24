@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Categories of skills being learned.
 enum SkillCategory {
@@ -148,7 +149,7 @@ class PracticeSession {
   factory PracticeSession.fromJson(Map<String, dynamic> json) {
     return PracticeSession(
       id: json['id'] as String,
-      startTime: DateTime.parse(json['startTime'] as String),
+      startTime: AppDateUtils.safeParse(json['startTime'] as String?),
       durationMinutes: json['durationMinutes'] as int,
       topic: json['topic'] as String?,
       notes: json['notes'] as String?,
@@ -222,9 +223,7 @@ class SkillMilestone {
       title: json['title'] as String,
       description: json['description'] as String?,
       completed: json['completed'] as bool? ?? false,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
-          : null,
+      completedAt: AppDateUtils.safeParseNullable(json['completedAt'] as String?),
       orderIndex: json['orderIndex'] as int? ?? 0,
     );
   }
@@ -354,10 +353,8 @@ class SkillEntry {
       category: SkillCategory.values[json['category'] as int],
       currentLevel: ProficiencyLevel.values[json['currentLevel'] as int],
       targetLevel: ProficiencyLevel.values[json['targetLevel'] as int],
-      startedAt: DateTime.parse(json['startedAt'] as String),
-      lastPracticedAt: json['lastPracticedAt'] != null
-          ? DateTime.parse(json['lastPracticedAt'] as String)
-          : null,
+      startedAt: AppDateUtils.safeParse(json['startedAt'] as String?),
+      lastPracticedAt: AppDateUtils.safeParseNullable(json['lastPracticedAt'] as String?),
       sessions: (json['sessions'] as List<dynamic>?)
           ?.map((e) => PracticeSession.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],

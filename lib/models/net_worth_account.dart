@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Represents a financial account (asset or liability) for net worth tracking.
 ///
 /// Accounts hold [snapshots] that record balance over time, enabling
@@ -134,7 +136,7 @@ class NetWorthAccount {
       ),
       institution: json['institution'] as String?,
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
       isArchived: json['isArchived'] as bool? ?? false,
       snapshots: (json['snapshots'] as List<dynamic>?)
               ?.map((s) =>
@@ -169,7 +171,7 @@ class BalanceSnapshot {
 
   factory BalanceSnapshot.fromJson(Map<String, dynamic> json) {
     return BalanceSnapshot(
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       balance: (json['balance'] as num).toDouble(),
       note: json['note'] as String?,
     );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Blood type classification.
 enum BloodType {
@@ -416,9 +417,7 @@ class MedicalCondition {
         (e) => e.name == json['severity'],
         orElse: () => ConditionSeverity.moderate,
       ),
-      diagnosedDate: json['diagnosedDate'] != null
-          ? DateTime.parse(json['diagnosedDate'] as String)
-          : null,
+      diagnosedDate: AppDateUtils.safeParseNullable(json['diagnosedDate'] as String?),
       treatingDoctor: json['treatingDoctor'] as String?,
       notes: json['notes'] as String?,
     );
@@ -515,9 +514,7 @@ class InsurancePolicy {
       groupNumber: json['groupNumber'] as String?,
       memberId: json['memberId'] as String?,
       phone: json['phone'] as String?,
-      expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'] as String)
-          : null,
+      expiresAt: AppDateUtils.safeParseNullable(json['expiresAt'] as String?),
       notes: json['notes'] as String?,
     );
   }
@@ -677,9 +674,7 @@ class EmergencyProfile {
   factory EmergencyProfile.fromJson(Map<String, dynamic> json) {
     return EmergencyProfile(
       fullName: json['fullName'] as String,
-      dateOfBirth: json['dateOfBirth'] != null
-          ? DateTime.parse(json['dateOfBirth'] as String)
-          : null,
+      dateOfBirth: AppDateUtils.safeParseNullable(json['dateOfBirth'] as String?),
       bloodType: BloodType.values.firstWhere(
         (e) => e.name == json['bloodType'],
         orElse: () => BloodType.unknown,
@@ -711,9 +706,7 @@ class EmergencyProfile {
           [],
       isOrganDonor: json['isOrganDonor'] as bool? ?? false,
       specialInstructions: json['specialInstructions'] as String?,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      updatedAt: AppDateUtils.safeParseNullable(json['updatedAt'] as String?),
     );
   }
 

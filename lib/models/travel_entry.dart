@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Model classes for the Travel Log feature.
 
 /// Type of trip.
@@ -118,8 +120,8 @@ class TravelEntry {
       id: json['id'] as String,
       destination: json['destination'] as String,
       country: json['country'] as String?,
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
+      startDate: AppDateUtils.safeParse(json['startDate'] as String?),
+      endDate: AppDateUtils.safeParse(json['endDate'] as String?),
       type: TripType.values.firstWhere((e) => e.name == json['type'],
           orElse: () => TripType.leisure),
       transport: TripTransport.values.firstWhere(

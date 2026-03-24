@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// Model classes for the Time Tracker feature.
 
 /// Categories for time entries.
@@ -62,10 +64,8 @@ class TimeEntry {
       category: TimeCategory.values.firstWhere(
           (e) => e.name == json['category'],
           orElse: () => TimeCategory.other),
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: json['endTime'] != null
-          ? DateTime.parse(json['endTime'] as String)
-          : null,
+      startTime: AppDateUtils.safeParse(json['startTime'] as String?),
+      endTime: AppDateUtils.safeParseNullable(json['endTime'] as String?),
       notes: json['notes'] as String?,
       tags: (json['tags'] as List<dynamic>?)
               ?.map((e) => e as String)

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Room/area where the chore takes place.
 enum ChoreRoom {
@@ -199,7 +200,7 @@ class ChoreCompletion {
       ChoreCompletion(
         id: json['id'] as String,
         choreId: json['choreId'] as String,
-        completedAt: DateTime.parse(json['completedAt'] as String),
+        completedAt: AppDateUtils.safeParse(json['completedAt'] as String?),
         durationMinutes: json['durationMinutes'] as int? ?? 0,
         note: json['note'] as String?,
         rating: json['rating'] as int? ?? 3,

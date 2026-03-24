@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Billing frequency for subscriptions.
 enum BillingCycle {
@@ -204,10 +205,10 @@ class SubscriptionEntry {
     cycle: BillingCycle.values.firstWhere((v) => v.name == json['cycle'], orElse: () => BillingCycle.monthly),
     category: SubscriptionCategory.values.firstWhere((v) => v.name == json['category'], orElse: () => SubscriptionCategory.other),
     status: SubscriptionStatus.values.firstWhere((v) => v.name == json['status'], orElse: () => SubscriptionStatus.active),
-    startDate: DateTime.parse(json['startDate'] as String),
-    endDate: json['endDate'] != null ? DateTime.parse(json['endDate'] as String) : null,
-    trialEndDate: json['trialEndDate'] != null ? DateTime.parse(json['trialEndDate'] as String) : null,
-    nextBillingDate: DateTime.parse(json['nextBillingDate'] as String),
+    startDate: AppDateUtils.safeParse(json['startDate'] as String?),
+    endDate: AppDateUtils.safeParseNullable(json['endDate'] as String?),
+    trialEndDate: AppDateUtils.safeParseNullable(json['trialEndDate'] as String?),
+    nextBillingDate: AppDateUtils.safeParse(json['nextBillingDate'] as String?),
     notes: json['notes'] as String?, tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
     url: json['url'] as String?, autoRenew: json['autoRenew'] as bool? ?? true,
     priceHistory: (json['priceHistory'] as List<dynamic>?)?.map((p) => PriceChange.fromJson(p as Map<String, dynamic>)).toList() ?? [],
@@ -233,7 +234,7 @@ class PriceChange {
   };
 
   factory PriceChange.fromJson(Map<String, dynamic> json) => PriceChange(
-    date: DateTime.parse(json['date'] as String),
+    date: AppDateUtils.safeParse(json['date'] as String?),
     oldPrice: (json['oldPrice'] as num).toDouble(),
     newPrice: (json['newPrice'] as num).toDouble(),
     reason: json['reason'] as String?,

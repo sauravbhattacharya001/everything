@@ -1,4 +1,5 @@
 import 'dart:math' show log;
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Represents a single debt (credit card, loan, mortgage, etc.)
 class DebtEntry {
@@ -112,7 +113,7 @@ class DebtEntry {
         (v) => v.name == json['category'],
         orElse: () => DebtCategory.creditCard,
       ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
       payments: (json['payments'] as List<dynamic>?)
               ?.map((p) => DebtPayment.fromJson(p as Map<String, dynamic>))
               .toList() ??
@@ -147,7 +148,7 @@ class DebtPayment {
     return DebtPayment(
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       note: json['note'] as String?,
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// A time capsule: a message to your future self that unlocks on a date.
 class TimeCapsuleEntry {
@@ -83,12 +84,10 @@ class TimeCapsuleEntry {
       id: json['id'] as String,
       title: json['title'] as String,
       message: json['message'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      unlockAt: DateTime.parse(json['unlockAt'] as String),
+      createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
+      unlockAt: AppDateUtils.safeParse(json['unlockAt'] as String?),
       isOpened: json['isOpened'] as bool? ?? false,
-      openedAt: json['openedAt'] != null
-          ? DateTime.parse(json['openedAt'] as String)
-          : null,
+      openedAt: AppDateUtils.safeParseNullable(json['openedAt'] as String?),
       mood: json['mood'] as String?,
     );
   }

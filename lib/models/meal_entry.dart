@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Meal type categories.
 enum MealType {
@@ -201,7 +202,7 @@ class MealEntry {
   factory MealEntry.fromJson(Map<String, dynamic> json) {
     return MealEntry(
       id: json['id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: AppDateUtils.safeParse(json['timestamp'] as String?),
       type: MealType.values.firstWhere(
         (t) => t.name == json['type'],
         orElse: () => MealType.snack,

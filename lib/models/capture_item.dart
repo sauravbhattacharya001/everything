@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Category for quick-capture items.
 enum CaptureCategory {
@@ -285,7 +286,7 @@ class CaptureItem {
   factory CaptureItem.fromJson(Map<String, dynamic> json) {
     return CaptureItem(
       id: json['id'] as String,
-      capturedAt: DateTime.parse(json['capturedAt'] as String),
+      capturedAt: AppDateUtils.safeParse(json['capturedAt'] as String?),
       text: json['text'] as String,
       category: CaptureCategory.values[json['category'] as int? ?? 2],
       priority: CapturePriority.values[json['priority'] as int? ?? 0],
@@ -295,9 +296,7 @@ class CaptureItem {
               .toList() ??
           [],
       note: json['note'] as String?,
-      processedAt: json['processedAt'] != null
-          ? DateTime.parse(json['processedAt'] as String)
-          : null,
+      processedAt: AppDateUtils.safeParseNullable(json['processedAt'] as String?),
       destination: json['destination'] != null
           ? ProcessedDestination.values[json['destination'] as int]
           : null,

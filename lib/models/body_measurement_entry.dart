@@ -1,3 +1,5 @@
+import 'package:everything/core/utils/date_utils.dart';
+
 /// A single body measurement recording.
 class BodyMeasurementEntry {
   final String id;
@@ -87,7 +89,7 @@ class BodyMeasurementEntry {
   factory BodyMeasurementEntry.fromJson(Map<String, dynamic> json) =>
       BodyMeasurementEntry(
         id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
+        date: AppDateUtils.safeParse(json['date'] as String?),
         weightKg: (json['weightKg'] as num?)?.toDouble(),
         heightCm: (json['heightCm'] as num?)?.toDouble(),
         waistCm: (json['waistCm'] as num?)?.toDouble(),

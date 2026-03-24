@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Type of vehicle.
 enum VehicleType {
@@ -197,7 +198,7 @@ class Vehicle {
       make: json['make'] as String,
       model: json['model'] as String,
       currentMileage: json['currentMileage'] as int,
-      addedAt: DateTime.parse(json['addedAt'] as String),
+      addedAt: AppDateUtils.safeParse(json['addedAt'] as String?),
     );
   }
 
@@ -248,7 +249,7 @@ class MaintenanceRecord {
         (c) => c.name == json['category'],
         orElse: () => MaintenanceCategory.other,
       ),
-      date: DateTime.parse(json['date'] as String),
+      date: AppDateUtils.safeParse(json['date'] as String?),
       mileage: json['mileage'] as int,
       cost: (json['cost'] as num).toDouble(),
       shop: json['shop'] as String?,

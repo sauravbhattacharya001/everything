@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Type of pet.
 enum PetType {
@@ -165,7 +166,7 @@ class Pet {
     name: json['name'] as String,
     type: PetType.values.byName(json['type'] as String),
     breed: json['breed'] as String?,
-    birthday: json['birthday'] != null ? DateTime.parse(json['birthday'] as String) : null,
+    birthday: AppDateUtils.safeParseNullable(json['birthday'] as String?),
     weightKg: (json['weightKg'] as num?)?.toDouble(),
     notes: json['notes'] as String?,
   );
@@ -207,7 +208,7 @@ class CareEntry {
   factory CareEntry.fromJson(Map<String, dynamic> json) => CareEntry(
     id: json['id'] as String,
     petId: json['petId'] as String,
-    timestamp: DateTime.parse(json['timestamp'] as String),
+    timestamp: AppDateUtils.safeParse(json['timestamp'] as String?),
     category: CareCategory.values.byName(json['category'] as String),
     note: json['note'] as String?,
     durationMinutes: json['durationMinutes'] as int?,
@@ -257,11 +258,11 @@ class HealthRecord {
   factory HealthRecord.fromJson(Map<String, dynamic> json) => HealthRecord(
     id: json['id'] as String,
     petId: json['petId'] as String,
-    date: DateTime.parse(json['date'] as String),
+    date: AppDateUtils.safeParse(json['date'] as String?),
     type: CareCategory.values.byName(json['type'] as String),
     title: json['title'] as String,
     description: json['description'] as String?,
     weightKg: (json['weightKg'] as num?)?.toDouble(),
-    nextDue: json['nextDue'] != null ? DateTime.parse(json['nextDue'] as String) : null,
+    nextDue: AppDateUtils.safeParseNullable(json['nextDue'] as String?),
   );
 }

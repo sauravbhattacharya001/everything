@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:everything/core/utils/date_utils.dart';
 
 /// Relationship category for classifying contacts.
 enum RelationshipCategory {
@@ -165,7 +166,7 @@ class Interaction {
 
   factory Interaction.fromJson(Map<String, dynamic> json) => Interaction(
         id: json['id'] as String,
-        date: DateTime.parse(json['date'] as String),
+        date: AppDateUtils.safeParse(json['date'] as String?),
         note: json['note'] as String,
         method: ContactMethod.values.byName(json['method'] as String),
         duration: json['durationMinutes'] != null
@@ -338,10 +339,8 @@ class Contact {
                 ?.map((e) => Interaction.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
-        birthday: json['birthday'] != null
-            ? DateTime.parse(json['birthday'] as String)
-            : null,
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        birthday: AppDateUtils.safeParseNullable(json['birthday'] as String?),
+        createdAt: AppDateUtils.safeParse(json['createdAt'] as String?),
         archived: json['archived'] as bool? ?? false,
       );
 
