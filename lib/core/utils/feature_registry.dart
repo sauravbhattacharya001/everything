@@ -100,6 +100,7 @@ import '../../views/home/invoice_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
 import '../../views/home/sun_moon_screen.dart';
 import '../../views/home/metronome_screen.dart';
+import '../../views/home/caffeine_tracker_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -318,6 +319,12 @@ class FeatureRegistry {
       icon: Icons.water_drop,
       category: FeatureCategory.health,
       builder: (_) => const WaterTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Caffeine Tracker',
+      icon: Icons.coffee,
+      category: FeatureCategory.health,
+      builder: (_) => const CaffeineTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Fasting Tracker',
