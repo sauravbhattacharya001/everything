@@ -62,6 +62,7 @@ import '../../views/home/water_tracker_screen.dart';
 import '../../views/home/weekly_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
 import '../../views/home/blood_pressure_screen.dart';
+import '../../views/home/blood_sugar_screen.dart';
 import '../../views/home/body_measurement_screen.dart';
 import '../../views/home/bookmark_screen.dart';
 import '../../views/home/time_capsule_screen.dart';
@@ -375,6 +376,12 @@ class FeatureRegistry {
       icon: Icons.monitor_heart,
       category: FeatureCategory.health,
       builder: (_) => const BloodPressureScreen(),
+    ),
+    FeatureEntry(
+      label: 'Blood Sugar',
+      icon: Icons.water_drop,
+      category: FeatureCategory.health,
+      builder: (_) => const BloodSugarScreen(),
     ),
     FeatureEntry(
       label: 'Breathing Exercise',
