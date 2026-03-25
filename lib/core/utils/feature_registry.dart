@@ -99,6 +99,7 @@ import '../../views/home/tally_counter_screen.dart';
 import '../../views/home/invoice_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
 import '../../views/home/sun_moon_screen.dart';
+import '../../views/home/metronome_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -751,6 +752,12 @@ class FeatureRegistry {
       icon: Icons.touch_app,
       category: FeatureCategory.productivity,
       builder: (_) => const TallyCounterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Metronome',
+      icon: Icons.speed,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MetronomeScreen(),
     ),
   ];
 
