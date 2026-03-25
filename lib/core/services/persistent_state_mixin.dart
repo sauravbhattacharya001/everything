@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'encrypted_preferences_service.dart';
 
 /// Mixin for StatefulWidget states that need to persist service data
 /// across app restarts via SharedPreferences.
@@ -7,6 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Subclasses must implement [storageKey], [exportData], and [importData].
 /// Data is automatically saved when the app goes to background or the
 /// widget is deactivated, and loaded on [initPersistence].
+///
+/// Sensitive keys (medical, financial, diary data) are automatically
+/// encrypted at rest using [EncryptedPreferencesService]. Non-sensitive
+/// keys use plain SharedPreferences for performance. Existing plaintext
+/// data for sensitive keys is transparently migrated on first read.
 ///
 /// Usage:
 /// ```dart
@@ -39,6 +45,10 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
 
   bool _persistenceInitialized = false;
 
+  /// Whether this storage key holds sensitive personal data that
+  /// requires encryption at rest.
+  bool get _isSensitive => SensitiveKeys.isSensitive(storageKey);
+
   /// Call in [initState] to load saved data and register lifecycle observer.
   /// Returns a Future that completes after data is loaded.
   Future<void> initPersistence() {
@@ -47,9 +57,33 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     return _loadData();
   }
 
-  Future<void> _loadData() async {
+  /// Reads the raw JSON string from the appropriate storage backend.
+  ///
+  /// Sensitive keys are read (and transparently migrated from plaintext)
+  /// via [EncryptedPreferencesService]. Non-sensitive keys use plain
+  /// SharedPreferences.
+  Future<String?> _readStorage() async {
+    if (_isSensitive) {
+      final encrypted = await EncryptedPreferencesService.getInstance();
+      return encrypted.getString(storageKey);
+    }
     final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(storageKey);
+    return prefs.getString(storageKey);
+  }
+
+  /// Writes the raw JSON string to the appropriate storage backend.
+  Future<void> _writeStorage(String data) async {
+    if (_isSensitive) {
+      final encrypted = await EncryptedPreferencesService.getInstance();
+      await encrypted.setString(storageKey, data);
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(storageKey, data);
+    }
+  }
+
+  Future<void> _loadData() async {
+    final json = await _readStorage();
     if (json != null && json.isNotEmpty) {
       try {
         importData(json);
@@ -58,11 +92,12 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     if (mounted) setState(() {});
   }
 
-  /// Save current state to SharedPreferences. Call after mutations.
+  /// Save current state to storage. Call after mutations.
+  ///
+  /// Sensitive data is encrypted; non-sensitive data is stored as-is.
   Future<void> saveData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, exportData());
+      await _writeStorage(exportData());
     } catch (_) {}
   }
 
