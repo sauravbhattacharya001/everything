@@ -70,6 +70,7 @@ import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 import '../../views/home/random_decision_screen.dart';
 import '../../views/home/unit_converter_screen.dart';
+import '../../views/home/base_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
 import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
@@ -678,6 +679,12 @@ class FeatureRegistry {
       icon: Icons.calculate,
       category: FeatureCategory.lifestyle,
       builder: (_) => const UnitConverterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Base Converter',
+      icon: Icons.swap_horiz,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const BaseConverterScreen(),
     ),
     FeatureEntry(
       label: 'World Clock',
