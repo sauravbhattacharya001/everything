@@ -1,8 +1,15 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'secure_storage_service.dart';
+
 /// Mixin for StatefulWidget states that need to persist service data
-/// across app restarts via SharedPreferences.
+/// across app restarts via encrypted storage.
+///
+/// Data is stored in platform-secure storage (Android EncryptedSharedPreferences /
+/// iOS Keychain) to protect sensitive health, financial, and personal data.
+/// On first load, any existing plaintext SharedPreferences data is automatically
+/// migrated to the encrypted backend and the plaintext copy is deleted.
 ///
 /// Subclasses must implement [storageKey], [exportData], and [importData].
 /// Data is automatically saved when the app goes to background or the
@@ -28,7 +35,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// ```
 mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     implements WidgetsBindingObserver {
-  /// SharedPreferences key for this screen's data.
+  /// Storage key for this screen's data.
   String get storageKey;
 
   /// Serialize current state to JSON string.
@@ -48,8 +55,21 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(storageKey);
+    // Try loading from encrypted storage first
+    String? json = await SecureStorageService.read(storageKey);
+
+    if (json == null || json.isEmpty) {
+      // Migrate from plaintext SharedPreferences if present
+      final prefs = await SharedPreferences.getInstance();
+      final plaintext = prefs.getString(storageKey);
+      if (plaintext != null && plaintext.isNotEmpty) {
+        json = plaintext;
+        // Migrate: write to secure storage, then delete plaintext
+        await SecureStorageService.write(storageKey, plaintext);
+        await prefs.remove(storageKey);
+      }
+    }
+
     if (json != null && json.isNotEmpty) {
       try {
         importData(json);
@@ -58,11 +78,10 @@ mixin PersistentStateMixin<T extends StatefulWidget> on State<T>
     if (mounted) setState(() {});
   }
 
-  /// Save current state to SharedPreferences. Call after mutations.
+  /// Save current state to encrypted storage. Call after mutations.
   Future<void> saveData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, exportData());
+      await SecureStorageService.write(storageKey, exportData());
     } catch (_) {}
   }
 

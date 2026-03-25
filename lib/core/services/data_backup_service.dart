@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'secure_storage_service.dart';
+
 /// Unified data backup and restore service.
 ///
 /// Discovers all registered storage keys, exports their data into a single
 /// JSON backup, and restores from a backup with optional merge/replace
 /// strategy.
+///
+/// All data is read/written via [SecureStorageService] (encrypted).
+/// During export/import, any lingering plaintext SharedPreferences data
+/// is automatically migrated to the encrypted backend.
 ///
 /// Usage:
 /// ```dart
@@ -67,14 +73,26 @@ class DataBackupService {
   ///
   /// Returns a JSON object with metadata and a `services` map where each
   /// key is a storage key and the value is the raw JSON string stored in
-  /// SharedPreferences.
+  /// encrypted storage.
   Future<String> exportAll() async {
     final prefs = await SharedPreferences.getInstance();
     final services = <String, dynamic>{};
     final supported = <String, bool>{};
 
     for (final entry in _storageKeys.entries) {
-      final data = prefs.getString(entry.key);
+      // Read from encrypted storage first
+      String? data = await SecureStorageService.read(entry.key);
+
+      // Auto-migrate from plaintext if encrypted store is empty
+      if (data == null || data.isEmpty) {
+        final plaintext = prefs.getString(entry.key);
+        if (plaintext != null && plaintext.isNotEmpty) {
+          data = plaintext;
+          await SecureStorageService.write(entry.key, plaintext);
+          await prefs.remove(entry.key);
+        }
+      }
+
       supported[entry.key] = data != null;
       if (data != null) {
         services[entry.key] = data;
@@ -164,7 +182,7 @@ class DataBackupService {
 
       // Check merge strategy
       if (strategy == BackupStrategy.merge) {
-        final existing = prefs.getString(key);
+        final existing = await SecureStorageService.read(key);
         if (existing != null && existing.isNotEmpty) {
           serviceResults[key] = 'skipped_existing';
           skipped++;
@@ -181,7 +199,9 @@ class DataBackupService {
         continue;
       }
 
-      await prefs.setString(key, value);
+      await SecureStorageService.write(key, value);
+      // Clean up any lingering plaintext
+      await prefs.remove(key);
       serviceResults[key] = 'restored';
       restored++;
     }
@@ -196,11 +216,10 @@ class DataBackupService {
 
   /// Check which services have data and which support backup.
   Future<Map<String, ServiceBackupInfo>> checkServiceSupport() async {
-    final prefs = await SharedPreferences.getInstance();
     final result = <String, ServiceBackupInfo>{};
 
     for (final entry in _storageKeys.entries) {
-      final data = prefs.getString(entry.key);
+      final data = await SecureStorageService.read(entry.key);
       result[entry.key] = ServiceBackupInfo(
         displayName: entry.value,
         hasData: data != null && data.isNotEmpty,
@@ -211,12 +230,15 @@ class DataBackupService {
     return result;
   }
 
-  /// Clear all persisted data. Use with caution.
+  /// Clear all persisted data from both encrypted and plaintext storage.
   Future<int> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     int cleared = 0;
     for (final key in _storageKeys.keys) {
-      if (prefs.containsKey(key)) {
+      final hasSecure = await SecureStorageService.containsKey(key);
+      final hasPlain = prefs.containsKey(key);
+      if (hasSecure || hasPlain) {
+        await SecureStorageService.delete(key);
         await prefs.remove(key);
         cleared++;
       }
