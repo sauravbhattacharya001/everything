@@ -119,12 +119,29 @@ class EncryptedPreferencesService {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // AES-256-GCM encryption
+  // AES-256-GCM encryption with HMAC integrity verification
   // ──────────────────────────────────────────────────────────────────
 
-  /// Encrypts [plaintext] with AES-256-GCM and a random 96-bit IV.
+  /// Derives a separate HMAC key from the encryption key to ensure
+  /// encryption and authentication use independent keys.
+  Uint8List get _hmacKey {
+    // Derive HMAC key as HMAC-SHA256(encKey, "hmac-key-derivation")
+    final hmac = Hmac(sha256, _key);
+    return Uint8List.fromList(
+      hmac.convert(utf8.encode('hmac-key-derivation')).bytes,
+    );
+  }
+
+  /// Encrypts [plaintext] with AES-256-GCM and a random 96-bit IV,
+  /// then appends an HMAC-SHA256 tag for integrity verification.
   ///
-  /// Output format: `base64(iv) + '.' + base64(ciphertext+tag)`
+  /// The `encrypt` package's GCM implementation may not reliably
+  /// validate the GCM authentication tag on decryption, which would
+  /// allow tampered ciphertext to decrypt without error. Adding an
+  /// explicit HMAC over (iv ‖ ciphertext) ensures tampered data is
+  /// always detected regardless of the underlying package's behavior.
+  ///
+  /// Output format: `base64(iv) + '.' + base64(ciphertext+tag) + '.' + base64(hmac)`
   String _encrypt(String plaintext) {
     final random = Random.secure();
     final iv = Uint8List.fromList(
@@ -140,18 +157,37 @@ class EncryptedPreferencesService {
       iv: enc.IV(iv),
     );
 
-    return '${base64Encode(iv)}.${encrypted.base64}';
+    // Compute HMAC-SHA256 over (iv ‖ ciphertext) for integrity.
+    final hmac = Hmac(sha256, _hmacKey);
+    final hmacDigest = hmac.convert([...iv, ...encrypted.bytes]);
+
+    return '${base64Encode(iv)}.${encrypted.base64}.${base64Encode(hmacDigest.bytes)}';
   }
 
   /// Decrypts a value produced by [_encrypt].
+  ///
+  /// Verifies the HMAC integrity tag before decryption (if present).
+  /// Values without an HMAC (written before this security fix) are
+  /// still accepted but will be re-encrypted with HMAC on next write.
   String _decrypt(String encoded) {
     final parts = encoded.split('.');
-    if (parts.length != 2) {
+    if (parts.length < 2 || parts.length > 3) {
       throw FormatException('Invalid encrypted format');
     }
 
     final iv = base64Decode(parts[0]);
     final ciphertext = base64Decode(parts[1]);
+
+    // Verify HMAC if present (v2 format with 3 parts).
+    if (parts.length == 3) {
+      final storedHmac = base64Decode(parts[2]);
+      final hmac = Hmac(sha256, _hmacKey);
+      final computedHmac = hmac.convert([...iv, ...ciphertext]);
+      if (!_constantTimeEquals(
+          Uint8List.fromList(computedHmac.bytes), Uint8List.fromList(storedHmac))) {
+        throw FormatException('HMAC verification failed — data may be tampered');
+      }
+    }
 
     final encrypter = enc.Encrypter(enc.AES(
       enc.Key(_key),
@@ -162,6 +198,16 @@ class EncryptedPreferencesService {
       enc.Encrypted(ciphertext),
       iv: enc.IV(iv),
     );
+  }
+
+  /// Constant-time comparison to prevent timing attacks on HMAC.
+  static bool _constantTimeEquals(Uint8List a, Uint8List b) {
+    if (a.length != b.length) return false;
+    int result = 0;
+    for (int i = 0; i < a.length; i++) {
+      result |= a[i] ^ b[i];
+    }
+    return result == 0;
   }
 }
 
