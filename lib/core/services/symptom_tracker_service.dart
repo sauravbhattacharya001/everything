@@ -1,62 +1,42 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/symptom_entry.dart';
+import 'persisted_list_service.dart';
 
 /// Service for managing symptom log entries with local persistence.
-class SymptomTrackerService {
-  static const String _storageKey = 'symptom_tracker_entries';
-  List<SymptomEntry> _entries = [];
-  bool _initialized = false;
+///
+/// Extends [PersistedListService] for SharedPreferences-based CRUD,
+/// adding symptom-specific queries: body area filtering, frequency analysis.
+class SymptomTrackerService extends PersistedListService<SymptomEntry> {
+  @override
+  String get storageKey => 'symptom_tracker_entries';
 
-  List<SymptomEntry> get entries => List.unmodifiable(_entries);
+  @override
+  String encodeList(List<SymptomEntry> entries) =>
+      SymptomEntry.encodeList(entries);
 
-  /// Load entries from local storage.
-  Future<void> init() async {
-    if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
-    if (data != null && data.isNotEmpty) {
-      _entries = SymptomEntry.decodeList(data);
-    }
-    _entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    _initialized = true;
-  }
+  @override
+  List<SymptomEntry> decodeList(String data) => SymptomEntry.decodeList(data);
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, SymptomEntry.encodeList(_entries));
-  }
+  @override
+  String getId(SymptomEntry e) => e.id;
 
-  /// Add a new symptom entry.
-  Future<void> addEntry(SymptomEntry entry) async {
-    await init();
-    _entries.insert(0, entry);
-    await _save();
-  }
+  @override
+  DateTime? getTimestamp(SymptomEntry e) => e.timestamp;
 
-  /// Delete an entry by id.
-  Future<void> deleteEntry(String id) async {
-    await init();
-    _entries.removeWhere((e) => e.id == id);
-    await _save();
-  }
+  @override
+  int defaultSort(SymptomEntry a, SymptomEntry b) =>
+      b.timestamp.compareTo(a.timestamp);
+
+  // ── Queries ──
 
   /// Get entries for a specific body area.
   List<SymptomEntry> entriesForArea(BodyArea area) {
-    return _entries.where((e) => e.bodyArea == area).toList();
-  }
-
-  /// Get entries within a date range.
-  List<SymptomEntry> entriesInRange(DateTime start, DateTime end) {
-    return _entries
-        .where((e) => e.timestamp.isAfter(start) && e.timestamp.isBefore(end))
-        .toList();
+    return entries.where((e) => e.bodyArea == area).toList();
   }
 
   /// Get most frequent symptoms.
   Map<String, int> symptomFrequency() {
     final freq = <String, int>{};
-    for (final e in _entries) {
+    for (final e in entries) {
       freq[e.symptom] = (freq[e.symptom] ?? 0) + 1;
     }
     return Map.fromEntries(
@@ -67,7 +47,7 @@ class SymptomTrackerService {
   /// Get most common triggers across all entries.
   Map<String, int> triggerFrequency() {
     final freq = <String, int>{};
-    for (final e in _entries) {
+    for (final e in entries) {
       for (final t in e.triggers) {
         freq[t] = (freq[t] ?? 0) + 1;
       }

@@ -1,68 +1,36 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/mood_entry.dart';
+import 'persisted_list_service.dart';
 
 /// Service for managing mood journal entries with local persistence.
-class MoodJournalService {
-  static const String _storageKey = 'mood_journal_entries';
-  List<MoodEntry> _entries = [];
-  bool _initialized = false;
+///
+/// Extends [PersistedListService] for SharedPreferences-based CRUD,
+/// adding mood-specific analytics: trends, activity correlations, streaks.
+class MoodJournalService extends PersistedListService<MoodEntry> {
+  @override
+  String get storageKey => 'mood_journal_entries';
 
-  List<MoodEntry> get entries => List.unmodifiable(_entries);
+  @override
+  String encodeList(List<MoodEntry> entries) => MoodEntry.encodeList(entries);
 
-  /// Load entries from local storage.
-  Future<void> init() async {
-    if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
-    if (data != null && data.isNotEmpty) {
-      _entries = MoodEntry.decodeList(data);
-    }
-    _entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    _initialized = true;
-  }
+  @override
+  List<MoodEntry> decodeList(String data) => MoodEntry.decodeList(data);
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, MoodEntry.encodeList(_entries));
-  }
+  @override
+  String getId(MoodEntry e) => e.id;
 
-  /// Add a new mood entry.
-  Future<void> addEntry(MoodEntry entry) async {
-    await init();
-    _entries.insert(0, entry);
-    await _save();
-  }
+  @override
+  DateTime? getTimestamp(MoodEntry e) => e.timestamp;
 
-  /// Delete an entry by id.
-  Future<void> deleteEntry(String id) async {
-    await init();
-    _entries.removeWhere((e) => e.id == id);
-    await _save();
-  }
+  @override
+  int defaultSort(MoodEntry a, MoodEntry b) =>
+      b.timestamp.compareTo(a.timestamp);
 
-  /// Update an existing entry.
-  Future<void> updateEntry(MoodEntry entry) async {
-    await init();
-    final idx = _entries.indexWhere((e) => e.id == entry.id);
-    if (idx >= 0) {
-      _entries[idx] = entry;
-      await _save();
-    }
-  }
-
-  /// Get entries for a specific date.
-  List<MoodEntry> entriesForDate(DateTime date) {
-    return _entries.where((e) =>
-        e.timestamp.year == date.year &&
-        e.timestamp.month == date.month &&
-        e.timestamp.day == date.day).toList();
-  }
+  // ── Queries ──
 
   /// Get entries for the last N days.
   List<MoodEntry> entriesForLastDays(int days) {
     final cutoff = DateTime.now().subtract(Duration(days: days));
-    return _entries.where((e) => e.timestamp.isAfter(cutoff)).toList();
+    return entries.where((e) => e.timestamp.isAfter(cutoff)).toList();
   }
 
   /// Average mood for a specific date (or null if no entries).
@@ -78,7 +46,8 @@ class MoodJournalService {
     final result = <DateTime, double>{};
     final now = DateTime.now();
     for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final date =
+          DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
       final avg = averageMoodForDate(date);
       if (avg != null) {
         result[date] = avg;
@@ -90,7 +59,7 @@ class MoodJournalService {
   /// Most common activities across all entries.
   Map<MoodActivity, int> activityFrequency() {
     final counts = <MoodActivity, int>{};
-    for (final entry in _entries) {
+    for (final entry in entries) {
       for (final activity in entry.activities) {
         counts[activity] = (counts[activity] ?? 0) + 1;
       }
@@ -104,7 +73,7 @@ class MoodJournalService {
   Map<MoodActivity, double> moodByActivity() {
     final sums = <MoodActivity, int>{};
     final counts = <MoodActivity, int>{};
-    for (final entry in _entries) {
+    for (final entry in entries) {
       for (final activity in entry.activities) {
         sums[activity] = (sums[activity] ?? 0) + entry.mood.value;
         counts[activity] = (counts[activity] ?? 0) + 1;
@@ -124,14 +93,16 @@ class MoodJournalService {
   /// Uses a pre-built set of dates for O(1) lookups instead of
   /// scanning the full entry list for each of the last 365 days.
   int currentStreak() {
-    if (_entries.isEmpty) return 0;
-    final dates = _entries
-        .map((e) => DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
+    if (entries.isEmpty) return 0;
+    final dates = entries
+        .map((e) =>
+            DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
         .toSet();
     final now = DateTime.now();
     int streak = 0;
     for (int i = 0; i < 365; i++) {
-      final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final date =
+          DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
       if (dates.contains(date)) {
         streak++;
       } else {
