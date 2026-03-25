@@ -72,6 +72,35 @@ class DataBackupService {
     'emergency_card_data': 'Emergency Card',
   };
 
+  /// Reads a value from the appropriate storage backend.
+  ///
+  /// Sensitive keys are transparently decrypted via
+  /// [EncryptedPreferencesService]; all other keys use plain
+  /// [SharedPreferences].
+  static Future<String?> _readKey(
+      String key, SharedPreferences prefs) async {
+    if (SensitiveKeys.isSensitive(key)) {
+      final encrypted = await EncryptedPreferencesService.getInstance();
+      return encrypted.getString(key);
+    }
+    return prefs.getString(key);
+  }
+
+  /// Writes a value through the appropriate storage backend.
+  ///
+  /// Sensitive keys are transparently encrypted via
+  /// [EncryptedPreferencesService]; all other keys use plain
+  /// [SharedPreferences].
+  static Future<void> _writeKey(
+      String key, String value, SharedPreferences prefs) async {
+    if (SensitiveKeys.isSensitive(key)) {
+      final encrypted = await EncryptedPreferencesService.getInstance();
+      await encrypted.setString(key, value);
+    } else {
+      await prefs.setString(key, value);
+    }
+  }
+
   /// Export all service data as a single JSON string.
   ///
   /// Sensitive keys are transparently decrypted before export so the
@@ -82,14 +111,7 @@ class DataBackupService {
     final supported = <String, bool>{};
 
     for (final entry in _storageKeys.entries) {
-      String? data;
-      if (SensitiveKeys.isSensitive(entry.key)) {
-        // Read through EncryptedPreferencesService to get decrypted data
-        final encrypted = await EncryptedPreferencesService.getInstance();
-        data = await encrypted.getString(entry.key);
-      } else {
-        data = prefs.getString(entry.key);
-      }
+      final data = await _readKey(entry.key, prefs);
       supported[entry.key] = data != null;
       if (data != null) {
         services[entry.key] = data;
@@ -179,13 +201,7 @@ class DataBackupService {
 
       // Check merge strategy
       if (strategy == BackupStrategy.merge) {
-        String? existing;
-        if (SensitiveKeys.isSensitive(key)) {
-          final encrypted = await EncryptedPreferencesService.getInstance();
-          existing = await encrypted.getString(key);
-        } else {
-          existing = prefs.getString(key);
-        }
+        final existing = await _readKey(key, prefs);
         if (existing != null && existing.isNotEmpty) {
           serviceResults[key] = 'skipped_existing';
           skipped++;
@@ -203,12 +219,7 @@ class DataBackupService {
       }
 
       // Write through the appropriate storage backend
-      if (SensitiveKeys.isSensitive(key)) {
-        final encrypted = await EncryptedPreferencesService.getInstance();
-        await encrypted.setString(key, value);
-      } else {
-        await prefs.setString(key, value);
-      }
+      await _writeKey(key, value, prefs);
       serviceResults[key] = 'restored';
       restored++;
     }
@@ -227,13 +238,7 @@ class DataBackupService {
     final result = <String, ServiceBackupInfo>{};
 
     for (final entry in _storageKeys.entries) {
-      String? data;
-      if (SensitiveKeys.isSensitive(entry.key)) {
-        final encrypted = await EncryptedPreferencesService.getInstance();
-        data = await encrypted.getString(entry.key);
-      } else {
-        data = prefs.getString(entry.key);
-      }
+      final data = await _readKey(entry.key, prefs);
       result[entry.key] = ServiceBackupInfo(
         displayName: entry.value,
         hasData: data != null && data.isNotEmpty,
