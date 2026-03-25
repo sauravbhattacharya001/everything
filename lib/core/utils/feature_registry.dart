@@ -101,6 +101,7 @@ import '../../views/home/vocabulary_builder_screen.dart';
 import '../../views/home/sun_moon_screen.dart';
 import '../../views/home/metronome_screen.dart';
 import '../../views/home/caffeine_tracker_screen.dart';
+import '../../views/home/compound_interest_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -465,6 +466,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const LoanCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Compound Interest',
+      icon: Icons.trending_up,
+      category: FeatureCategory.finance,
+      builder: (_) => const CompoundInterestScreen(),
     ),
     FeatureEntry(
       label: 'Expense Splitter',
