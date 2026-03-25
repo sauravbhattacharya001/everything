@@ -102,6 +102,7 @@ import '../../views/home/sun_moon_screen.dart';
 import '../../views/home/metronome_screen.dart';
 import '../../views/home/caffeine_tracker_screen.dart';
 import '../../views/home/compound_interest_screen.dart';
+import '../../views/home/roman_numeral_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -700,6 +701,12 @@ class FeatureRegistry {
       icon: Icons.swap_horiz,
       category: FeatureCategory.lifestyle,
       builder: (_) => const BaseConverterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Roman Numerals',
+      icon: Icons.format_list_numbered,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const RomanNumeralScreen(),
     ),
     FeatureEntry(
       label: 'World Clock',
