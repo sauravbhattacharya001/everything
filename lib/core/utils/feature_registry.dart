@@ -27,6 +27,7 @@ import '../../views/home/heatmap_screen.dart';
 import '../../views/home/home_inventory_screen.dart';
 import '../../views/home/home_maintenance_screen.dart';
 import '../../views/home/kanban_board_screen.dart';
+import '../../views/home/gpa_calculator_screen.dart';
 import '../../views/home/learning_tracker_screen.dart';
 import '../../views/home/life_dashboard_screen.dart';
 import '../../views/home/loyalty_tracker_screen.dart';
@@ -467,6 +468,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const LoanCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'GPA Calculator',
+      icon: Icons.school,
+      category: FeatureCategory.productivity,
+      builder: (_) => const GpaCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Compound Interest',
