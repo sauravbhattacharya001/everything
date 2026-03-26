@@ -25,7 +25,7 @@ class _FeatureDrawerState extends State<FeatureDrawer> {
   List<FeatureEntry> _filteredFeatures() {
     if (_query.isEmpty) return FeatureRegistry.features;
     return FeatureRegistry.features
-        .where((f) => f.label.toLowerCase().contains(_query))
+        .where((f) => f.searchLabel.contains(_query))
         .toList();
   }
 
