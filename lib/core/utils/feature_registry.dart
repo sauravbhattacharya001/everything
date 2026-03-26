@@ -97,6 +97,7 @@ import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
+import '../../views/home/eye_break_screen.dart';
 import '../../views/home/invoice_screen.dart';
 import '../../views/home/chess_clock_screen.dart';
 import '../../views/home/coin_flip_screen.dart';
@@ -807,6 +808,12 @@ class FeatureRegistry {
       icon: Icons.auto_awesome,
       category: FeatureCategory.lifestyle,
       builder: (_) => const AffirmationScreen(),
+    ),
+    FeatureEntry(
+      label: 'Eye Break Reminder',
+      icon: Icons.visibility,
+      category: FeatureCategory.health,
+      builder: (_) => const EyeBreakScreen(),
     ),
   ];
 
