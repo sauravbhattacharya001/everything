@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../models/meal_entry.dart';
 
 /// Nutrition goals configuration.
