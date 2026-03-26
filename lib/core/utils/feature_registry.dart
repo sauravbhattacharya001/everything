@@ -97,6 +97,7 @@ import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
+import '../../views/home/countdown_timer_screen.dart';
 import '../../views/home/eye_break_screen.dart';
 import '../../views/home/invoice_screen.dart';
 import '../../views/home/chess_clock_screen.dart';
@@ -790,6 +791,12 @@ class FeatureRegistry {
       icon: Icons.touch_app,
       category: FeatureCategory.productivity,
       builder: (_) => const TallyCounterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Countdown Timer',
+      icon: Icons.timer,
+      category: FeatureCategory.productivity,
+      builder: (_) => const CountdownTimerScreen(),
     ),
     FeatureEntry(
       label: 'Metronome',
