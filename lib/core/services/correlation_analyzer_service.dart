@@ -415,52 +415,66 @@ class CorrelationAnalyzerService {
   /// Compute mood impact of each activity.
   ///
   /// Returns a map of activity → average mood delta vs non-activity days.
+  /// Single-pass implementation: accumulates per-activity mood sums and
+  /// counts in one traversal instead of iterating snapshots per activity.
   Map<MoodActivity, double> activityMoodImpact(List<DailySnapshot> snapshots) {
-    final withMood = snapshots.where((s) => s.moodScore != null).toList();
-    if (withMood.length < minSampleSize) return {};
+    final activitySums = <MoodActivity, double>{};
+    final activityCounts = <MoodActivity, int>{};
+    double totalMood = 0;
+    int totalCount = 0;
 
-    final overallMean =
-        withMood.map((s) => s.moodScore!).reduce((a, b) => a + b) /
-            withMood.length;
+    for (final s in snapshots) {
+      if (s.moodScore == null) continue;
+      final score = s.moodScore!.toDouble();
+      totalMood += score;
+      totalCount++;
+      for (final activity in s.moodActivities) {
+        activitySums[activity] = (activitySums[activity] ?? 0) + score;
+        activityCounts[activity] = (activityCounts[activity] ?? 0) + 1;
+      }
+    }
+
+    if (totalCount < minSampleSize) return {};
+    final overallMean = totalMood / totalCount;
 
     final impact = <MoodActivity, double>{};
-
-    for (final activity in MoodActivity.values) {
-      final withActivity =
-          withMood.where((s) => s.moodActivities.contains(activity)).toList();
-      if (withActivity.length < 2) continue;
-
-      final activityMean =
-          withActivity.map((s) => s.moodScore!).reduce((a, b) => a + b) /
-              withActivity.length;
-
-      impact[activity] = activityMean - overallMean;
+    for (final activity in activitySums.keys) {
+      final count = activityCounts[activity]!;
+      if (count < 2) continue;
+      impact[activity] = activitySums[activity]! / count - overallMean;
     }
 
     return impact;
   }
 
   /// Compute sleep quality impact of each sleep factor.
+  /// Single-pass implementation: accumulates per-factor quality sums and
+  /// counts in one traversal instead of iterating snapshots per factor.
   Map<SleepFactor, double> factorSleepImpact(List<DailySnapshot> snapshots) {
-    final withSleep = snapshots.where((s) => s.sleepQuality != null).toList();
-    if (withSleep.length < minSampleSize) return {};
+    final factorSums = <SleepFactor, double>{};
+    final factorCounts = <SleepFactor, int>{};
+    double totalQuality = 0;
+    int totalCount = 0;
 
-    final overallMean =
-        withSleep.map((s) => s.sleepQuality!).reduce((a, b) => a + b) /
-            withSleep.length;
+    for (final s in snapshots) {
+      if (s.sleepQuality == null) continue;
+      final quality = s.sleepQuality!.toDouble();
+      totalQuality += quality;
+      totalCount++;
+      for (final factor in s.sleepFactors) {
+        factorSums[factor] = (factorSums[factor] ?? 0) + quality;
+        factorCounts[factor] = (factorCounts[factor] ?? 0) + 1;
+      }
+    }
+
+    if (totalCount < minSampleSize) return {};
+    final overallMean = totalQuality / totalCount;
 
     final impact = <SleepFactor, double>{};
-
-    for (final factor in SleepFactor.values) {
-      final withFactor =
-          withSleep.where((s) => s.sleepFactors.contains(factor)).toList();
-      if (withFactor.length < 2) continue;
-
-      final factorMean =
-          withFactor.map((s) => s.sleepQuality!).reduce((a, b) => a + b) /
-              withFactor.length;
-
-      impact[factor] = factorMean - overallMean;
+    for (final factor in factorSums.keys) {
+      final count = factorCounts[factor]!;
+      if (count < 2) continue;
+      impact[factor] = factorSums[factor]! / count - overallMean;
     }
 
     return impact;
