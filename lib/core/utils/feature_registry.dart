@@ -98,6 +98,7 @@ import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
 import '../../views/home/invoice_screen.dart';
+import '../../views/home/chess_clock_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
 import '../../views/home/sun_moon_screen.dart';
 import '../../views/home/metronome_screen.dart';
@@ -248,6 +249,12 @@ class FeatureRegistry {
       icon: Icons.timer,
       category: FeatureCategory.productivity,
       builder: (_) => const StopwatchScreen(),
+    ),
+    FeatureEntry(
+      label: 'Chess Clock',
+      icon: Icons.timer_outlined,
+      category: FeatureCategory.productivity,
+      builder: (_) => const ChessClockScreen(),
     ),
     FeatureEntry(
       label: 'Skill Tracker',
