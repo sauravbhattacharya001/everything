@@ -52,6 +52,8 @@ analytics dashboard, and Firebase authentication, all wrapped in a clean Materia
 - **🐳 Docker** — Multi-stage Dockerfile for Flutter Web → nginx production builds
 - **📖 Documentation** — [GitHub Pages docs site](https://sauravbhattacharya001.github.io/everything/)
 
+> **📱 100+ built-in features** across productivity, health, finance, lifestyle, and more — see the full **[Feature Catalog](FEATURES.md)** for details.
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology | Purpose |
