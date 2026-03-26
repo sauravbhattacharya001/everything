@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'encrypted_preferences_service.dart';
+import 'storage_backend.dart';
 
 /// Unified data backup and restore service.
 ///
@@ -74,31 +74,18 @@ class DataBackupService {
 
   /// Reads a value from the appropriate storage backend.
   ///
-  /// Sensitive keys are transparently decrypted via
-  /// [EncryptedPreferencesService]; all other keys use plain
-  /// [SharedPreferences].
-  static Future<String?> _readKey(
-      String key, SharedPreferences prefs) async {
-    if (SensitiveKeys.isSensitive(key)) {
-      final encrypted = await EncryptedPreferencesService.getInstance();
-      return encrypted.getString(key);
-    }
-    return prefs.getString(key);
+  /// Delegates to [StorageBackend] which transparently handles
+  /// encryption for sensitive keys.
+  static Future<String?> _readKey(String key) async {
+    return StorageBackend.read(key);
   }
 
   /// Writes a value through the appropriate storage backend.
   ///
-  /// Sensitive keys are transparently encrypted via
-  /// [EncryptedPreferencesService]; all other keys use plain
-  /// [SharedPreferences].
-  static Future<void> _writeKey(
-      String key, String value, SharedPreferences prefs) async {
-    if (SensitiveKeys.isSensitive(key)) {
-      final encrypted = await EncryptedPreferencesService.getInstance();
-      await encrypted.setString(key, value);
-    } else {
-      await prefs.setString(key, value);
-    }
+  /// Delegates to [StorageBackend] which transparently handles
+  /// encryption for sensitive keys.
+  static Future<void> _writeKey(String key, String value) async {
+    await StorageBackend.write(key, value);
   }
 
   /// Export all service data as a single JSON string.
@@ -106,12 +93,11 @@ class DataBackupService {
   /// Sensitive keys are transparently decrypted before export so the
   /// backup contains readable JSON regardless of at-rest encryption.
   Future<String> exportAll() async {
-    final prefs = await SharedPreferences.getInstance();
     final services = <String, dynamic>{};
     final supported = <String, bool>{};
 
     for (final entry in _storageKeys.entries) {
-      final data = await _readKey(entry.key, prefs);
+      final data = await _readKey(entry.key);
       supported[entry.key] = data != null;
       if (data != null) {
         services[entry.key] = data;
@@ -181,7 +167,6 @@ class DataBackupService {
     }
 
     final services = data['services'] as Map<String, dynamic>? ?? {};
-    final prefs = await SharedPreferences.getInstance();
 
     int restored = 0;
     int skipped = 0;
@@ -201,7 +186,7 @@ class DataBackupService {
 
       // Check merge strategy
       if (strategy == BackupStrategy.merge) {
-        final existing = await _readKey(key, prefs);
+        final existing = await _readKey(key);
         if (existing != null && existing.isNotEmpty) {
           serviceResults[key] = 'skipped_existing';
           skipped++;
@@ -219,7 +204,7 @@ class DataBackupService {
       }
 
       // Write through the appropriate storage backend
-      await _writeKey(key, value, prefs);
+      await _writeKey(key, value);
       serviceResults[key] = 'restored';
       restored++;
     }
@@ -234,11 +219,10 @@ class DataBackupService {
 
   /// Check which services have data and which support backup.
   Future<Map<String, ServiceBackupInfo>> checkServiceSupport() async {
-    final prefs = await SharedPreferences.getInstance();
     final result = <String, ServiceBackupInfo>{};
 
     for (final entry in _storageKeys.entries) {
-      final data = await _readKey(entry.key, prefs);
+      final data = await _readKey(entry.key);
       result[entry.key] = ServiceBackupInfo(
         displayName: entry.value,
         hasData: data != null && data.isNotEmpty,
