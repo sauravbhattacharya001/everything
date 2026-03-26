@@ -1,47 +1,25 @@
 import '../../models/watchlist_item.dart';
+import '../utils/collection_utils.dart';
 
 /// Service for watchlist analytics and recommendations.
 class WatchlistService {
   const WatchlistService();
 
   /// Count items by status.
-  Map<WatchStatus, int> statusBreakdown(List<WatchlistItem> items) {
-    final counts = <WatchStatus, int>{};
-    for (final item in items) {
-      counts[item.status] = (counts[item.status] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<WatchStatus, int> statusBreakdown(List<WatchlistItem> items) =>
+      CollectionUtils.frequency(items, (i) => i.status);
 
   /// Count items by genre (across all items).
-  Map<WatchlistGenre, int> genreBreakdown(List<WatchlistItem> items) {
-    final counts = <WatchlistGenre, int>{};
-    for (final item in items) {
-      for (final genre in item.genres) {
-        counts[genre] = (counts[genre] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }
+  Map<WatchlistGenre, int> genreBreakdown(List<WatchlistItem> items) =>
+      CollectionUtils.frequencyFlat(items, (i) => i.genres);
 
   /// Count items by media type.
-  Map<WatchlistMediaType, int> mediaTypeBreakdown(List<WatchlistItem> items) {
-    final counts = <WatchlistMediaType, int>{};
-    for (final item in items) {
-      counts[item.mediaType] = (counts[item.mediaType] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<WatchlistMediaType, int> mediaTypeBreakdown(List<WatchlistItem> items) =>
+      CollectionUtils.frequency(items, (i) => i.mediaType);
 
   /// Count items by platform.
-  Map<String, int> platformBreakdown(List<WatchlistItem> items) {
-    final counts = <String, int>{};
-    for (final item in items) {
-      final p = item.platform ?? 'Unknown';
-      counts[p] = (counts[p] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<String, int> platformBreakdown(List<WatchlistItem> items) =>
+      CollectionUtils.frequency(items, (i) => i.platform ?? 'Unknown');
 
   /// Average rating of completed items.
   double avgRating(List<WatchlistItem> items) {
@@ -73,11 +51,8 @@ class WatchlistService {
   }
 
   /// Favorite genre (most frequently appearing across all items).
-  WatchlistGenre? favoriteGenre(List<WatchlistItem> items) {
-    final counts = genreBreakdown(items);
-    if (counts.isEmpty) return null;
-    return counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-  }
+  WatchlistGenre? favoriteGenre(List<WatchlistItem> items) =>
+      CollectionUtils.maxByCount(genreBreakdown(items));
 
   /// Items currently being watched, sorted by progress descending.
   List<WatchlistItem> currentlyWatching(List<WatchlistItem> items) => items

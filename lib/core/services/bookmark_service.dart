@@ -1,4 +1,5 @@
 import '../../models/bookmark.dart';
+import '../utils/collection_utils.dart';
 
 /// Service for bookmark analytics and management.
 class BookmarkService {
@@ -9,13 +10,11 @@ class BookmarkService {
       items.where((b) => !b.isArchived).length;
 
   /// Bookmarks per folder.
-  Map<BookmarkFolder, int> folderBreakdown(List<Bookmark> items) {
-    final counts = <BookmarkFolder, int>{};
-    for (final b in items.where((b) => !b.isArchived)) {
-      counts[b.folder] = (counts[b.folder] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<BookmarkFolder, int> folderBreakdown(List<Bookmark> items) =>
+      CollectionUtils.frequency(
+        items.where((b) => !b.isArchived),
+        (b) => b.folder,
+      );
 
   /// Most-visited bookmarks.
   List<Bookmark> mostVisited(List<Bookmark> items, {int limit = 10}) {
@@ -40,36 +39,24 @@ class BookmarkService {
   }
 
   /// Unique domains across all bookmarks.
-  Map<String, int> domainBreakdown(List<Bookmark> items) {
-    final counts = <String, int>{};
-    for (final b in items.where((b) => !b.isArchived)) {
-      counts[b.domain] = (counts[b.domain] ?? 0) + 1;
-    }
-    return counts;
-  }
+  Map<String, int> domainBreakdown(List<Bookmark> items) =>
+      CollectionUtils.frequency(
+        items.where((b) => !b.isArchived),
+        (b) => b.domain,
+      );
 
   /// Top domains by bookmark count.
   List<MapEntry<String, int>> topDomains(List<Bookmark> items,
-      {int limit = 10}) {
-    final domains = domainBreakdown(items).entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return domains.take(limit).toList();
-  }
+      {int limit = 10}) =>
+      CollectionUtils.topN(domainBreakdown(items), limit);
 
   /// All unique tags used.
   Set<String> allTags(List<Bookmark> items) =>
       items.expand((b) => b.tags).toSet();
 
   /// Tag frequency.
-  Map<String, int> tagBreakdown(List<Bookmark> items) {
-    final counts = <String, int>{};
-    for (final b in items) {
-      for (final tag in b.tags) {
-        counts[tag] = (counts[tag] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }
+  Map<String, int> tagBreakdown(List<Bookmark> items) =>
+      CollectionUtils.frequencyFlat(items, (b) => b.tags);
 
   /// Sample bookmarks for demo.
   List<Bookmark> sampleItems() => [

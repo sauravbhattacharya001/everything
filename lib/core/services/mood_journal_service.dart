@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/mood_entry.dart';
+import '../utils/collection_utils.dart';
 
 /// Service for managing mood journal entries with local persistence.
 class MoodJournalService {
@@ -89,12 +90,10 @@ class MoodJournalService {
 
   /// Most common activities across all entries.
   Map<MoodActivity, int> activityFrequency() {
-    final counts = <MoodActivity, int>{};
-    for (final entry in _entries) {
-      for (final activity in entry.activities) {
-        counts[activity] = (counts[activity] ?? 0) + 1;
-      }
-    }
+    final counts = CollectionUtils.frequencyFlat(
+      _entries,
+      (e) => e.activities,
+    );
     return Map.fromEntries(
       counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value)),
     );
