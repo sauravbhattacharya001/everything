@@ -113,6 +113,7 @@ import '../../views/home/color_blindness_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/wiki_screen.dart';
+import '../../views/home/typing_speed_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -239,6 +240,12 @@ class FeatureRegistry {
       icon: Icons.view_kanban,
       category: FeatureCategory.productivity,
       builder: (_) => const KanbanBoardScreen(),
+    ),
+    FeatureEntry(
+      label: 'Typing Speed Test',
+      icon: Icons.keyboard,
+      category: FeatureCategory.productivity,
+      builder: (_) => const TypingSpeedScreen(),
     ),
     FeatureEntry(
       label: 'Time Tracker',
