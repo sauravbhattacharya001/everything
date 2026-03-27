@@ -109,6 +109,7 @@ import '../../views/home/sun_moon_screen.dart';
 import '../../views/home/metronome_screen.dart';
 import '../../views/home/caffeine_tracker_screen.dart';
 import '../../views/home/compound_interest_screen.dart';
+import '../../views/home/color_blindness_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/wiki_screen.dart';
@@ -842,6 +843,12 @@ class FeatureRegistry {
       icon: Icons.visibility,
       category: FeatureCategory.health,
       builder: (_) => const EyeBreakScreen(),
+    ),
+    FeatureEntry(
+      label: 'Color Blindness Simulator',
+      icon: Icons.remove_red_eye,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ColorBlindnessScreen(),
     ),
   ];
 
