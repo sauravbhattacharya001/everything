@@ -22,6 +22,7 @@ import '../../views/home/gift_tracker_screen.dart';
 import '../../views/home/goals_screen.dart';
 import '../../views/home/gratitude_journal_screen.dart';
 import '../../views/home/grocery_list_screen.dart';
+import '../../views/home/pantry_tracker_screen.dart';
 import '../../views/home/habit_tracker_screen.dart';
 import '../../views/home/heatmap_screen.dart';
 import '../../views/home/home_inventory_screen.dart';
@@ -638,6 +639,12 @@ class FeatureRegistry {
       icon: Icons.local_grocery_store,
       category: FeatureCategory.organization,
       builder: (_) => const GroceryListScreen(),
+    ),
+    FeatureEntry(
+      label: 'Pantry Tracker',
+      icon: Icons.kitchen,
+      category: FeatureCategory.organization,
+      builder: (_) => const PantryTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Packing Lists',
