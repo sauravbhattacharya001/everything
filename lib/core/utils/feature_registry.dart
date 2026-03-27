@@ -115,6 +115,7 @@ import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/wiki_screen.dart';
 import '../../views/home/typing_speed_screen.dart';
+import '../../views/home/pixel_art_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -607,6 +608,12 @@ class FeatureRegistry {
       icon: Icons.book,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ReadingListScreen(),
+    ),
+    FeatureEntry(
+      label: 'Pixel Art',
+      icon: Icons.grid_on,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const PixelArtScreen(),
     ),
 
     // ── Organization ──
