@@ -1,50 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/services/command_palette_service.dart';
+import '../../core/utils/feature_registry.dart';
 import 'package:flutter/services.dart';
-import '../home/calendar_screen.dart';
-import '../home/stats_screen.dart';
-import '../home/heatmap_screen.dart';
-import '../home/countdown_screen.dart';
-import '../home/agenda_timeline_screen.dart';
-import '../home/weekly_report_screen.dart';
-import '../home/daily_review_screen.dart';
-import '../home/life_dashboard_screen.dart';
-import '../home/habit_tracker_screen.dart';
-import '../home/goals_screen.dart';
-import '../home/mood_journal_screen.dart';
-import '../home/water_tracker_screen.dart';
-import '../home/workout_tracker_screen.dart';
-import '../home/meal_tracker_screen.dart';
-import '../home/sleep_tracker_screen.dart';
-import '../home/symptom_tracker_screen.dart';
-import '../home/energy_tracker_screen.dart';
-import '../home/pomodoro_screen.dart';
-import '../home/time_tracker_screen.dart';
-import '../home/focus_time_screen.dart';
-import '../home/routine_builder_screen.dart';
-import '../home/chore_tracker_screen.dart';
-import '../home/time_budget_screen.dart';
-import '../home/screen_time_tracker_screen.dart';
-import '../home/weekly_planner_screen.dart';
-import '../home/expense_tracker_screen.dart';
-import '../home/subscription_tracker_screen.dart';
-import '../home/savings_goal_screen.dart';
-import '../home/net_worth_tracker_screen.dart';
-import '../home/budget_planner_screen.dart';
-import '../home/contact_tracker_screen.dart';
-import '../home/gratitude_journal_screen.dart';
-import '../home/decision_journal_screen.dart';
-import '../home/reading_list_screen.dart';
-import '../home/skill_tracker_screen.dart';
-import '../home/pet_care_tracker_screen.dart';
-import '../home/plant_care_tracker_screen.dart';
-import '../home/medication_tracker_screen.dart';
-import '../home/commute_tracker_screen.dart';
-import '../home/bucket_list_screen.dart';
-import '../home/travel_log_screen.dart';
-import '../home/wishlist_screen.dart';
-import '../home/watchlist_screen.dart';
-import '../home/gift_tracker_screen.dart';
 
 /// Spotlight-style command palette overlay.
 ///
@@ -88,52 +45,22 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
   List<PaletteAction> _filtered = [];
   int _selectedIndex = 0;
 
-  static final _screenRoutes = <String, Widget Function()>{
-    'nav_calendar': () => CalendarScreen(),
-    'nav_stats': () => StatsScreen(),
-    'nav_heatmap': () => HeatmapScreen(),
-    'nav_countdown': () => CountdownScreen(),
-    'nav_agenda': () => AgendaTimelineScreen(),
-    'nav_weekly_report': () => WeeklyReportScreen(),
-    'nav_daily_review': () => DailyReviewScreen(),
-    'nav_life_dashboard': () => LifeDashboardScreen(),
-    'nav_habits': () => HabitTrackerScreen(),
-    'nav_goals': () => GoalsScreen(),
-    'nav_mood': () => MoodJournalScreen(),
-    'nav_water': () => WaterTrackerScreen(),
-    'nav_workout': () => WorkoutTrackerScreen(),
-    'nav_meal': () => MealTrackerScreen(),
-    'nav_sleep': () => SleepTrackerScreen(),
-    'nav_symptoms': () => SymptomTrackerScreen(),
-    'nav_energy': () => EnergyTrackerScreen(),
-    'nav_pomodoro': () => PomodoroScreen(),
-    'nav_time_tracker': () => TimeTrackerScreen(),
-    'nav_focus': () => FocusTimeScreen(),
-    'nav_routine': () => RoutineBuilderScreen(),
-    'nav_chores': () => ChoreTrackerScreen(),
-    'nav_time_budget': () => TimeBudgetScreen(),
-    'nav_screen_time': () => ScreenTimeTrackerScreen(),
-    'nav_weekly_planner': () => WeeklyPlannerScreen(),
-    'nav_expenses': () => ExpenseTrackerScreen(),
-    'nav_subscriptions': () => SubscriptionTrackerScreen(),
-    'nav_savings': () => SavingsGoalScreen(),
-    'nav_net_worth': () => NetWorthTrackerScreen(),
-    'nav_budget': () => BudgetPlannerScreen(),
-    'nav_contacts': () => ContactTrackerScreen(),
-    'nav_gratitude': () => GratitudeJournalScreen(),
-    'nav_decisions': () => DecisionJournalScreen(),
-    'nav_reading': () => ReadingListScreen(),
-    'nav_skills': () => SkillTrackerScreen(),
-    'nav_pet': () => PetCareTrackerScreen(),
-    'nav_plant': () => PlantCareTrackerScreen(),
-    'nav_medication': () => MedicationTrackerScreen(),
-    'nav_commute': () => CommuteTrackerScreen(),
-    'nav_bucket_list': () => BucketListScreen(),
-    'nav_travel': () => TravelLogScreen(),
-    'nav_wishlist': () => WishlistScreen(),
-    'nav_watchlist': () => WatchlistScreen(),
-    'nav_gifts': () => GiftTrackerScreen(),
-  };
+  /// Maps palette action IDs to [FeatureRegistry] indices for navigation.
+  ///
+  /// Built lazily from [FeatureRegistry.features] so that adding a new
+  /// feature only requires a single entry in the registry — both the
+  /// navigation drawer and the command palette pick it up automatically.
+  static late final Map<String, int> _featureIndex = _buildFeatureIndex();
+
+  static Map<String, int> _buildFeatureIndex() {
+    final map = <String, int>{};
+    for (int i = 0; i < FeatureRegistry.features.length; i++) {
+      final label = FeatureRegistry.features[i].label;
+      final id = 'nav_${label.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').replaceAll(RegExp(r'_+$'), '')}';
+      map[id] = i;
+    }
+    return map;
+  }
 
   @override
   void initState() {
@@ -194,11 +121,12 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     Navigator.of(context).pop(); // Close palette
 
     if (action.id.startsWith('nav_')) {
-      final builder = _screenRoutes[action.id];
-      if (builder != null) {
+      final index = _featureIndex[action.id];
+      if (index != null) {
         CommandPaletteService.instance.recordVisit(action.id);
+        final feature = FeatureRegistry.features[index];
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => builder()),
+          MaterialPageRoute(builder: feature.builder),
         );
       }
     }
