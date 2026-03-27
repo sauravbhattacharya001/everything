@@ -306,6 +306,21 @@ class EventDeduplicationService {
       titleCache[e.id] = e.title.trim().toLowerCase();
     }
 
+    // Pre-compute lowercased tag sets once — avoids re-lowercasing
+    // on every pair comparison in the O(n²) loop. For 1000 events
+    // with 5 tags each, this eliminates ~2.5M string allocations.
+    final tagCache = <String, Set<String>>{};
+    // Pre-compute lowercased locations once for the same reason.
+    final locationCache = <String, String>{};
+    for (final e in sorted) {
+      if (e.tags.isNotEmpty) {
+        tagCache[e.id] = e.tags.map((t) => t.name.toLowerCase()).toSet();
+      }
+      if (e.location.isNotEmpty) {
+        locationCache[e.id] = e.location.trim().toLowerCase();
+      }
+    }
+
     final matches = <DuplicateMatch>[];
     final seen = <String>{}; // Track pair IDs to avoid symmetric duplicates
 
@@ -334,7 +349,7 @@ class EventDeduplicationService {
         final pairKey = _pairKey(a.id, b.id);
         if (seen.contains(pairKey)) continue;
 
-        final match = _compareEvents(a, b, gapMinutes, titleCache);
+        final match = _compareEvents(a, b, gapMinutes, titleCache, tagCache, locationCache);
         if (match != null && match.similarity >= config.minimumOverallScore) {
           matches.add(match);
           seen.add(pairKey);
@@ -345,32 +360,26 @@ class EventDeduplicationService {
     // Sort by similarity descending
     matches.sort((a, b) => b.similarity.compareTo(a.similarity));
 
-    // Build kind breakdown
+    // Build kind breakdown and count IDs in a single pass over matches
+    // (was iterating matches once per DuplicateKind — O(k*n) → now O(n))
     final kindBreakdown = <DuplicateKind, int>{};
-    for (final kind in DuplicateKind.values) {
-      final count = matches.where((m) => m.kind == kind).length;
-      if (count > 0) kindBreakdown[kind] = count;
+    final idCounts = <String, int>{};
+    double timeSavings = 0;
+    for (final match in matches) {
+      kindBreakdown[match.kind] = (kindBreakdown[match.kind] ?? 0) + 1;
+      idCounts[match.eventA.id] = (idCounts[match.eventA.id] ?? 0) + 1;
+      idCounts[match.eventB.id] = (idCounts[match.eventB.id] ?? 0) + 1;
+      final durA = match.eventA.duration?.inMinutes ?? 30;
+      final durB = match.eventB.duration?.inMinutes ?? 30;
+      timeSavings += math.min(durA, durB);
     }
 
     // Find frequent duplicate IDs
-    final idCounts = <String, int>{};
-    for (final match in matches) {
-      idCounts[match.eventA.id] = (idCounts[match.eventA.id] ?? 0) + 1;
-      idCounts[match.eventB.id] = (idCounts[match.eventB.id] ?? 0) + 1;
-    }
     final frequentIds = idCounts.entries
         .where((e) => e.value >= 2)
         .map((e) => e.key)
         .toList()
       ..sort((a, b) => (idCounts[b] ?? 0).compareTo(idCounts[a] ?? 0));
-
-    // Estimate time savings
-    double timeSavings = 0;
-    for (final match in matches) {
-      final durA = match.eventA.duration?.inMinutes ?? 30;
-      final durB = match.eventB.duration?.inMinutes ?? 30;
-      timeSavings += math.min(durA, durB);
-    }
 
     return DeduplicationReport(
       totalEvents: events.length,
@@ -427,12 +436,14 @@ class EventDeduplicationService {
     EventModel b,
     int gapMinutes, [
     Map<String, String>? titleCache,
+    Map<String, Set<String>>? tagCache,
+    Map<String, String>? locationCache,
   ]) {
     final titleSim = titleCache != null
         ? _titleSimilarityPrecomputed(titleCache[a.id]!, titleCache[b.id]!)
         : _titleSimilarity(a.title, b.title);
     final timeSim = _timeSimilarity(gapMinutes);
-    final contentSim = _contentSimilarity(a, b);
+    final contentSim = _contentSimilarity(a, b, tagCache, locationCache);
     final sameDay = AppDateUtils.isSameDay(a.date, b.date);
 
     // ── Exact duplicate: identical title + overlapping time ──
@@ -665,7 +676,14 @@ class EventDeduplicationService {
   }
 
   /// Content similarity based on description and location.
-  double _contentSimilarity(EventModel a, EventModel b) {
+  ///
+  /// When [tagCache] is provided (from the bulk [scan] path),
+  /// pre-computed lowercased tag sets are reused instead of
+  /// re-lowercasing on every pair comparison.
+  double _contentSimilarity(EventModel a, EventModel b, [
+    Map<String, Set<String>>? tagCache,
+    Map<String, String>? locationCache,
+  ]) {
     double score = 0.0;
     int factors = 0;
 
@@ -680,9 +698,13 @@ class EventDeduplicationService {
       factors++;
     }
 
-    // Location similarity
+    // Location similarity — use pre-computed cache when available
     if (a.location.isNotEmpty && b.location.isNotEmpty) {
-      score += _titleSimilarity(a.location, b.location);
+      if (locationCache != null && locationCache.containsKey(a.id) && locationCache.containsKey(b.id)) {
+        score += _titleSimilarityPrecomputed(locationCache[a.id]!, locationCache[b.id]!);
+      } else {
+        score += _titleSimilarity(a.location, b.location);
+      }
       factors++;
     } else if (a.location.isEmpty && b.location.isEmpty) {
       // Both empty — neutral
@@ -698,10 +720,11 @@ class EventDeduplicationService {
       factors++;
     }
 
-    // Tag overlap
+    // Tag overlap — use pre-computed cache when available to avoid
+    // re-lowercasing tag names on every pair in the O(n²) scan loop.
     if (a.tags.isNotEmpty && b.tags.isNotEmpty) {
-      final tagsA = a.tags.map((t) => t.name.toLowerCase()).toSet();
-      final tagsB = b.tags.map((t) => t.name.toLowerCase()).toSet();
+      final tagsA = tagCache?[a.id] ?? a.tags.map((t) => t.name.toLowerCase()).toSet();
+      final tagsB = tagCache?[b.id] ?? b.tags.map((t) => t.name.toLowerCase()).toSet();
       final intersection = tagsA.intersection(tagsB).length;
       final union = tagsA.union(tagsB).length;
       score += union > 0 ? intersection / union : 0.0;
