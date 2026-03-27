@@ -330,10 +330,10 @@ class EventDependencyTracker {
   }
 
   /// Computes depth of each event (0 = root, skips circular nodes).
-  Map<String, int> computeDepths() {
+  Map<String, int> computeDepths({Set<String>? circularCache}) {
     final allIds = _allEventIds();
     final depths = <String, int>{};
-    final circular = findCircularDependencies().toSet();
+    final circular = circularCache ?? findCircularDependencies().toSet();
 
     for (final id in allIds) {
       if (circular.contains(id)) continue;
@@ -357,14 +357,14 @@ class EventDependencyTracker {
     return depths;
   }
 
-  EventDependencyInfo getInfo(String eventId) {
+  EventDependencyInfo getInfo(String eventId, {Set<String>? circularCache, Map<String, int>? depthCache}) {
     final blockers = getBlockers(eventId);
     final dependents = getDependents(eventId);
-    final circular = findCircularDependencies();
-    final depths = computeDepths();
+    final circularSet = circularCache ?? findCircularDependencies().toSet();
+    final depths = depthCache ?? computeDepths();
 
     DependencyStatus status;
-    if (circular.contains(eventId)) {
+    if (circularSet.contains(eventId)) {
       status = DependencyStatus.circular;
     } else if (_completedEvents.contains(eventId)) {
       status = DependencyStatus.completed;
@@ -380,9 +380,9 @@ class EventDependencyTracker {
     );
   }
 
-  CriticalPath findCriticalPath() {
-    final circular = findCircularDependencies().toSet();
-    final depths = computeDepths();
+  CriticalPath findCriticalPath({Set<String>? circularCache, Map<String, int>? depthCache}) {
+    final circular = circularCache ?? findCircularDependencies().toSet();
+    final depths = depthCache ?? computeDepths();
     final allIds = _allEventIds().where((id) => !circular.contains(id));
     if (allIds.isEmpty) return const CriticalPath(path: []);
 
@@ -411,8 +411,8 @@ class EventDependencyTracker {
     return CriticalPath(path: path);
   }
 
-  List<String> findReadyEvents() {
-    final circular = findCircularDependencies().toSet();
+  List<String> findReadyEvents({Set<String>? circularCache}) {
+    final circular = circularCache ?? findCircularDependencies().toSet();
     final ready = <String>[];
     for (final id in _allEventIds()) {
       if (_completedEvents.contains(id) || circular.contains(id)) continue;
@@ -424,8 +424,8 @@ class EventDependencyTracker {
     return ready..sort();
   }
 
-  List<String> findBlockedEvents() {
-    final circular = findCircularDependencies().toSet();
+  List<String> findBlockedEvents({Set<String>? circularCache}) {
+    final circular = circularCache ?? findCircularDependencies().toSet();
     final blocked = <String>[];
     for (final id in _allEventIds()) {
       if (_completedEvents.contains(id) || circular.contains(id)) continue;
@@ -439,7 +439,8 @@ class EventDependencyTracker {
 
   DependencyGraphSummary analyze(List<EventModel> events) {
     final circular = findCircularDependencies();
-    final depths = computeDepths();
+    final circularSet = circular.toSet();
+    final depths = computeDepths(circularCache: circularSet);
     final allIds = _allEventIds();
     final rootEvents = <String>[];
     final leafEvents = <String>[];
@@ -452,9 +453,9 @@ class EventDependencyTracker {
       totalDependencies: _dependencies.length,
       rootEvents: rootEvents..sort(),
       leafEvents: leafEvents..sort(),
-      blockedEvents: findBlockedEvents(),
-      readyEvents: findReadyEvents(),
-      criticalPath: findCriticalPath(),
+      blockedEvents: findBlockedEvents(circularCache: circularSet),
+      readyEvents: findReadyEvents(circularCache: circularSet),
+      criticalPath: findCriticalPath(circularCache: circularSet, depthCache: depths),
       maxDepth: depths.values.isEmpty ? 0 : depths.values.reduce((a, b) => a > b ? a : b),
       hasCircularDependencies: circular.isNotEmpty,
       circularEventIds: circular,
