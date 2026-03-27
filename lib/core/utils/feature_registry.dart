@@ -29,6 +29,7 @@ import '../../views/home/home_maintenance_screen.dart';
 import '../../views/home/kanban_board_screen.dart';
 import '../../views/home/gpa_calculator_screen.dart';
 import '../../views/home/learning_tracker_screen.dart';
+import '../../views/home/library_book_screen.dart';
 import '../../views/home/life_dashboard_screen.dart';
 import '../../views/home/loyalty_tracker_screen.dart';
 import '../../views/home/meal_tracker_screen.dart';
@@ -744,6 +745,12 @@ class FeatureRegistry {
       icon: Icons.password,
       category: FeatureCategory.organization,
       builder: (_) => const PasswordGeneratorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Library Books',
+      icon: Icons.local_library,
+      category: FeatureCategory.organization,
+      builder: (_) => const LibraryBookScreen(),
     ),
     FeatureEntry(
       label: 'Color Palette',
