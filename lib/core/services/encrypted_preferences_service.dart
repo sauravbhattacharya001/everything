@@ -234,6 +234,7 @@ class SensitiveKeys {
     // Mental health & personal
     'mood_journal_entries',
     'gratitude_journal_entries',
+    'dream_journal_data',
     'daily_journal_entries',
     'meditation_tracker_entries',
     'energy_tracker_entries',

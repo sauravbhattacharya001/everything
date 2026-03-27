@@ -58,6 +58,7 @@ class DataBackupService {
     'sleep_tracker_entries': 'Sleep Tracker',
     'expense_tracker_entries': 'Expense Tracker',
     'gratitude_journal_entries': 'Gratitude Journal',
+    'dream_journal_data': 'Dream Journal',
     'habit_tracker_data': 'Habit Tracker',
     'meal_tracker_entries': 'Meal Tracker',
     'skill_tracker_entries': 'Skill Tracker',

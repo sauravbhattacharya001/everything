@@ -156,6 +156,8 @@ class CommandPaletteService {
           ['people', 'relationships', 'network']),
       _nav('nav_gratitude', 'Gratitude Journal', Icons.favorite, 'Personal',
           ['grateful', 'thankful', 'appreciate']),
+      _nav('nav_dreams', 'Dream Journal', Icons.nightlight_round, 'Personal',
+          ['dream', 'sleep', 'nightmare', 'lucid']),
       _nav('nav_decisions', 'Decision Journal', Icons.balance, 'Personal',
           ['decide', 'choices', 'options']),
       _nav('nav_reading', 'Reading List', Icons.book, 'Personal',

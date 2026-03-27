@@ -33,6 +33,7 @@ import '../home/net_worth_tracker_screen.dart';
 import '../home/budget_planner_screen.dart';
 import '../home/contact_tracker_screen.dart';
 import '../home/gratitude_journal_screen.dart';
+import '../home/dream_journal_screen.dart';
 import '../home/decision_journal_screen.dart';
 import '../home/reading_list_screen.dart';
 import '../home/skill_tracker_screen.dart';
@@ -121,6 +122,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     'nav_budget': () => BudgetPlannerScreen(),
     'nav_contacts': () => ContactTrackerScreen(),
     'nav_gratitude': () => GratitudeJournalScreen(),
+    'nav_dreams': () => DreamJournalScreen(),
     'nav_decisions': () => DecisionJournalScreen(),
     'nav_reading': () => ReadingListScreen(),
     'nav_skills': () => SkillTrackerScreen(),

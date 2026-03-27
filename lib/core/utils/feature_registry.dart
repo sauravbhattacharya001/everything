@@ -21,6 +21,7 @@ import '../../views/home/focus_time_screen.dart';
 import '../../views/home/gift_tracker_screen.dart';
 import '../../views/home/goals_screen.dart';
 import '../../views/home/gratitude_journal_screen.dart';
+import '../../views/home/dream_journal_screen.dart';
 import '../../views/home/grocery_list_screen.dart';
 import '../../views/home/pantry_tracker_screen.dart';
 import '../../views/home/habit_tracker_screen.dart';
@@ -394,6 +395,12 @@ class FeatureRegistry {
       icon: Icons.favorite,
       category: FeatureCategory.health,
       builder: (_) => const GratitudeJournalScreen(),
+    ),
+    FeatureEntry(
+      label: 'Dream Journal',
+      icon: Icons.nightlight_round,
+      category: FeatureCategory.health,
+      builder: (_) => const DreamJournalScreen(),
     ),
     FeatureEntry(
       label: 'BMI Calculator',
