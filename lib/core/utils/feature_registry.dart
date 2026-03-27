@@ -109,6 +109,7 @@ import '../../views/home/metronome_screen.dart';
 import '../../views/home/caffeine_tracker_screen.dart';
 import '../../views/home/compound_interest_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
+import '../../views/home/date_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -761,6 +762,12 @@ class FeatureRegistry {
       icon: Icons.cake,
       category: FeatureCategory.lifestyle,
       builder: (_) => const AgeCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Date Calculator',
+      icon: Icons.date_range,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const DateCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Dice Roller',
