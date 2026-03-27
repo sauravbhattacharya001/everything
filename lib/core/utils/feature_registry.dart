@@ -111,6 +111,7 @@ import '../../views/home/caffeine_tracker_screen.dart';
 import '../../views/home/compound_interest_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
+import '../../views/home/wiki_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -751,6 +752,12 @@ class FeatureRegistry {
       icon: Icons.local_library,
       category: FeatureCategory.organization,
       builder: (_) => const LibraryBookScreen(),
+    ),
+    FeatureEntry(
+      label: 'Personal Wiki',
+      icon: Icons.auto_stories,
+      category: FeatureCategory.organization,
+      builder: (_) => const WikiScreen(),
     ),
     FeatureEntry(
       label: 'Color Palette',
