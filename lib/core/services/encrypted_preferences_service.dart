@@ -237,6 +237,7 @@ class SensitiveKeys {
     'daily_journal_entries',
     'meditation_tracker_entries',
     'energy_tracker_entries',
+    'decision_journal_entries',
 
     // Financial
     'expense_tracker_entries',
@@ -249,6 +250,13 @@ class SensitiveKeys {
     // Personal identity
     'emergency_card_data',
     'contact_tracker_entries',
+
+    // Location & behavioral patterns
+    'travel_log_entries',
+    'commute_tracker_entries',
+    'habit_tracker_data',
+    'goal_tracker_entries',
+    'time_tracker_entries',
   };
 
   /// Returns true if [key] contains sensitive personal data that
