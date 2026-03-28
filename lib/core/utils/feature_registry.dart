@@ -93,6 +93,7 @@ import '../../views/home/bmi_calculator_screen.dart';
 import '../../views/home/flash_card_screen.dart';
 import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
+import '../../views/home/aspect_ratio_screen.dart';
 import '../../views/home/morse_code_screen.dart';
 import '../../views/home/music_practice_screen.dart';
 import '../../views/home/daily_journal_screen.dart';
@@ -842,6 +843,12 @@ class FeatureRegistry {
       icon: Icons.swap_horiz,
       category: FeatureCategory.lifestyle,
       builder: (_) => const BaseConverterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Aspect Ratio Calculator',
+      icon: Icons.crop,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const AspectRatioScreen(),
     ),
     FeatureEntry(
       label: 'Roman Numerals',
