@@ -124,6 +124,16 @@ class EncryptedBackupService {
       throw ArgumentError('Passphrase must not be empty');
     }
 
+    // Reject oversized encrypted payloads before parsing.
+    // Encrypted data is base64-encoded so the envelope is ~1.37x the plaintext.
+    // Use 2x the plaintext limit as a generous upper bound.
+    if (encryptedJson.length > DataBackupService.maxBackupBytes * 2) {
+      final sizeMB = (encryptedJson.length / (1024 * 1024)).toStringAsFixed(1);
+      throw EncryptedBackupException(
+        'Encrypted backup is $sizeMB MB which exceeds the maximum allowed size.',
+      );
+    }
+
     // 1. Parse envelope.
     final dynamic decoded;
     try {

@@ -19,6 +19,12 @@ class DataBackupService {
   /// Current backup format version.
   static const int backupVersion = 1;
 
+  /// Maximum allowed backup size in bytes (50 MB).
+  ///
+  /// Prevents memory exhaustion from maliciously large backup files
+  /// on resource-constrained mobile devices.
+  static const int maxBackupBytes = 50 * 1024 * 1024;
+
   /// All storage keys used by tracker screens across the app.
   /// Maintain this list when adding new persistent screens.
   static const Map<String, String> _storageKeys = {
@@ -128,6 +134,20 @@ class DataBackupService {
     String json, {
     BackupStrategy strategy = BackupStrategy.replace,
   }) async {
+    // Guard against oversized payloads that could exhaust memory on mobile.
+    if (json.length > maxBackupBytes) {
+      final sizeMB = (json.length / (1024 * 1024)).toStringAsFixed(1);
+      final limitMB = (maxBackupBytes / (1024 * 1024)).round();
+      return BackupResult(
+        success: false,
+        error: 'Backup is $sizeMB MB which exceeds the $limitMB MB limit. '
+            'Please use a smaller backup file.',
+        restored: 0,
+        skipped: 0,
+        services: {},
+      );
+    }
+
     final dynamic decoded;
     try {
       decoded = jsonDecode(json);
