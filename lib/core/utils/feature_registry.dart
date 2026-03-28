@@ -122,6 +122,7 @@ import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
+import '../../views/home/periodic_table_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -522,6 +523,12 @@ class FeatureRegistry {
       icon: Icons.percent,
       category: FeatureCategory.productivity,
       builder: (_) => const PercentageCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Periodic Table',
+      icon: Icons.science,
+      category: FeatureCategory.productivity,
+      builder: (_) => const PeriodicTableScreen(),
     ),
     FeatureEntry(
       label: 'GPA Calculator',
