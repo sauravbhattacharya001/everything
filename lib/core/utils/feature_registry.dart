@@ -130,6 +130,7 @@ import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
 import '../../views/home/cipher_tool_screen.dart';
 import '../../views/home/regex_tester_screen.dart';
+import '../../views/home/sobriety_counter_screen.dart';
 import '../../views/home/spin_wheel_screen.dart';
 
 /// A single navigable feature in the app.
@@ -369,6 +370,12 @@ class FeatureRegistry {
       icon: Icons.warning_amber,
       category: FeatureCategory.health,
       builder: (_) => const AllergyTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Sobriety Counter',
+      icon: Icons.spa,
+      category: FeatureCategory.health,
+      builder: (_) => const SobrietyCounterScreen(),
     ),
     FeatureEntry(
       label: 'Movie Tracker',
