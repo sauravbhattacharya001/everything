@@ -123,6 +123,7 @@ import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/periodic_table_screen.dart';
+import '../../views/home/ascii_art_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -928,6 +929,12 @@ class FeatureRegistry {
       icon: Icons.remove_red_eye,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorBlindnessScreen(),
+    ),
+    FeatureEntry(
+      label: 'ASCII Art Generator',
+      icon: Icons.text_fields,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const AsciiArtScreen(),
     ),
   ];
 
