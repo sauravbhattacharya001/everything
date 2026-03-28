@@ -99,15 +99,19 @@ class DataBackupService {
   ///
   /// Sensitive keys are transparently decrypted before export so the
   /// backup contains readable JSON regardless of at-rest encryption.
+  ///
+  /// All storage keys are read concurrently via [Future.wait] to reduce
+  /// total export time from O(n × latency) to O(latency) — a significant
+  /// improvement when many tracker screens have data, especially on
+  /// devices where [StorageBackend] involves async decryption.
   Future<String> exportAll() async {
-    final services = <String, dynamic>{};
-    final supported = <String, bool>{};
+    final keys = _storageKeys.keys.toList();
+    final values = await Future.wait(keys.map(_readKey));
 
-    for (final entry in _storageKeys.entries) {
-      final data = await _readKey(entry.key);
-      supported[entry.key] = data != null;
-      if (data != null) {
-        services[entry.key] = data;
+    final services = <String, dynamic>{};
+    for (var i = 0; i < keys.length; i++) {
+      if (values[i] != null) {
+        services[keys[i]] = values[i];
       }
     }
 
@@ -239,13 +243,17 @@ class DataBackupService {
   }
 
   /// Check which services have data and which support backup.
+  ///
+  /// Reads all keys concurrently for the same latency win as [exportAll].
   Future<Map<String, ServiceBackupInfo>> checkServiceSupport() async {
-    final result = <String, ServiceBackupInfo>{};
+    final entries = _storageKeys.entries.toList();
+    final values = await Future.wait(entries.map((e) => _readKey(e.key)));
 
-    for (final entry in _storageKeys.entries) {
-      final data = await _readKey(entry.key);
-      result[entry.key] = ServiceBackupInfo(
-        displayName: entry.value,
+    final result = <String, ServiceBackupInfo>{};
+    for (var i = 0; i < entries.length; i++) {
+      final data = values[i];
+      result[entries[i].key] = ServiceBackupInfo(
+        displayName: entries[i].value,
         hasData: data != null && data.isNotEmpty,
         dataSize: data?.length ?? 0,
       );
