@@ -130,6 +130,7 @@ import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
 import '../../views/home/cipher_tool_screen.dart';
 import '../../views/home/regex_tester_screen.dart';
+import '../../views/home/spin_wheel_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -977,6 +978,12 @@ class FeatureRegistry {
       icon: Icons.manage_search,
       category: FeatureCategory.lifestyle,
       builder: (_) => const RegexTesterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Spin the Wheel',
+      icon: Icons.casino,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const SpinWheelScreen(),
     ),
   ];
 
