@@ -126,6 +126,7 @@ import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/periodic_table_screen.dart';
 import '../../views/home/ascii_art_screen.dart';
 import '../../views/home/reaction_time_screen.dart';
+import '../../views/home/sketch_pad_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -650,6 +651,12 @@ class FeatureRegistry {
       icon: Icons.abc,
       category: FeatureCategory.lifestyle,
       builder: (_) => const VocabularyBuilderScreen(),
+    ),
+    FeatureEntry(
+      label: 'Sketch Pad',
+      icon: Icons.draw,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const SketchPadScreen(),
     ),
     FeatureEntry(
       label: 'Decision Journal',
