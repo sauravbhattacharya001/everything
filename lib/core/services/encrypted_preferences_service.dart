@@ -251,13 +251,19 @@ class SensitiveKeys {
     // Personal identity
     'emergency_card_data',
     'contact_tracker_entries',
+    'contact_tracker_data',
 
     // Location & behavioral patterns
     'travel_log_entries',
     'commute_tracker_entries',
     'habit_tracker_data',
     'goal_tracker_entries',
+    'goal_tracker_data',
     'time_tracker_entries',
+
+    // ServicePersistence key variants (some services use _data suffix)
+    'expense_tracker_data',
+    'gratitude_journal_data',
   };
 
   /// Returns true if [key] contains sensitive personal data that

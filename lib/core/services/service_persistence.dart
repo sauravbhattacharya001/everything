@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
-/// Mixin for adding SharedPreferences-based persistence to stateful services.
+/// Mixin for adding persistence to stateful services via [StorageBackend].
 ///
-/// Services that hold in-memory state (lists, maps) can use this mixin to
-/// automatically save/restore their data across app restarts.
+/// Sensitive keys (medical, financial, diary data) are automatically
+/// encrypted at rest. Non-sensitive keys use plain SharedPreferences
+/// for performance. See [StorageBackend] and [SensitiveKeys] for details.
 ///
 /// Usage:
 /// ```dart
@@ -22,7 +23,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// }
 /// ```
 mixin ServicePersistence {
-  /// Unique key for SharedPreferences storage.
+  /// Unique key for storage.
   String get storageKey;
 
   /// Serialize service state to JSON-compatible map.
@@ -36,10 +37,12 @@ mixin ServicePersistence {
   /// Whether persistence has been initialized (data loaded).
   bool get isInitialized => _persInitialized;
 
-  /// Load state from SharedPreferences. Call once at startup or before first use.
+  /// Load state from storage. Call once at startup or before first use.
+  ///
+  /// Sensitive keys are transparently decrypted. Existing plaintext
+  /// data for sensitive keys is migrated to encrypted form on first read.
   Future<bool> loadState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(storageKey);
+    final data = await StorageBackend.read(storageKey);
     if (data != null && data.isNotEmpty) {
       try {
         final json = jsonDecode(data) as Map<String, dynamic>;
@@ -56,15 +59,16 @@ mixin ServicePersistence {
     return false;
   }
 
-  /// Save current state to SharedPreferences.
+  /// Save current state to storage.
+  ///
+  /// Sensitive data is encrypted before writing; non-sensitive data
+  /// is stored as-is.
   Future<void> saveState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(storageKey, jsonEncode(toStorageJson()));
+    await StorageBackend.write(storageKey, jsonEncode(toStorageJson()));
   }
 
   /// Clear persisted state.
   Future<void> clearState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(storageKey);
+    await StorageBackend.remove(storageKey);
   }
 }
