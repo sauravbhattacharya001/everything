@@ -128,6 +128,7 @@ import '../../views/home/ascii_art_screen.dart';
 import '../../views/home/reaction_time_screen.dart';
 import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
+import '../../views/home/cipher_tool_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -963,6 +964,12 @@ class FeatureRegistry {
       icon: Icons.bolt,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ReactionTimeScreen(),
+    ),
+    FeatureEntry(
+      label: 'Cipher Tool',
+      icon: Icons.enhanced_encryption,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const CipherToolScreen(),
     ),
   ];
 
