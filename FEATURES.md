@@ -51,6 +51,7 @@ Everything App includes **100+ features** organized into 7 categories. Each feat
 | **Mood Journal** | Track daily moods with notes and pattern detection |
 | **Sleep Tracker** | Log sleep duration and quality with trend graphs |
 | **Symptom Tracker** | Record health symptoms with severity and triggers |
+| **Allergy Tracker** | Log allergic reactions with allergens, severity, symptoms & treatment |
 | **Meditation** | Guided and timed meditation sessions with history |
 | **Water Tracker** | Daily water intake tracking with reminders |
 | **Caffeine Tracker** | Monitor caffeine consumption and timing |
