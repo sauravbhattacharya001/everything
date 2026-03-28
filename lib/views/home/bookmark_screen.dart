@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/bookmark.dart';
 import '../../core/services/bookmark_service.dart';
 import '../../core/services/screen_persistence.dart';
+import '../../core/utils/snackbar_helper.dart';
 
 /// Bookmark Manager Screen — 4-tab UI for saving & organizing URLs.
 ///
@@ -129,9 +130,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
     _tagsController.clear();
     setState(() => _selectedFolder = BookmarkFolder.general);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bookmark saved ✓'), duration: Duration(seconds: 2)),
-    );
+    SnackBarHelper.success(context, 'Bookmark saved ✓');
   }
 
   void _deleteBookmark(String id) {
@@ -162,9 +161,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
     });
     _save();
     // URL opening would require url_launcher package
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Visiting ${bookmark.title}'), duration: const Duration(seconds: 1)),
-    );
+    SnackBarHelper.brief(context, 'Visiting ${bookmark.title}');
   }
 
   @override
