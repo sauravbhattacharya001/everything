@@ -74,17 +74,32 @@ class MoodJournalService {
   }
 
   /// Daily average moods for the last N days (for trend chart).
+  ///
+  /// Groups entries once into a date-keyed map for O(n) performance
+  /// instead of scanning all entries per day (O(n×days)).
   Map<DateTime, double> moodTrend(int days) {
-    final result = <DateTime, double>{};
     final now = DateTime.now();
-    for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
-      final avg = averageMoodForDate(date);
-      if (avg != null) {
-        result[date] = avg;
-      }
+    final cutoff = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: days));
+
+    // Single pass: group entries by date
+    final grouped = <DateTime, List<int>>{};
+    for (final e in _entries) {
+      if (e.timestamp.isBefore(cutoff)) continue;
+      final date = DateTime(
+          e.timestamp.year, e.timestamp.month, e.timestamp.day);
+      (grouped[date] ??= []).add(e.mood.value);
     }
-    return result;
+
+    // Compute averages
+    final result = <DateTime, double>{};
+    for (final entry in grouped.entries) {
+      final sum = entry.value.fold<int>(0, (s, v) => s + v);
+      result[entry.key] = sum / entry.value.length;
+    }
+    return Map.fromEntries(
+      result.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
   }
 
   /// Most common activities across all entries.

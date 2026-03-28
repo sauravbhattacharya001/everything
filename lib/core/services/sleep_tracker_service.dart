@@ -82,29 +82,55 @@ class SleepTrackerService {
   }
 
   /// Daily average duration for the last N days (for trend chart).
+  ///
+  /// Groups entries once for O(n) performance instead of
+  /// scanning per day (O(n×days)).
   Map<DateTime, double> durationTrend(int days) {
-    final result = <DateTime, double>{};
     final now = DateTime.now();
-    for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: i));
-      final avg = avgDurationForDate(date);
-      if (avg != null) result[date] = avg;
+    final cutoff = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: days));
+
+    final grouped = <DateTime, List<double>>{};
+    for (final e in _entries) {
+      if (e.wakeTime.isBefore(cutoff)) continue;
+      final date = DateTime(e.date.year, e.date.month, e.date.day);
+      (grouped[date] ??= []).add(e.durationHours);
     }
-    return result;
+
+    final result = <DateTime, double>{};
+    for (final entry in grouped.entries) {
+      final sum = entry.value.fold<double>(0, (s, v) => s + v);
+      result[entry.key] = sum / entry.value.length;
+    }
+    return Map.fromEntries(
+      result.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
   }
 
   /// Daily average quality for the last N days (for trend chart).
+  ///
+  /// Groups entries once for O(n) performance instead of
+  /// scanning per day (O(n×days)).
   Map<DateTime, double> qualityTrend(int days) {
-    final result = <DateTime, double>{};
     final now = DateTime.now();
-    for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: i));
-      final avg = avgQualityForDate(date);
-      if (avg != null) result[date] = avg;
+    final cutoff = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: days));
+
+    final grouped = <DateTime, List<int>>{};
+    for (final e in _entries) {
+      if (e.wakeTime.isBefore(cutoff)) continue;
+      final date = DateTime(e.date.year, e.date.month, e.date.day);
+      (grouped[date] ??= []).add(e.quality.value);
     }
-    return result;
+
+    final result = <DateTime, double>{};
+    for (final entry in grouped.entries) {
+      final sum = entry.value.fold<int>(0, (s, v) => s + v);
+      result[entry.key] = sum / entry.value.length;
+    }
+    return Map.fromEntries(
+      result.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
   }
 
   /// Overall average duration across all entries.
