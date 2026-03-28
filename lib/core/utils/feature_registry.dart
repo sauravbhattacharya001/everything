@@ -118,6 +118,7 @@ import '../../views/home/wiki_screen.dart';
 import '../../views/home/typing_speed_screen.dart';
 import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
+import '../../views/home/unit_price_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -530,6 +531,12 @@ class FeatureRegistry {
       icon: Icons.receipt_long,
       category: FeatureCategory.finance,
       builder: (_) => const InvoiceScreen(),
+    ),
+    FeatureEntry(
+      label: 'Unit Price Comparator',
+      icon: Icons.compare_arrows,
+      category: FeatureCategory.finance,
+      builder: (_) => const UnitPriceScreen(),
     ),
 
     // ── Lifestyle ──
