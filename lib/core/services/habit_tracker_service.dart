@@ -11,6 +11,7 @@
 /// - Habit archiving (soft delete)
 
 import '../../models/habit.dart';
+import 'service_persistence.dart';
 
 /// Stats for a single habit over a date range.
 class HabitStats {
@@ -95,9 +96,34 @@ class WeeklyHabitSummary {
 }
 
 /// Main service for habit tracking.
-class HabitTrackerService {
+class HabitTrackerService with ServicePersistence {
   final List<Habit> _habits;
   final List<HabitCompletion> _completions;
+
+  @override
+  String get storageKey => 'habit_tracker_data';
+
+  @override
+  Map<String, dynamic> toStorageJson() => {
+        'habits': _habits.map((h) => h.toJson()).toList(),
+        'completions': _completions.map((c) => c.toJson()).toList(),
+      };
+
+  @override
+  void fromStorageJson(Map<String, dynamic> json) {
+    _habits.clear();
+    _completions.clear();
+    if (json['habits'] != null) {
+      _habits.addAll(
+        (json['habits'] as List).map((h) => Habit.fromJson(h as Map<String, dynamic>)),
+      );
+    }
+    if (json['completions'] != null) {
+      _completions.addAll(
+        (json['completions'] as List).map((c) => HabitCompletion.fromJson(c as Map<String, dynamic>)),
+      );
+    }
+  }
 
   HabitTrackerService({
     List<Habit>? habits,
