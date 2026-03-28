@@ -83,6 +83,7 @@ import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
+import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/currency_converter_screen.dart';
@@ -526,6 +527,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const LoanCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Mortgage Calculator',
+      icon: Icons.house,
+      category: FeatureCategory.finance,
+      builder: (_) => const MortgageCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Percentage Calculator',
