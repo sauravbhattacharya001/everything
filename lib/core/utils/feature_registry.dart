@@ -129,6 +129,7 @@ import '../../views/home/reaction_time_screen.dart';
 import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
 import '../../views/home/cipher_tool_screen.dart';
+import '../../views/home/regex_tester_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -970,6 +971,12 @@ class FeatureRegistry {
       icon: Icons.enhanced_encryption,
       category: FeatureCategory.lifestyle,
       builder: (_) => const CipherToolScreen(),
+    ),
+    FeatureEntry(
+      label: 'Regex Tester',
+      icon: Icons.manage_search,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const RegexTesterScreen(),
     ),
   ];
 
