@@ -132,6 +132,7 @@ import '../../views/home/cipher_tool_screen.dart';
 import '../../views/home/regex_tester_screen.dart';
 import '../../views/home/sobriety_counter_screen.dart';
 import '../../views/home/spin_wheel_screen.dart';
+import '../../views/home/bill_reminder_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -546,6 +547,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const LoanCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Bill Reminder',
+      icon: Icons.receipt_long,
+      category: FeatureCategory.finance,
+      builder: (_) => const BillReminderScreen(),
     ),
     FeatureEntry(
       label: 'Mortgage Calculator',
