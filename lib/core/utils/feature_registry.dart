@@ -134,6 +134,7 @@ import '../../views/home/regex_tester_screen.dart';
 import '../../views/home/sobriety_counter_screen.dart';
 import '../../views/home/spin_wheel_screen.dart';
 import '../../views/home/bill_reminder_screen.dart';
+import '../../views/home/wheel_of_life_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -224,6 +225,12 @@ class FeatureRegistry {
       icon: Icons.dashboard,
       category: FeatureCategory.planning,
       builder: (_) => const LifeDashboardScreen(),
+    ),
+    FeatureEntry(
+      label: 'Wheel of Life',
+      icon: Icons.radar,
+      category: FeatureCategory.planning,
+      builder: (_) => const WheelOfLifeScreen(),
     ),
 
     // ── Productivity ──
