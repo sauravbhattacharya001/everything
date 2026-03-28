@@ -127,16 +127,24 @@ import '../../views/home/periodic_table_screen.dart';
 /// A single navigable feature in the app.
 class FeatureEntry {
   final String label;
+
+  /// Pre-computed lowercase label for search filtering.
+  ///
+  /// The navigation drawer calls `_filteredFeatures()` on every
+  /// keystroke, which previously ran `label.toLowerCase()` on all
+  /// 100+ entries per rebuild. Caching the lowercase form here
+  /// eliminates ~100 string allocations per keystroke.
+  final String searchLabel;
   final IconData icon;
   final WidgetBuilder builder;
   final FeatureCategory category;
 
-  const FeatureEntry({
+  FeatureEntry({
     required this.label,
     required this.icon,
     required this.builder,
     required this.category,
-  });
+  }) : searchLabel = label.toLowerCase();
 }
 
 /// Categories for organizing features in the navigation drawer.
