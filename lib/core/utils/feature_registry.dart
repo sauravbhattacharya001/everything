@@ -56,6 +56,7 @@ import '../../views/home/skill_tracker_screen.dart';
 import '../../views/home/sleep_tracker_screen.dart';
 import '../../views/home/symptom_tracker_screen.dart';
 import '../../views/home/allergy_tracker_screen.dart';
+import '../../views/home/movie_tracker_screen.dart';
 import '../../views/home/stats_screen.dart';
 import '../../views/home/subscription_tracker_screen.dart';
 import '../../views/home/time_budget_screen.dart';
@@ -344,6 +345,12 @@ class FeatureRegistry {
       icon: Icons.warning_amber,
       category: FeatureCategory.health,
       builder: (_) => const AllergyTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Movie Tracker',
+      icon: Icons.movie,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MovieTrackerScreen(),
     ),
     FeatureEntry(
       label: 'Meditation',

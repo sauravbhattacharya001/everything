@@ -18,6 +18,7 @@ import '../home/meal_tracker_screen.dart';
 import '../home/sleep_tracker_screen.dart';
 import '../home/symptom_tracker_screen.dart';
 import '../home/allergy_tracker_screen.dart';
+import '../home/movie_tracker_screen.dart';
 import '../home/energy_tracker_screen.dart';
 import '../home/pomodoro_screen.dart';
 import '../home/time_tracker_screen.dart';
@@ -108,6 +109,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     'nav_sleep': () => SleepTrackerScreen(),
     'nav_symptoms': () => SymptomTrackerScreen(),
     'nav_allergies': () => AllergyTrackerScreen(),
+    'nav_movies': () => MovieTrackerScreen(),
     'nav_energy': () => EnergyTrackerScreen(),
     'nav_pomodoro': () => PomodoroScreen(),
     'nav_time_tracker': () => TimeTrackerScreen(),
