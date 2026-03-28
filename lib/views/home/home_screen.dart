@@ -8,6 +8,7 @@ import '../widgets/event_card.dart';
 import '../widgets/event_form_dialog.dart';
 import '../widgets/next_up_banner.dart';
 import '../widgets/command_palette_overlay.dart';
+import '../widgets/event_filter_bar.dart';
 import '../widgets/feature_drawer.dart';
 import 'event_detail_screen.dart';
 
@@ -449,181 +450,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFilterBar(List<EventModel> allEvents) {
     _ensureFilterBarCache(allEvents);
-    final priorityCounts = _cachedPriorityCounts;
-    final allTags = _cachedAllTags;
-    final tagCounts = _cachedTagCounts;
 
-    return Container(
-      color: Colors.grey[50],
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search events...',
-              prefixIcon: const Icon(Icons.search, size: 20),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
-                      onPressed: () => _searchController.clear(),
-                    )
-                  : null,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.blue, width: 1.5),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Priority filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                Text(
-                  'Priority:',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ...EventPriority.values.map((priority) {
-                  final isSelected =
-                      _activePriorityFilters.contains(priority);
-                  final count = priorityCounts[priority] ?? 0;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: FilterChip(
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            priority.icon,
-                            size: 14,
-                            color: isSelected ? Colors.white : priority.color,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${priority.label} ($count)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color:
-                                  isSelected ? Colors.white : priority.color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      selected: isSelected,
-                      selectedColor: priority.color,
-                      backgroundColor: priority.color.withAlpha(20),
-                      checkmarkColor: Colors.white,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _activePriorityFilters.add(priority);
-                          } else {
-                            _activePriorityFilters.remove(priority);
-                          }
-                        });
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          // Tag filter chips
-          if (allTags.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  Text(
-                    'Tags:',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ...allTags.entries.map((entry) {
-                    final tag = entry.value;
-                    final key = entry.key;
-                    final isSelected = _activeTagFilters.contains(key);
-                    final count = tagCounts[key] ?? 0;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: FilterChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : tag.color,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${tag.name} ($count)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected ? Colors.white : tag.color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        selected: isSelected,
-                        selectedColor: tag.color,
-                        backgroundColor: tag.color.withAlpha(20),
-                        checkmarkColor: Colors.white,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _activeTagFilters.add(key);
-                            } else {
-                              _activeTagFilters.remove(key);
-                            }
-                          });
-                        },
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
+    return EventFilterBar(
+      searchController: _searchController,
+      searchQuery: _searchQuery,
+      activePriorityFilters: _activePriorityFilters,
+      activeTagFilters: _activeTagFilters,
+      priorityCounts: _cachedPriorityCounts,
+      allTags: _cachedAllTags,
+      tagCounts: _cachedTagCounts,
+      onPriorityToggled: (priority, selected) {
+        setState(() {
+          if (selected) {
+            _activePriorityFilters.add(priority);
+          } else {
+            _activePriorityFilters.remove(priority);
+          }
+        });
+      },
+      onTagToggled: (key, selected) {
+        setState(() {
+          if (selected) {
+            _activeTagFilters.add(key);
+          } else {
+            _activeTagFilters.remove(key);
+          }
+        });
+      },
     );
   }
 
