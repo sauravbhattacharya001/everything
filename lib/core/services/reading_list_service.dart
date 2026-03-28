@@ -536,32 +536,109 @@ class ReadingListService extends CrudService<Book> {
 
   // ── Full report ──────────────────────────────────
 
+  /// Generates a full reading report in a single pass over the book list.
+  ///
+  /// Previous implementation called [byStatus] 4 times, [getGenreBreakdown],
+  /// [getTopAuthors], plus folded totalPages/totalMinutes — each a separate
+  /// O(n) scan. This consolidates into one O(n) pass for status counts,
+  /// page/minute totals, rating aggregation, genre grouping, and author
+  /// grouping, then delegates only streak and monthly summaries (which
+  /// require sorted date structures that don't benefit from the same pass).
   ReadingReport generateReport({int? challengeYear, DateTime? asOf}) {
-    final finished = byStatus(ReadingStatus.finished);
-    final rated = finished.where((b) => b.rating != null);
-    final avgRating = rated.isNotEmpty
-        ? rated.map((b) => b.rating!).reduce((a, b) => a + b) / rated.length
-        : 0.0;
-    final totalPages =
-        itemsMutable.fold<int>(0, (s, b) => s + b.currentPage);
-    final totalMinutes =
-        itemsMutable.fold<int>(0, (s, b) => s + b.totalMinutesRead);
-    final avgPages = finished.isNotEmpty
-        ? finished.fold<int>(0, (s, b) => s + b.totalPages) / finished.length
-        : 0.0;
+    // Single pass: status counts, totals, genre/author grouping, ratings
+    int countFinished = 0, countReading = 0, countWantToRead = 0, countAbandoned = 0;
+    int totalPages = 0, totalMinutes = 0;
+    int finishedTotalPages = 0;
+    int ratingSum = 0, ratingCount = 0;
+    final genreGroups = <BookGenre, List<Book>>{};
+    final authorGroups = <String, List<Book>>{};
+
+    for (final b in itemsMutable) {
+      // Status counts
+      switch (b.status) {
+        case ReadingStatus.finished:
+          countFinished++;
+          finishedTotalPages += b.totalPages;
+          break;
+        case ReadingStatus.reading:
+          countReading++;
+          break;
+        case ReadingStatus.wantToRead:
+          countWantToRead++;
+          break;
+        case ReadingStatus.abandoned:
+          countAbandoned++;
+          break;
+      }
+
+      // Totals
+      totalPages += b.currentPage;
+      totalMinutes += b.totalMinutesRead;
+
+      // Ratings (finished books only, matching previous behavior)
+      if (b.status == ReadingStatus.finished && b.rating != null) {
+        ratingSum += b.rating!;
+        ratingCount++;
+      }
+
+      // Genre grouping
+      genreGroups.putIfAbsent(b.genre, () => []).add(b);
+
+      // Author grouping
+      authorGroups.putIfAbsent(b.author, () => []).add(b);
+    }
+
+    final total = itemsMutable.length;
+    final avgRating = ratingCount > 0 ? ratingSum / ratingCount : 0.0;
+    final avgPages = countFinished > 0 ? finishedTotalPages / countFinished : 0.0;
+
+    // Build genre stats from pre-grouped data
+    final genreBreakdown = total > 0
+        ? (genreGroups.entries.map((e) {
+            final rated = e.value.where((b) => b.rating != null);
+            final avgR = rated.isNotEmpty
+                ? rated.map((b) => b.rating!).reduce((a, b) => a + b) / rated.length
+                : null;
+            return GenreStats(
+              genre: e.key,
+              count: e.value.length,
+              percentage: e.value.length / total * 100,
+              averageRating: avgR,
+            );
+          }).toList()
+            ..sort((a, b) => b.count.compareTo(a.count)))
+        : <GenreStats>[];
+
+    // Build author stats from pre-grouped data
+    final topAuthors = (authorGroups.entries.map((e) {
+      final pages = e.value.fold<int>(0, (s, b) => s + b.currentPage);
+      final rated = e.value.where((b) => b.rating != null);
+      final avgR = rated.isNotEmpty
+          ? rated.map((b) => b.rating!).reduce((a, b) => a + b) / rated.length
+          : null;
+      return AuthorStats(
+        author: e.key,
+        bookCount: e.value.length,
+        pagesRead: pages,
+        averageRating: avgR,
+      );
+    }).toList()
+      ..sort((a, b) => b.bookCount.compareTo(a.bookCount)))
+        .take(10)
+        .toList();
 
     return ReadingReport(
-      totalBooks: itemsMutable.length,
-      booksFinished: finished.length,
-      booksReading: byStatus(ReadingStatus.reading).length,
-      booksWantToRead: byStatus(ReadingStatus.wantToRead).length,
-      booksAbandoned: byStatus(ReadingStatus.abandoned).length,
+      totalBooks: total,
+      booksFinished: countFinished,
+      booksReading: countReading,
+      booksWantToRead: countWantToRead,
+      booksAbandoned: countAbandoned,
       totalPagesRead: totalPages,
       totalMinutesRead: totalMinutes,
       averageRating: avgRating,
       averagePagesPerBook: avgPages,
-      genreBreakdown: getGenreBreakdown(),
-      topAuthors: getTopAuthors(),
+      genreBreakdown: genreBreakdown,
+      topAuthors: topAuthors,
       streak: getStreak(asOf: asOf),
       challenge: challengeYear != null ? getChallenge(challengeYear) : null,
       monthlySummaries: getMonthlySummaries(),
