@@ -127,6 +127,7 @@ import '../../views/home/periodic_table_screen.dart';
 import '../../views/home/ascii_art_screen.dart';
 import '../../views/home/reaction_time_screen.dart';
 import '../../views/home/sketch_pad_screen.dart';
+import '../../views/home/interval_timer_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -285,6 +286,12 @@ class FeatureRegistry {
       icon: Icons.timer,
       category: FeatureCategory.productivity,
       builder: (_) => const StopwatchScreen(),
+    ),
+    FeatureEntry(
+      label: 'Interval Timer',
+      icon: Icons.fitness_center,
+      category: FeatureCategory.productivity,
+      builder: (_) => const IntervalTimerScreen(),
     ),
     FeatureEntry(
       label: 'Chess Clock',
