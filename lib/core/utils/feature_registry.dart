@@ -121,6 +121,7 @@ import '../../views/home/typing_speed_screen.dart';
 import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
+import '../../views/home/percentage_calculator_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -515,6 +516,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const LoanCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Percentage Calculator',
+      icon: Icons.percent,
+      category: FeatureCategory.productivity,
+      builder: (_) => const PercentageCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'GPA Calculator',
