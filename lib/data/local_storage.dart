@@ -188,6 +188,26 @@ class LocalStorage {
     );
   }
 
+  /// Inserts or replaces multiple rows in [table] within a single transaction.
+  ///
+  /// This is significantly faster than calling [insert] in a loop because
+  /// SQLite commits each standalone insert as its own transaction (fsync),
+  /// whereas batching them amortizes the cost to a single fsync.
+  /// Throws [ArgumentError] if [table] is not a recognized table name.
+  static Future<void> insertAll(
+      String table, List<Map<String, dynamic>> rows) async {
+    if (rows.isEmpty) return;
+    _validateTable(table);
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final row in rows) {
+        batch.insert(table, row, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   /// Closes the database connection and clears the cached instance.
   ///
   /// After calling this, the next access to [database] will re-open
