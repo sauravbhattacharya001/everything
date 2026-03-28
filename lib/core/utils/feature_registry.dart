@@ -125,6 +125,7 @@ import '../../views/home/unit_price_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/periodic_table_screen.dart';
 import '../../views/home/ascii_art_screen.dart';
+import '../../views/home/reaction_time_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -942,6 +943,12 @@ class FeatureRegistry {
       icon: Icons.text_fields,
       category: FeatureCategory.lifestyle,
       builder: (_) => const AsciiArtScreen(),
+    ),
+    FeatureEntry(
+      label: 'Reaction Time Test',
+      icon: Icons.bolt,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ReactionTimeScreen(),
     ),
   ];
 
