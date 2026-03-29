@@ -13,6 +13,8 @@
 ///     morning" or "Fridays are light".
 ///   - **Prediction**: A forecasted event based on detected patterns.
 
+import 'dart:math' as math;
+
 import '../../models/event_model.dart';
 
 // ─── Data Classes ───────────────────────────────────────────────
@@ -500,14 +502,7 @@ class EventPatternService {
   double _stdDev(List<double> values, double mean) {
     if (values.length < 2) return 0.0;
     final sumSqDiff = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean));
-    return _sqrt(sumSqDiff / (values.length - 1));
-  }
-
-  double _sqrt(double n) {
-    if (n <= 0) return 0;
-    double x = n;
-    for (var i = 0; i < 20; i++) { x = (x + n / x) / 2; }
-    return x;
+    return math.sqrt(sumSqDiff / (values.length - 1));
   }
 
   String _dayName(int weekday) {

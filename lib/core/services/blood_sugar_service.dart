@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../models/blood_sugar_entry.dart';
 
 /// Summary statistics for blood sugar readings.
@@ -120,15 +122,6 @@ class BloodSugarService {
       0,
       (s, e) => s + (e.glucoseMgDl - avg) * (e.glucoseMgDl - avg),
     );
-    return _sqrt(sumSquares / (entries.length - 1));
-  }
-
-  double _sqrt(double x) {
-    if (x <= 0) return 0;
-    double guess = x / 2;
-    for (int i = 0; i < 20; i++) {
-      guess = (guess + x / guess) / 2;
-    }
-    return guess;
+    return math.sqrt(sumSquares / (entries.length - 1));
   }
 }
