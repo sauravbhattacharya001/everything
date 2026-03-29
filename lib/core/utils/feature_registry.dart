@@ -126,6 +126,7 @@ import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
+import '../../views/home/scientific_calculator_screen.dart';
 import '../../views/home/periodic_table_screen.dart';
 import '../../views/home/ascii_art_screen.dart';
 import '../../views/home/reaction_time_screen.dart';
@@ -582,6 +583,12 @@ class FeatureRegistry {
       icon: Icons.percent,
       category: FeatureCategory.productivity,
       builder: (_) => const PercentageCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Scientific Calculator',
+      icon: Icons.calculate,
+      category: FeatureCategory.productivity,
+      builder: (_) => const ScientificCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Periodic Table',
