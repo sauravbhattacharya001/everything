@@ -77,6 +77,7 @@ class DataBackupService {
     'fasting_tracker_entries': 'Fasting Tracker',
     'daily_journal_entries': 'Daily Journal',
     'emergency_card_data': 'Emergency Card',
+    'symptom_tracker_entries': 'Symptom Tracker',
   };
 
   /// Reads a value from the appropriate storage backend.
