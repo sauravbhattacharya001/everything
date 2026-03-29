@@ -66,6 +66,7 @@ import '../../views/home/warranty_tracker_screen.dart';
 import '../../views/home/watchlist_screen.dart';
 import '../../views/home/water_tracker_screen.dart';
 import '../../views/home/weekly_planner_screen.dart';
+import '../../views/home/project_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
 import '../../views/home/blood_pressure_screen.dart';
 import '../../views/home/blood_sugar_screen.dart';
@@ -207,6 +208,12 @@ class FeatureRegistry {
       icon: Icons.view_week,
       category: FeatureCategory.planning,
       builder: (_) => const WeeklyPlannerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Project Planner',
+      icon: Icons.rocket_launch,
+      category: FeatureCategory.planning,
+      builder: (_) => const ProjectPlannerScreen(),
     ),
     FeatureEntry(
       label: 'Weekly Report',
