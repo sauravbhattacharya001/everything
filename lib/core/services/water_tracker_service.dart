@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../models/water_entry.dart';
 
 /// Configuration for daily water intake goals.
@@ -373,7 +375,7 @@ class WaterTrackerService {
     final variance = days.fold<double>(
             0, (sum, d) => sum + (d.totalMl - avgMl) * (d.totalMl - avgMl)) /
         7;
-    final stdDev = variance > 0 ? _sqrt(variance) : 0.0;
+    final stdDev = variance > 0 ? math.sqrt(variance) : 0.0;
     final cv = avgMl > 0 ? stdDev / avgMl : 1.0;
     final consistency = ((1 - cv) * 100).clamp(0, 100).toDouble();
 
@@ -470,13 +472,4 @@ class WaterTrackerService {
 
   String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-  double _sqrt(double x) {
-    if (x <= 0) return 0;
-    double guess = x / 2;
-    for (int i = 0; i < 20; i++) {
-      guess = (guess + x / guess) / 2;
-    }
-    return guess;
-  }
 }
