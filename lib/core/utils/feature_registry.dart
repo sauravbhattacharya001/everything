@@ -144,6 +144,7 @@ import '../../views/home/memory_game_screen.dart';
 import '../../views/home/wheel_of_life_screen.dart';
 import '../../views/home/weight_tracker_screen.dart';
 import '../../views/home/game_of_life_screen.dart';
+import '../../views/home/lorem_ipsum_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
 
 /// A single navigable feature in the app.
@@ -1082,6 +1083,12 @@ class FeatureRegistry {
       icon: Icons.groups,
       category: FeatureCategory.productivity,
       builder: (_) => const MeetingCostScreen(),
+    ),
+    FeatureEntry(
+      label: 'Lorem Ipsum Generator',
+      icon: Icons.text_snippet,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const LoremIpsumScreen(),
     ),
   ];
 
