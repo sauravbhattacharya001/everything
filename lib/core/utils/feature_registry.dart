@@ -104,6 +104,7 @@ import '../../views/home/ambient_sound_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
+import '../../views/home/speed_reader_screen.dart';
 import '../../views/home/tally_counter_screen.dart';
 import '../../views/home/countdown_timer_screen.dart';
 import '../../views/home/eye_break_screen.dart';
@@ -285,6 +286,12 @@ class FeatureRegistry {
       icon: Icons.keyboard,
       category: FeatureCategory.productivity,
       builder: (_) => const TypingSpeedScreen(),
+    ),
+    FeatureEntry(
+      label: 'Speed Reader',
+      icon: Icons.auto_stories,
+      category: FeatureCategory.productivity,
+      builder: (_) => const SpeedReaderScreen(),
     ),
     FeatureEntry(
       label: 'Time Tracker',
