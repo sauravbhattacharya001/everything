@@ -82,6 +82,7 @@ import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
+import '../../views/home/salary_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
@@ -549,6 +550,12 @@ class FeatureRegistry {
       icon: Icons.restaurant,
       category: FeatureCategory.finance,
       builder: (_) => const TipCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Salary Calculator',
+      icon: Icons.account_balance_wallet,
+      category: FeatureCategory.finance,
+      builder: (_) => const SalaryCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Loan Calculator',
