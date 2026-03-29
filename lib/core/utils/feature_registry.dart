@@ -136,6 +136,7 @@ import '../../views/home/regex_tester_screen.dart';
 import '../../views/home/sobriety_counter_screen.dart';
 import '../../views/home/spin_wheel_screen.dart';
 import '../../views/home/bill_reminder_screen.dart';
+import '../../views/home/memory_game_screen.dart';
 import '../../views/home/wheel_of_life_screen.dart';
 
 /// A single navigable feature in the app.
@@ -1026,6 +1027,12 @@ class FeatureRegistry {
       icon: Icons.school,
       category: FeatureCategory.productivity,
       builder: (_) => const GradeCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Memory Game',
+      icon: Icons.grid_view_rounded,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MemoryGameScreen(),
     ),
   ];
 
