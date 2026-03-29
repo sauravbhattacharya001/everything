@@ -142,6 +142,7 @@ import '../../views/home/spin_wheel_screen.dart';
 import '../../views/home/bill_reminder_screen.dart';
 import '../../views/home/memory_game_screen.dart';
 import '../../views/home/wheel_of_life_screen.dart';
+import '../../views/home/game_of_life_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1061,6 +1062,12 @@ class FeatureRegistry {
       icon: Icons.grid_view_rounded,
       category: FeatureCategory.lifestyle,
       builder: (_) => const MemoryGameScreen(),
+    ),
+    FeatureEntry(
+      label: 'Game of Life',
+      icon: Icons.blur_on,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const GameOfLifeScreen(),
     ),
   ];
 
