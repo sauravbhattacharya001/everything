@@ -144,6 +144,7 @@ import '../../views/home/memory_game_screen.dart';
 import '../../views/home/wheel_of_life_screen.dart';
 import '../../views/home/weight_tracker_screen.dart';
 import '../../views/home/game_of_life_screen.dart';
+import '../../views/home/meeting_cost_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1075,6 +1076,12 @@ class FeatureRegistry {
       icon: Icons.blur_on,
       category: FeatureCategory.lifestyle,
       builder: (_) => const GameOfLifeScreen(),
+    ),
+    FeatureEntry(
+      label: 'Meeting Cost Calculator',
+      icon: Icons.groups,
+      category: FeatureCategory.productivity,
+      builder: (_) => const MeetingCostScreen(),
     ),
   ];
 
