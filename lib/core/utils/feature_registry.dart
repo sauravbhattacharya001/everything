@@ -132,6 +132,7 @@ import '../../views/home/typing_speed_screen.dart';
 import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
+import '../../views/home/tax_calculator_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/scientific_calculator_screen.dart';
 import '../../views/home/matrix_calculator_screen.dart';
@@ -683,6 +684,12 @@ class FeatureRegistry {
       icon: Icons.compare_arrows,
       category: FeatureCategory.finance,
       builder: (_) => const UnitPriceScreen(),
+    ),
+    FeatureEntry(
+      label: 'Tax Calculator',
+      icon: Icons.account_balance,
+      category: FeatureCategory.finance,
+      builder: (_) => const TaxCalculatorScreen(),
     ),
 
     // ── Lifestyle ──
