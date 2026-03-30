@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
 import '../../views/home/bucket_list_screen.dart';
@@ -1124,6 +1125,12 @@ class FeatureRegistry {
       icon: Icons.text_snippet,
       category: FeatureCategory.lifestyle,
       builder: (_) => const LoremIpsumScreen(),
+    ),
+    FeatureEntry(
+      label: 'Color Mixer',
+      icon: Icons.blender,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ColorMixerScreen(),
     ),
   ];
 
