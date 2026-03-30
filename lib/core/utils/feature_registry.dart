@@ -112,6 +112,7 @@ import '../../views/home/eye_break_screen.dart';
 import '../../views/home/invoice_screen.dart';
 import '../../views/home/chess_clock_screen.dart';
 import '../../views/home/coin_flip_screen.dart';
+import '../../views/home/rps_screen.dart';
 import '../../views/home/grade_calculator_screen.dart';
 import '../../views/home/affirmation_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
@@ -1013,6 +1014,12 @@ class FeatureRegistry {
       icon: Icons.monetization_on,
       category: FeatureCategory.lifestyle,
       builder: (_) => const CoinFlipScreen(),
+    ),
+    FeatureEntry(
+      label: 'Rock Paper Scissors',
+      icon: Icons.sports_esports,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const RpsScreen(),
     ),
     FeatureEntry(
       label: 'Daily Affirmation',
