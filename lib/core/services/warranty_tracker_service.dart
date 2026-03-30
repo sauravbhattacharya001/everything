@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../models/warranty_entry.dart';
+import 'crud_service.dart';
 
 /// Alert for warranties expiring soon.
 class WarrantyAlert {
@@ -60,72 +61,70 @@ class WarrantySummary {
 }
 
 /// Service for managing product warranties.
-class WarrantyTrackerService {
-  final List<WarrantyEntry> _warranties = [];
+///
+/// Extends [CrudService] to eliminate hand-rolled CRUD and JSON
+/// serialization boilerplate. Domain-specific logic (claims, alerts,
+/// coverage analysis) is preserved as-is.
+class WarrantyTrackerService extends CrudService<WarrantyEntry> {
+  @override
+  String getId(WarrantyEntry item) => item.id;
 
-  List<WarrantyEntry> get warranties => List.unmodifiable(_warranties);
+  @override
+  Map<String, dynamic> toJson(WarrantyEntry item) => item.toJson();
 
-  // ── CRUD ──
+  @override
+  WarrantyEntry fromJson(Map<String, dynamic> json) =>
+      WarrantyEntry.fromJson(json);
 
-  void addWarranty(WarrantyEntry entry) {
-    _warranties.add(entry);
-  }
+  /// Backwards-compatible alias for [items].
+  List<WarrantyEntry> get warranties => items;
 
-  void updateWarranty(WarrantyEntry entry) {
-    final idx = _warranties.indexWhere((w) => w.id == entry.id);
-    if (idx >= 0) _warranties[idx] = entry;
-  }
+  // ── Backwards-compatible CRUD aliases ──
 
-  void removeWarranty(String id) {
-    _warranties.removeWhere((w) => w.id == id);
-  }
+  void addWarranty(WarrantyEntry entry) => add(entry);
 
-  WarrantyEntry? getById(String id) {
-    try {
-      return _warranties.firstWhere((w) => w.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
+  void updateWarranty(WarrantyEntry entry) => update(entry);
+
+  void removeWarranty(String id) => remove(id);
 
   // ── Claims ──
 
   void addClaim(String warrantyId, WarrantyClaim claim) {
     final w = getById(warrantyId);
     if (w == null) return;
-    updateWarranty(w.copyWith(claims: [...w.claims, claim]));
+    update(w.copyWith(claims: [...w.claims, claim]));
   }
 
   void updateClaim(String warrantyId, WarrantyClaim claim) {
     final w = getById(warrantyId);
     if (w == null) return;
     final updated = w.claims.map((c) => c.id == claim.id ? claim : c).toList();
-    updateWarranty(w.copyWith(claims: updated));
+    update(w.copyWith(claims: updated));
   }
 
   // ── Filtering ──
 
   List<WarrantyEntry> getActive() =>
-      _warranties.where((w) => w.isValid).toList();
+      items.where((w) => w.isValid).toList();
 
   List<WarrantyEntry> getExpired() =>
-      _warranties.where((w) => w.isExpired).toList();
+      items.where((w) => w.isExpired).toList();
 
   List<WarrantyEntry> getExpiringSoon({int withinDays = 30}) =>
-      _warranties
+      items
           .where((w) => !w.isExpired && w.daysRemaining <= withinDays)
           .toList()
         ..sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
 
   List<WarrantyEntry> getByCategory(WarrantyCategory category) =>
-      _warranties.where((w) => w.category == category).toList();
+      items.where((w) => w.category == category).toList();
 
   List<WarrantyEntry> getByType(WarrantyType type) =>
-      _warranties.where((w) => w.type == type).toList();
+      items.where((w) => w.type == type).toList();
 
   List<WarrantyEntry> searchByName(String query) {
     final q = query.toLowerCase();
-    return _warranties
+    return items
         .where((w) =>
             w.productName.toLowerCase().contains(q) ||
             (w.brand?.toLowerCase().contains(q) ?? false) ||
@@ -134,7 +133,7 @@ class WarrantyTrackerService {
   }
 
   List<WarrantyEntry> getWithOpenClaims() =>
-      _warranties.where((w) => w.openClaimCount > 0).toList();
+      items.where((w) => w.openClaimCount > 0).toList();
 
   // ── Alerts ──
 
@@ -162,24 +161,24 @@ class WarrantyTrackerService {
     final expired = getExpired();
     final expiringSoon = getExpiringSoon();
     final totalValue =
-        _warranties.fold<double>(0, (s, w) => s + w.purchasePrice);
+        items.fold<double>(0, (s, w) => s + w.purchasePrice);
     final protectedVal =
         active.fold<double>(0, (s, w) => s + w.purchasePrice);
 
     // Category breakdown
     final catMap = <WarrantyCategory, List<WarrantyEntry>>{};
-    for (final w in _warranties) {
+    for (final w in items) {
       catMap.putIfAbsent(w.category, () => []).add(w);
     }
     final breakdown = catMap.entries.map((e) {
-      final items = e.value;
-      final catActive = items.where((w) => w.isValid).length;
-      final catExpired = items.where((w) => w.isExpired).length;
+      final catItems = e.value;
+      final catActive = catItems.where((w) => w.isValid).length;
+      final catExpired = catItems.where((w) => w.isExpired).length;
       final catValue =
-          items.fold<double>(0, (s, w) => s + w.purchasePrice);
+          catItems.fold<double>(0, (s, w) => s + w.purchasePrice);
       return WarrantyCategoryBreakdown(
         category: e.key,
-        count: items.length,
+        count: catItems.length,
         activeCount: catActive,
         expiredCount: catExpired,
         totalPurchaseValue: catValue,
@@ -189,12 +188,12 @@ class WarrantyTrackerService {
       ..sort((a, b) => b.totalPurchaseValue.compareTo(a.totalPurchaseValue));
 
     final totalClaims =
-        _warranties.fold<int>(0, (s, w) => s + w.claimCount);
+        items.fold<int>(0, (s, w) => s + w.claimCount);
     final openClaims =
-        _warranties.fold<int>(0, (s, w) => s + w.openClaimCount);
+        items.fold<int>(0, (s, w) => s + w.openClaimCount);
 
     return WarrantySummary(
-      totalWarranties: _warranties.length,
+      totalWarranties: length,
       activeCount: active.length,
       expiredCount: expired.length,
       expiringSoonCount: expiringSoon.length,
@@ -212,9 +211,9 @@ class WarrantyTrackerService {
 
   /// Returns a coverage score (0-100) based on warranty status.
   double getCoverageScore() {
-    if (_warranties.isEmpty) return 0;
+    if (isEmpty) return 0;
     final totalValue =
-        _warranties.fold<double>(0, (s, w) => s + w.purchasePrice);
+        items.fold<double>(0, (s, w) => s + w.purchasePrice);
     if (totalValue <= 0) return 0;
     final protectedVal =
         getActive().fold<double>(0, (s, w) => s + w.purchasePrice);
@@ -226,19 +225,5 @@ class WarrantyTrackerService {
     final active = getActive();
     active.sort((a, b) => a.expirationDate.compareTo(b.expirationDate));
     return active;
-  }
-
-  // ── Persistence ──
-
-  String exportToJson() =>
-      jsonEncode(_warranties.map((w) => w.toJson()).toList());
-
-  void importFromJson(String jsonStr) {
-    final list = jsonDecode(jsonStr) as List<dynamic>;
-    _warranties.clear();
-    for (final item in list) {
-      _warranties.add(
-          WarrantyEntry.fromJson(item as Map<String, dynamic>));
-    }
   }
 }

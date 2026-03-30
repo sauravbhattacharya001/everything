@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../views/home/habit_tracker_screen.dart';
 import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
@@ -1153,12 +1152,6 @@ class FeatureRegistry {
       icon: Icons.blender,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorMixerScreen(),
-    ),
-    FeatureEntry(
-      label: 'Habit Tracker',
-      icon: Icons.track_changes,
-      category: FeatureCategory.tracking,
-      builder: (_) => const HabitTrackerScreen(),
     ),
   ];
 
