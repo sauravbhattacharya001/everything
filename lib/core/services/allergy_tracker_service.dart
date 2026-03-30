@@ -1,8 +1,11 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/allergy_entry.dart';
+import 'encrypted_preferences_service.dart';
 
-/// Service for managing allergy log entries with local persistence.
+/// Service for managing allergy log entries with encrypted local persistence.
+///
+/// Allergy data (allergens, reactions, severity) is sensitive health
+/// information and is encrypted at rest via [EncryptedPreferencesService].
 class AllergyTrackerService {
   static const String _storageKey = 'allergy_tracker_entries';
   List<AllergyEntry> _entries = [];
@@ -10,11 +13,11 @@ class AllergyTrackerService {
 
   List<AllergyEntry> get entries => List.unmodifiable(_entries);
 
-  /// Load entries from local storage.
+  /// Load entries from encrypted local storage.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    final data = await encPrefs.getString(_storageKey);
     if (data != null && data.isNotEmpty) {
       _entries = AllergyEntry.decodeList(data);
     }
@@ -23,8 +26,8 @@ class AllergyTrackerService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, AllergyEntry.encodeList(_entries));
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    await encPrefs.setString(_storageKey, AllergyEntry.encodeList(_entries));
   }
 
   /// Add a new allergy entry.

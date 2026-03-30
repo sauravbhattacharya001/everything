@@ -1,8 +1,12 @@
 import 'dart:math' show sqrt;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/sleep_entry.dart';
+import 'encrypted_preferences_service.dart';
 
 /// Service for managing sleep log entries with local persistence and analytics.
+///
+/// Sleep data is encrypted at rest via [EncryptedPreferencesService].
+/// Plaintext entries written before this migration are transparently
+/// re-encrypted on first read (handled by [EncryptedPreferencesService]).
 class SleepTrackerService {
   static const String _storageKey = 'sleep_tracker_entries';
   List<SleepEntry> _entries = [];
@@ -10,11 +14,11 @@ class SleepTrackerService {
 
   List<SleepEntry> get entries => List.unmodifiable(_entries);
 
-  /// Load entries from local storage.
+  /// Load entries from encrypted local storage.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    final data = await encPrefs.getString(_storageKey);
     if (data != null && data.isNotEmpty) {
       _entries = SleepEntry.decodeList(data);
     }
@@ -23,8 +27,8 @@ class SleepTrackerService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, SleepEntry.encodeList(_entries));
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    await encPrefs.setString(_storageKey, SleepEntry.encodeList(_entries));
   }
 
   /// Add a new sleep entry.

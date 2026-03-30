@@ -1,7 +1,12 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/symptom_entry.dart';
+import 'encrypted_preferences_service.dart';
 
-/// Service for managing symptom log entries with local persistence.
+/// Service for managing symptom log entries with encrypted local persistence.
+///
+/// Symptom data (body area, triggers, severity) is sensitive health
+/// information and is encrypted at rest via [EncryptedPreferencesService].
+/// Plaintext entries written before this migration are transparently
+/// re-encrypted on first read.
 class SymptomTrackerService {
   static const String _storageKey = 'symptom_tracker_entries';
   List<SymptomEntry> _entries = [];
@@ -9,11 +14,11 @@ class SymptomTrackerService {
 
   List<SymptomEntry> get entries => List.unmodifiable(_entries);
 
-  /// Load entries from local storage.
+  /// Load entries from encrypted local storage.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    final data = await encPrefs.getString(_storageKey);
     if (data != null && data.isNotEmpty) {
       _entries = SymptomEntry.decodeList(data);
     }
@@ -22,8 +27,8 @@ class SymptomTrackerService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, SymptomEntry.encodeList(_entries));
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    await encPrefs.setString(_storageKey, SymptomEntry.encodeList(_entries));
   }
 
   /// Add a new symptom entry.

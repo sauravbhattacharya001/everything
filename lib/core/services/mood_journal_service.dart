@@ -1,8 +1,11 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/mood_entry.dart';
 import '../utils/collection_utils.dart';
+import 'encrypted_preferences_service.dart';
 
-/// Service for managing mood journal entries with local persistence.
+/// Service for managing mood journal entries with encrypted local persistence.
+///
+/// Mood journal data (emotions, activities, notes) is sensitive mental
+/// health information and is encrypted at rest via [EncryptedPreferencesService].
 class MoodJournalService {
   static const String _storageKey = 'mood_journal_entries';
   List<MoodEntry> _entries = [];
@@ -10,11 +13,11 @@ class MoodJournalService {
 
   List<MoodEntry> get entries => List.unmodifiable(_entries);
 
-  /// Load entries from local storage.
+  /// Load entries from encrypted local storage.
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    final data = await encPrefs.getString(_storageKey);
     if (data != null && data.isNotEmpty) {
       _entries = MoodEntry.decodeList(data);
     }
@@ -23,8 +26,8 @@ class MoodJournalService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, MoodEntry.encodeList(_entries));
+    final encPrefs = await EncryptedPreferencesService.getInstance();
+    await encPrefs.setString(_storageKey, MoodEntry.encodeList(_entries));
   }
 
   /// Add a new mood entry.
