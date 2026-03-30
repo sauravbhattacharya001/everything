@@ -73,6 +73,7 @@ class DataBackupService {
     // Previously missing — added to ensure complete backup coverage
     'blood_pressure_entries': 'Blood Pressure',
     'blood_sugar_entries': 'Blood Sugar',
+    'spo2_entries': 'Blood Oxygen (SpO2)',
     'body_measurement_entries': 'Body Measurements',
     'fasting_tracker_entries': 'Fasting Tracker',
     'daily_journal_entries': 'Daily Journal',

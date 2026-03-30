@@ -72,6 +72,7 @@ import '../../views/home/project_planner_screen.dart';
 import '../../views/home/weekly_report_screen.dart';
 import '../../views/home/blood_pressure_screen.dart';
 import '../../views/home/blood_sugar_screen.dart';
+import '../../views/home/spo2_screen.dart';
 import '../../views/home/body_measurement_screen.dart';
 import '../../views/home/bookmark_screen.dart';
 import '../../views/home/time_capsule_screen.dart';
@@ -518,6 +519,12 @@ class FeatureRegistry {
       icon: Icons.water_drop,
       category: FeatureCategory.health,
       builder: (_) => const BloodSugarScreen(),
+    ),
+    FeatureEntry(
+      label: 'Blood Oxygen (SpO2)',
+      icon: Icons.air_rounded,
+      category: FeatureCategory.health,
+      builder: (_) => const SpO2Screen(),
     ),
     FeatureEntry(
       label: 'Breathing Exercise',

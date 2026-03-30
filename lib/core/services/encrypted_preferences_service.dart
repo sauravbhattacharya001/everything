@@ -224,6 +224,7 @@ class SensitiveKeys {
     'symptom_tracker_entries',
     'blood_pressure_entries',
     'blood_sugar_entries',
+    'spo2_entries',
     'body_measurement_entries',
     'sleep_tracker_entries',
     'water_tracker_entries',
