@@ -83,32 +83,103 @@ jobs:
     runs-on: ubuntu-latest
     needs: coverage
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Download coverage artifact
         uses: actions/download-artifact@v8
         with:
           name: lcov-report
           path: coverage
 
-      - name: Check minimum coverage threshold
-        run: |
-          if [ ! -f coverage/lcov.info ]; then
-            echo "::error::Coverage artifact not found"
-            exit 1
-          fi
-          LINES_FOUND=$(grep "^LF:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
-          LINES_COVERED=$(grep "^LH:" coverage/lcov.info | awk -F: '{sum+=$2} END {print sum}')
-          if [ "$LINES_FOUND" -eq 0 ]; then
-            echo "No coverage data found"
-            exit 0
-          fi
-          PCT=$(awk "BEGIN {printf \"%.1f\", ($LINES_COVERED/$LINES_FOUND)*100}")
-          echo "Coverage: ${PCT}% ($LINES_COVERED/$LINES_FOUND lines)"
-          # Fail if coverage drops below 30% (adjust threshold as project matures)
-          THRESHOLD=30
-          PASS=$(awk "BEGIN {print ($PCT >= $THRESHOLD) ? 1 : 0}")
-          if [ "$PASS" -eq 0 ]; then
-            echo "::error::Coverage ${PCT}% is below minimum threshold of ${THRESHOLD}%"
-            exit 1
-          fi
-          echo "✅ Coverage ${PCT}% meets minimum threshold of ${THRESHOLD}%"
+      - name: Analyze coverage and comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const lcov = fs.readFileSync('coverage/lcov.info', 'utf8');
+
+            // Parse LCOV into per-file coverage data
+            const files = [];
+            let current = null;
+            for (const line of lcov.split('\n')) {
+              if (line.startsWith('SF:')) {
+                current = { file: line.slice(3), found: 0, hit: 0 };
+              } else if (line.startsWith('LF:')) {
+                if (current) current.found = parseInt(line.slice(3));
+              } else if (line.startsWith('LH:')) {
+                if (current) current.hit = parseInt(line.slice(3));
+              } else if (line === 'end_of_record' && current) {
+                files.push(current);
+                current = null;
+              }
+            }
+
+            const totalFound = files.reduce((s, f) => s + f.found, 0);
+            const totalHit = files.reduce((s, f) => s + f.hit, 0);
+            const totalPct = totalFound > 0 ? ((totalHit / totalFound) * 100).toFixed(1) : '0.0';
+
+            // Find low-coverage files (< 50% and > 10 lines)
+            const lowCoverage = files
+              .filter(f => f.found > 10 && (f.hit / f.found) < 0.5)
+              .sort((a, b) => (a.hit / a.found) - (b.hit / b.found))
+              .slice(0, 10);
+
+            // Build comment
+            let body = `## 📊 Coverage Report\n\n`;
+            body += `| Metric | Value |\n|--------|-------|\n`;
+            body += `| **Overall Coverage** | **${totalPct}%** (${totalHit}/${totalFound} lines) |\n`;
+            body += `| **Files Analyzed** | ${files.length} |\n\n`;
+
+            const THRESHOLD = 30;
+            if (parseFloat(totalPct) >= THRESHOLD) {
+              body += `✅ Coverage **${totalPct}%** meets the ${THRESHOLD}% threshold.\n\n`;
+            } else {
+              body += `❌ Coverage **${totalPct}%** is below the ${THRESHOLD}% threshold.\n\n`;
+            }
+
+            if (lowCoverage.length > 0) {
+              body += `### ⚠️ Files Needing Coverage\n\n`;
+              body += `| File | Coverage | Lines |\n|------|----------|-------|\n`;
+              for (const f of lowCoverage) {
+                const pct = ((f.hit / f.found) * 100).toFixed(1);
+                const short = f.file.replace(/^.*lib\//, 'lib/');
+                body += `| \`${short}\` | ${pct}% | ${f.hit}/${f.found} |\n`;
+              }
+              body += '\n';
+            }
+
+            // Find and update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('📊 Coverage Report')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+            // Fail if below threshold
+            if (parseFloat(totalPct) < THRESHOLD) {
+              core.setFailed(`Coverage ${totalPct}% is below minimum threshold of ${THRESHOLD}%`);
+            }
