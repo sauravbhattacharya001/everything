@@ -113,6 +113,7 @@ import '../../views/home/invoice_screen.dart';
 import '../../views/home/chess_clock_screen.dart';
 import '../../views/home/coin_flip_screen.dart';
 import '../../views/home/rps_screen.dart';
+import '../../views/home/tic_tac_toe_screen.dart';
 import '../../views/home/grade_calculator_screen.dart';
 import '../../views/home/affirmation_screen.dart';
 import '../../views/home/vocabulary_builder_screen.dart';
@@ -1020,6 +1021,12 @@ class FeatureRegistry {
       icon: Icons.sports_esports,
       category: FeatureCategory.lifestyle,
       builder: (_) => const RpsScreen(),
+    ),
+    FeatureEntry(
+      label: 'Tic Tac Toe',
+      icon: Icons.grid_3x3,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const TicTacToeScreen(),
     ),
     FeatureEntry(
       label: 'Daily Affirmation',
