@@ -57,34 +57,104 @@ genhtml coverage/filtered.info -o coverage/html
     </div>
 
     <h2 id="structure">Test Structure</h2>
+    <p>The test suite contains <strong>110+ test files</strong> organized into five categories, covering services, models, state management, views, and utilities.</p>
     <div class="arch-diagram">
       <pre>
 test/
-├── core/
-│   ├── event_service_test.dart        # EventService coordination tests
-│   └── http_utils_test.dart           # SSRF protection, scheme validation
-├── models/
-│   ├── event_model_test.dart          # Serialization, equality, copyWith
-│   ├── event_model_tags_test.dart     # Tag handling in fromJson/toJson
-│   ├── event_model_recurrence_test.dart  # Recurrence generation
-│   ├── event_tag_test.dart            # Tag equality, preset validation
-│   ├── recurrence_rule_test.dart      # Frequency, intervals, month clamping
-│   └── user_model_test.dart           # User serialization
-└── state/
-    ├── event_bloc_test.dart           # BLoC state transitions
-    ├── event_provider_test.dart       # O(1) index, CRUD operations
-    └── user_provider_test.dart        # User session management
+├── core/                              # Core service tests (35 files)
+│   ├── services/                      # Nested service tests
+│   │   ├── event_sharing_service_test.dart
+│   │   ├── free_slot_finder_test.dart
+│   │   └── meal_tracker_service_test.dart
+│   ├── achievement_service_test.dart
+│   ├── agenda_digest_service_test.dart
+│   ├── conflict_detector_test.dart
+│   ├── correlation_analyzer_service_test.dart
+│   ├── daily_review_service_test.dart
+│   ├── daily_timeline_service_test.dart
+│   ├── date_utils_test.dart
+│   ├── decision_journal_service_test.dart
+│   ├── dependency_tracker_test.dart
+│   ├── eisenhower_matrix_service_test.dart
+│   ├── energy_tracker_service_test.dart
+│   ├── event_deduplication_service_test.dart
+│   ├── event_pattern_service_test.dart
+│   ├── event_search_service_test.dart
+│   ├── event_service_test.dart
+│   ├── focus_time_service_test.dart
+│   ├── free_slot_finder_test.dart
+│   ├── gratitude_journal_service_test.dart
+│   ├── heatmap_service_test.dart
+│   ├── ics_export_service_test.dart
+│   ├── meditation_tracker_service_test.dart
+│   ├── productivity_score_service_test.dart
+│   ├── reading_list_service_test.dart
+│   ├── routine_builder_service_test.dart
+│   ├── screen_time_tracker_service_test.dart
+│   ├── snooze_service_test.dart
+│   ├── streak_tracker_test.dart
+│   ├── template_service_test.dart
+│   ├── time_audit_service_test.dart
+│   ├── time_budget_service_test.dart
+│   ├── travel_time_estimator_test.dart
+│   ├── water_tracker_service_test.dart
+│   ├── weekly_planner_service_test.dart
+│   ├── weekly_report_service_test.dart
+│   └── workout_tracker_service_test.dart
+├── models/                            # Model tests (16 files)
+│   ├── datetime_corruption_test.dart
+│   ├── event_attachment_test.dart
+│   ├── event_checklist_test.dart
+│   ├── event_location_test.dart
+│   ├── event_model_recurrence_test.dart
+│   ├── event_model_tags_test.dart
+│   ├── event_model_test.dart
+│   ├── event_tag_test.dart
+│   ├── event_template_test.dart
+│   ├── goal_test.dart
+│   ├── mood_entry_test.dart
+│   ├── recurrence_rule_test.dart
+│   ├── reminder_settings_test.dart
+│   ├── sleep_entry_test.dart
+│   ├── sleep_tracker_test.dart
+│   └── user_model_test.dart
+├── state/                             # State management tests (3 files)
+│   ├── event_bloc_test.dart
+│   ├── event_provider_test.dart
+│   └── user_provider_test.dart
+├── views/                             # Widget tests (7 files)
+│   ├── home/
+│   │   ├── parking_spot_screen_test.dart
+│   │   └── weekly_planner_screen_test.dart
+│   ├── calendar_screen_test.dart
+│   ├── countdown_screen_test.dart
+│   ├── focus_time_screen_test.dart
+│   ├── routine_builder_screen_test.dart
+│   └── screen_time_tracker_screen_test.dart
+└── *.dart                             # Feature service tests (50+ files)
+    ├── blood_sugar_test.dart
+    ├── budget_planner_test.dart
+    ├── habit_tracker_test.dart
+    ├── kanban_board_service_test.dart
+    ├── medication_tracker_test.dart
+    ├── pomodoro_service_test.dart
+    └── ... (and 44 more)
       </pre>
     </div>
 
     <h2 id="test-categories">Test Categories</h2>
 
-    <h3>Model Tests</h3>
+    <h3>Model Tests <span class="badge">16 files</span></h3>
     <p>Verify serialization round-trips, value equality, and domain logic:</p>
     <ul>
       <li><strong>EventModel</strong> — <code>fromJson</code>/<code>toJson</code> round-trip, <code>copyWith</code> (including <code>clearRecurrence</code>), <code>==</code> and <code>hashCode</code>, default values</li>
       <li><strong>EventTag</strong> — Case-insensitive equality, color palette bounds clamping, preset validation</li>
       <li><strong>RecurrenceRule</strong> — Occurrence generation for all frequencies, month clamping (Jan 31 + 1mo = Feb 28), end date cutoff, <code>summary</code> formatting, JSON string round-trip</li>
+      <li><strong>EventAttachment / EventChecklist / EventLocation</strong> — Serialization and equality for event sub-models</li>
+      <li><strong>EventTemplate</strong> — Template creation, preset defaults</li>
+      <li><strong>ReminderSettings</strong> — Notification scheduling logic</li>
+      <li><strong>SleepEntry / MoodEntry / Goal</strong> — Domain model serialization and validation</li>
+      <li><strong>DatetimeCorruption</strong> — Edge cases: timezone transitions, DST boundaries, epoch edge values</li>
     </ul>
 
     <div class="code-block">
@@ -101,18 +171,44 @@ test/
 });
     </div>
 
-    <h3>Service Tests</h3>
-    <p>Verify coordination between state and persistence:</p>
+    <h3>Core Service Tests <span class="badge">35 files</span></h3>
+    <p>Verify coordination between state and persistence across the core service layer:</p>
     <ul>
       <li><strong>EventService</strong> — add/update/delete coordination, load-once guard (doesn't overwrite non-empty provider), persistence error handling (logged, not thrown)</li>
-      <li><strong>HttpUtils</strong> — scheme blocking (<code>http</code>, <code>file</code>, <code>ftp</code>), trusted host validation, timeout enforcement</li>
+      <li><strong>Calendar &amp; Scheduling</strong> — ConflictDetector, FreeSlotFinder, DailyTimeline, SnoozeService, TravelTimeEstimator, WeeklyPlanner</li>
+      <li><strong>Analytics &amp; Insights</strong> — CorrelationAnalyzer, EventPattern, EventSearch, EventDeduplication, HeatmapService, ProductivityScore, StreakTracker</li>
+      <li><strong>Wellness</strong> — MeditationTracker, WaterTracker, WorkoutTracker, EnergyTracker, ScreenTimeTracker</li>
+      <li><strong>Journaling &amp; Review</strong> — DailyReview, DecisionJournal, GratitudeJournal, WeeklyReport, TimeAudit, TimeBudget</li>
+      <li><strong>Import/Export</strong> — IcsExport, EventSharing, TemplateService</li>
+      <li><strong>Utilities</strong> — DateUtils (month arithmetic, week boundaries), AchievementService, DependencyTracker</li>
     </ul>
 
-    <h3>State Tests</h3>
+    <h3>Feature Service Tests <span class="badge">50+ files</span></h3>
+    <p>Each of the 100+ features has service-level tests covering CRUD operations, business rules, and edge cases:</p>
+    <ul>
+      <li><strong>Finance</strong> — BudgetPlanner, DebtPayoff, ExpenseTracker, SavingsGoal, NetWorthTracker, SubscriptionTracker</li>
+      <li><strong>Health</strong> — BloodSugar, MedicationTracker, SleepTracker, MoodEntry, EnergyTracker</li>
+      <li><strong>Productivity</strong> — PomodoroService, KanbanBoard, HabitTracker, GoalTracker, TimeTracker, SkillTracker</li>
+      <li><strong>Lifestyle</strong> — RecipeBook, GroceryList, PlantCare, PetCareTracker, HomeInventory, VehicleMaintenance</li>
+      <li><strong>Misc</strong> — CommandPalette, RandomDecision, QuickCapture, LoyaltyTracker, WarrantyTracker, Watchlist</li>
+    </ul>
+
+    <h3>State Tests <span class="badge">3 files</span></h3>
     <p>Verify reactive state management behavior:</p>
     <ul>
       <li><strong>EventProvider</strong> — O(1) <code>getEventById</code>, <code>removeEvent</code> index rebuild, <code>UnmodifiableListView</code> enforcement, <code>notifyListeners</code> calls</li>
       <li><strong>EventBloc</strong> — State machine transitions (<code>EventInitial</code> → <code>EventLoaded</code>), no-op behavior in wrong state, list immutability between emissions</li>
+      <li><strong>UserProvider</strong> — User session lifecycle, authentication state management</li>
+    </ul>
+
+    <h3>View Tests <span class="badge">7 files</span></h3>
+    <p>Widget-level integration tests for key screens:</p>
+    <ul>
+      <li><strong>CalendarScreen</strong> — Month navigation, event display, interaction</li>
+      <li><strong>FocusTimeScreen</strong> — Timer UI, session start/stop</li>
+      <li><strong>WeeklyPlannerScreen</strong> — Week layout, drag-and-drop</li>
+      <li><strong>RoutineBuilderScreen</strong> — Step creation, reordering</li>
+      <li><strong>CountdownScreen, ParkingSpotScreen, ScreenTimeTrackerScreen</strong></li>
     </ul>
 
     <h2 id="coverage">Coverage</h2>
