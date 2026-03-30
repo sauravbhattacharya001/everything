@@ -86,6 +86,7 @@ import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
+import '../../views/home/pace_calculator_screen.dart';
 import '../../views/home/salary_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/mortgage_calculator_screen.dart';
@@ -501,6 +502,12 @@ class FeatureRegistry {
       icon: Icons.accessibility_new,
       category: FeatureCategory.health,
       builder: (_) => const BmiCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Pace Calculator',
+      icon: Icons.speed,
+      category: FeatureCategory.health,
+      builder: (_) => const PaceCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Body Measurements',
