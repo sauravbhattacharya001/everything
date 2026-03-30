@@ -3,6 +3,9 @@ import '../../core/services/regex_tester_service.dart';
 
 /// Interactive regex tester with live match highlighting,
 /// capture groups display, and a library of common patterns.
+///
+/// Regex evaluation runs in a background [Isolate] with a timeout
+/// to protect against ReDoS (catastrophic backtracking).
 class RegexTesterScreen extends StatefulWidget {
   const RegexTesterScreen({super.key});
 
@@ -18,6 +21,10 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
   bool _dotAll = false;
   bool _unicode = false;
   RegexTestResult? _result;
+  bool _isEvaluating = false;
+
+  /// Monotonically increasing request counter to discard stale results.
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -33,8 +40,11 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
     super.dispose();
   }
 
-  void _onChanged() {
-    final result = RegexTesterService.test(
+  void _onChanged() async {
+    final id = ++_requestId;
+    setState(() => _isEvaluating = true);
+
+    final result = await RegexTesterService.test(
       pattern: _patternController.text,
       input: _inputController.text,
       caseSensitive: _caseSensitive,
@@ -42,7 +52,14 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
       dotAll: _dotAll,
       unicode: _unicode,
     );
-    setState(() => _result = result);
+
+    // Only apply if this is still the latest request.
+    if (id == _requestId && mounted) {
+      setState(() {
+        _result = result;
+        _isEvaluating = false;
+      });
+    }
   }
 
   void _applyCommonPattern(String pattern) {
@@ -172,6 +189,13 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Loading indicator
+          if (_isEvaluating)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: LinearProgressIndicator(),
+            ),
+
           // Results summary
           if (result != null && result.error == null) ...[
             Card(
@@ -197,6 +221,14 @@ class _RegexTesterScreenState extends State<RegexTesterScreen> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
+                      ),
+                    ],
+                    if (result.truncated) ...[
+                      const SizedBox(width: 16),
+                      Tooltip(
+                        message: 'Results capped at ${RegexTesterService.maxMatches} matches',
+                        child: Icon(Icons.warning_amber,
+                            color: Colors.orange, size: 20),
                       ),
                     ],
                   ],
