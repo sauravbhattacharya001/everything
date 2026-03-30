@@ -594,7 +594,16 @@ class WorkoutTrackerService {
 
   // ── Tips ──
 
-  List<String> generateTips() {
+  /// Generates training tips from pre-computed analytics.
+  ///
+  /// When called from [generateReport], pass the already-computed
+  /// [balance], [streak], and duration stats to avoid re-iterating
+  /// [_workouts] three extra times.
+  List<String> generateTips({
+    MuscleBalance? balance,
+    WorkoutStreak? streak,
+    double? avgDurationMinutes,
+  }) {
     final tips = <String>[];
 
     if (_workouts.isEmpty) {
@@ -602,39 +611,35 @@ class WorkoutTrackerService {
       return tips;
     }
 
-    final balance = analyzeMuscleBalance();
-    final streak = getStreak();
+    final b = balance ?? analyzeMuscleBalance();
+    final s = streak ?? getStreak();
 
-    if (balance.neglectedGroups.isNotEmpty) {
-      final names = balance.neglectedGroups.take(3).map((g) => g.label).join(', ');
+    if (b.neglectedGroups.isNotEmpty) {
+      final names = b.neglectedGroups.take(3).map((g) => g.label).join(', ');
       tips.add('Consider adding exercises for: $names');
     }
 
-    if (balance.upperLowerRatio > 2.0) {
-      tips.add('Your upper/lower volume ratio is ${balance.upperLowerRatio.toStringAsFixed(1)}:1. '
+    if (b.upperLowerRatio > 2.0) {
+      tips.add('Your upper/lower volume ratio is ${b.upperLowerRatio.toStringAsFixed(1)}:1. '
           'Add more leg exercises for balance.');
     }
 
-    if (balance.pushPullRatio > 1.5) {
-      tips.add('Push volume exceeds pull by ${balance.pushPullRatio.toStringAsFixed(1)}x. '
+    if (b.pushPullRatio > 1.5) {
+      tips.add('Push volume exceeds pull by ${b.pushPullRatio.toStringAsFixed(1)}x. '
           'Add more rows and pull-ups to balance.');
-    } else if (balance.pushPullRatio > 0 && balance.pushPullRatio < 0.7) {
+    } else if (b.pushPullRatio > 0 && b.pushPullRatio < 0.7) {
       tips.add('Pull volume exceeds push. Consider adding more pressing movements.');
     }
 
-    if (streak.currentStreak >= 4) {
-      tips.add('Great consistency! ${streak.currentStreak}-week streak going strong.');
-    } else if (streak.currentStreak == 0 && _workouts.isNotEmpty) {
+    if (s.currentStreak >= 4) {
+      tips.add('Great consistency! ${s.currentStreak}-week streak going strong.');
+    } else if (s.currentStreak == 0 && _workouts.isNotEmpty) {
       tips.add('You missed last week. Get back on track!');
     }
 
-    final avgDuration = _workouts
-        .where((w) => w.durationMinutes != null)
-        .map((w) => w.durationMinutes!)
-        .fold<int>(0, (sum, d) => sum + d);
-    final durationCount = _workouts.where((w) => w.durationMinutes != null).length;
-    if (durationCount > 0) {
-      final avg = avgDuration / durationCount;
+    // Use caller-supplied average if available; otherwise compute it.
+    final avg = avgDurationMinutes ?? _computeAvgDuration();
+    if (avg > 0) {
       if (avg > 90) {
         tips.add('Average workout is ${avg.toStringAsFixed(0)} min. '
             'Consider keeping sessions under 75 min for optimal recovery.');
@@ -645,6 +650,19 @@ class WorkoutTrackerService {
     }
 
     return tips;
+  }
+
+  /// Average workout duration in minutes, or 0 if no durations logged.
+  double _computeAvgDuration() {
+    var total = 0;
+    var count = 0;
+    for (final w in _workouts) {
+      if (w.durationMinutes != null) {
+        total += w.durationMinutes!;
+        count++;
+      }
+    }
+    return count > 0 ? total / count : 0;
   }
 
   // ── Full Report ──
@@ -674,24 +692,34 @@ class WorkoutTrackerService {
       }
     }
 
+    final avgDur = durationCount > 0 ? totalMinutes / durationCount : 0.0;
+
+    // Compute shared analytics once, then pass to generateTips()
+    // to avoid re-iterating _workouts 3 extra times.
+    final streak = getStreak();
+    final muscleBalance = analyzeMuscleBalance();
+
     return WorkoutReport(
       totalWorkouts: _workouts.length,
       totalVolume: totalVolume,
       totalSets: totalSets,
       totalReps: totalReps,
       totalMinutes: totalMinutes,
-      avgWorkoutMinutes:
-          durationCount > 0 ? totalMinutes / durationCount : 0,
+      avgWorkoutMinutes: avgDur,
       avgVolume: _workouts.isNotEmpty
           ? totalVolume / _workouts.length
           : 0,
       avgRpe: rpeCount > 0 ? rpeSum / rpeCount : 0,
-      streak: getStreak(),
+      streak: streak,
       personalRecords: getPersonalRecords(),
-      muscleBalance: analyzeMuscleBalance(),
+      muscleBalance: muscleBalance,
       volumeTrend: getVolumeTrend(),
       exerciseFrequency: getExerciseFrequency(),
-      tips: generateTips(),
+      tips: generateTips(
+        balance: muscleBalance,
+        streak: streak,
+        avgDurationMinutes: avgDur,
+      ),
     );
   }
 
