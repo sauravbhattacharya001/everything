@@ -153,6 +153,7 @@ import '../../views/home/game_2048_screen.dart';
 import '../../views/home/simon_says_screen.dart';
 import '../../views/home/lorem_ipsum_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
+import '../../views/home/timezone_converter_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -922,6 +923,12 @@ class FeatureRegistry {
       icon: Icons.public,
       category: FeatureCategory.lifestyle,
       builder: (_) => const WorldClockScreen(),
+    ),
+    FeatureEntry(
+      label: 'Timezone Converter',
+      icon: Icons.swap_horiz,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const TimezoneConverterScreen(),
     ),
     FeatureEntry(
       label: 'Sun & Moon',
