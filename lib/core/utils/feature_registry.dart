@@ -145,6 +145,7 @@ import '../../views/home/wheel_of_life_screen.dart';
 import '../../views/home/weight_tracker_screen.dart';
 import '../../views/home/game_of_life_screen.dart';
 import '../../views/home/sudoku_screen.dart';
+import '../../views/home/game_2048_screen.dart';
 import '../../views/home/lorem_ipsum_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
 
@@ -1084,6 +1085,12 @@ class FeatureRegistry {
       icon: Icons.grid_on,
       category: FeatureCategory.lifestyle,
       builder: (_) => const SudokuScreen(),
+    ),
+    FeatureEntry(
+      label: '2048',
+      icon: Icons.apps,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const Game2048Screen(),
     ),
     FeatureEntry(
       label: 'Meeting Cost Calculator',
