@@ -198,29 +198,20 @@ class DataBackupService {
     int skipped = 0;
     final serviceResults = <String, String>{};
 
+    // Phase 1: Filter and validate entries (sync — no I/O).
+    final validEntries = <String, String>{};
     for (final entry in services.entries) {
       final key = entry.key;
       final value = entry.value as String?;
       if (value == null) continue;
 
-      // Validate it's a known key
       if (!_storageKeys.containsKey(key)) {
         serviceResults[key] = 'unknown_key';
         skipped++;
         continue;
       }
 
-      // Check merge strategy
-      if (strategy == BackupStrategy.merge) {
-        final existing = await _readKey(key);
-        if (existing != null && existing.isNotEmpty) {
-          serviceResults[key] = 'skipped_existing';
-          skipped++;
-          continue;
-        }
-      }
-
-      // Validate JSON is parseable
+      // Validate JSON is parseable before any I/O.
       try {
         jsonDecode(value);
       } catch (_) {
@@ -229,10 +220,35 @@ class DataBackupService {
         continue;
       }
 
-      // Write through the appropriate storage backend
-      await _writeKey(key, value);
-      serviceResults[key] = 'restored';
-      restored++;
+      validEntries[key] = value;
+    }
+
+    // Phase 2 (merge only): Batch-read all existing values concurrently
+    // to decide which keys to skip. Previously each key was read
+    // sequentially inside the loop, making import O(n × latency).
+    if (strategy == BackupStrategy.merge && validEntries.isNotEmpty) {
+      final keys = validEntries.keys.toList();
+      final existing = await Future.wait(keys.map(_readKey));
+      for (var i = 0; i < keys.length; i++) {
+        if (existing[i] != null && existing[i]!.isNotEmpty) {
+          serviceResults[keys[i]] = 'skipped_existing';
+          skipped++;
+          validEntries.remove(keys[i]);
+        }
+      }
+    }
+
+    // Phase 3: Write all remaining entries concurrently.
+    // Previously writes were sequential (O(n × latency)); batching
+    // reduces total time to O(latency) — same approach as exportAll.
+    if (validEntries.isNotEmpty) {
+      await Future.wait(
+        validEntries.entries.map((e) => _writeKey(e.key, e.value)),
+      );
+      for (final key in validEntries.keys) {
+        serviceResults[key] = 'restored';
+        restored++;
+      }
     }
 
     return BackupResult(
