@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/services/reading_list_service.dart';
 import '../../core/services/screen_persistence.dart';
 import '../../models/book.dart';
+import '../widgets/stat_card.dart';
+import '../widgets/section_card.dart';
 
 /// Reading List screen — track books, log reading sessions, view stats,
 /// and manage a reading challenge.
@@ -407,35 +409,32 @@ class _ReadingListScreenState extends State<ReadingListScreen>
           // Overview cards
           Row(
             children: [
-              _statCard('📚', 'Total', '${report.totalBooks}', theme),
+              StatCard(emoji: '📚', label: 'Total', value: '${report.totalBooks}'),
               const SizedBox(width: 8),
-              _statCard('✅', 'Finished', '${report.booksFinished}', theme),
+              StatCard(emoji: '✅', label: 'Finished', value: '${report.booksFinished}'),
               const SizedBox(width: 8),
-              _statCard('📖', 'Reading', '${report.booksReading}', theme),
+              StatCard(emoji: '📖', label: 'Reading', value: '${report.booksReading}'),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _statCard('📄', 'Pages',
-                  '${report.totalPagesRead}', theme),
+              StatCard(emoji: '📄', label: 'Pages', value: '${report.totalPagesRead}'),
               const SizedBox(width: 8),
-              _statCard('⏱️', 'Hours',
-                  report.totalHoursRead.toStringAsFixed(1), theme),
+              StatCard(emoji: '⏱️', label: 'Hours', value: report.totalHoursRead.toStringAsFixed(1)),
               const SizedBox(width: 8),
-              _statCard(
-                  '⭐',
-                  'Avg Rating',
-                  report.averageRating > 0
-                      ? report.averageRating.toStringAsFixed(1)
-                      : '—',
-                  theme),
+              StatCard(
+                emoji: '⭐',
+                label: 'Avg Rating',
+                value: report.averageRating > 0
+                    ? report.averageRating.toStringAsFixed(1)
+                    : '—',
+              ),
             ],
           ),
           const SizedBox(height: 16),
           // Streak
-          _sectionCard(
-            theme,
+          SectionCard(
             '🔥 Reading Streak',
             Column(
               children: [
@@ -454,8 +453,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
           const SizedBox(height: 16),
           // Genre breakdown
           if (report.genreBreakdown.isNotEmpty) ...[
-            _sectionCard(
-              theme,
+            SectionCard(
               '📊 Genre Breakdown',
               Column(
                 children: report.genreBreakdown.take(6).map((g) {
@@ -498,8 +496,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
           ],
           // Top authors
           if (report.topAuthors.isNotEmpty)
-            _sectionCard(
-              theme,
+            SectionCard(
               '✍️ Top Authors',
               Column(
                 children: report.topAuthors.take(5).map((a) {
@@ -529,27 +526,6 @@ class _ReadingListScreenState extends State<ReadingListScreen>
     );
   }
 
-  Widget _statCard(
-      String emoji, String label, String value, ThemeData theme) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Column(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
-              const SizedBox(height: 4),
-              Text(value,
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              Text(label, style: theme.textTheme.labelSmall),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _streakStat(
       String label, String value, String unit, ThemeData theme) {
     return Column(
@@ -562,24 +538,6 @@ class _ReadingListScreenState extends State<ReadingListScreen>
             style: theme.textTheme.labelSmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],
-    );
-  }
-
-  Widget _sectionCard(ThemeData theme, String title, Widget child) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
     );
   }
 
@@ -1004,8 +962,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
                 // Progress
                 if (book.status == ReadingStatus.reading ||
                     book.status == ReadingStatus.finished) ...[
-                  _sectionCard(
-                    theme,
+                  SectionCard(
                     '📊 Progress',
                     Column(
                       children: [
@@ -1050,8 +1007,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
                 ],
                 // Sessions
                 if (book.sessions.isNotEmpty) ...[
-                  _sectionCard(
-                    theme,
+                  SectionCard(
                     '📝 Reading Sessions (${book.sessions.length})',
                     Column(
                       children: book.sessions.reversed.take(10).map((s) {
@@ -1097,8 +1053,7 @@ class _ReadingListScreenState extends State<ReadingListScreen>
                 // Review
                 if (book.review != null) ...[
                   const SizedBox(height: 12),
-                  _sectionCard(
-                    theme,
+                  SectionCard(
                     '💬 Review',
                     Text(book.review!, style: theme.textTheme.bodyMedium),
                   ),
