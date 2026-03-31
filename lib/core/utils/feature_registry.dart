@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../views/home/color_mixer_screen.dart';
+import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
 import '../../views/home/bucket_list_screen.dart';
@@ -1166,6 +1167,12 @@ class FeatureRegistry {
       icon: Icons.blender,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorMixerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Text Statistics',
+      icon: Icons.analytics_outlined,
+      category: FeatureCategory.productivity,
+      builder: (_) => const TextStatsScreen(),
     ),
   ];
 
