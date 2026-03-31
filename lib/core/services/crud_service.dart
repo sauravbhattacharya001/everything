@@ -26,6 +26,12 @@ import 'dart:convert';
 abstract class CrudService<T> {
   final List<T> _items = [];
 
+  /// Maximum number of items allowed per service instance.
+  ///
+  /// Prevents memory exhaustion from maliciously large imports or
+  /// runaway additions. Subclasses can override for different limits.
+  int get maxItems => 50000;
+
   /// Unmodifiable view of all items.
   List<T> get items => List.unmodifiable(_items);
 
@@ -107,9 +113,18 @@ abstract class CrudService<T> {
       jsonEncode(_items.map((item) => toJson(item)).toList());
 
   /// Import items from a JSON string, replacing all current items.
+  ///
+  /// Throws [StateError] if the decoded list exceeds [maxItems] to
+  /// prevent memory exhaustion from untrusted input.
   void importFromJson(String jsonStr) {
-    _items.clear();
     final list = jsonDecode(jsonStr) as List;
+    if (list.length > maxItems) {
+      throw StateError(
+        'Import contains ${list.length} items which exceeds the '
+        'maximum of $maxItems. Reduce the data set and try again.',
+      );
+    }
+    _items.clear();
     _items.addAll(
       list.map((e) => fromJson(e as Map<String, dynamic>)),
     );
@@ -117,8 +132,16 @@ abstract class CrudService<T> {
 
   /// Import items from a JSON string, appending to existing items.
   /// Returns the number of items imported.
+  ///
+  /// Throws [StateError] if the combined total would exceed [maxItems].
   int importAndAppend(String jsonStr) {
     final list = jsonDecode(jsonStr) as List;
+    if (_items.length + list.length > maxItems) {
+      throw StateError(
+        'Import would result in ${_items.length + list.length} items '
+        'which exceeds the maximum of $maxItems.',
+      );
+    }
     final newItems = list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     _items.addAll(newItems);
     return newItems.length;

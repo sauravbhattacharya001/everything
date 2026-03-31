@@ -191,8 +191,15 @@ class EncryptedBackupService {
         enc.Encrypted(ciphertext),
         iv: enc.IV(iv),
       );
-    } catch (e) {
-      throw EncryptedBackupException('Decryption failed: ${e.toString()}');
+    } catch (_) {
+      // Do NOT expose the raw exception message — it may reveal
+      // padding-specific errors or other internal details that help
+      // an attacker distinguish failure modes (e.g., padding oracle).
+      // The HMAC was already verified above, so a decryption failure
+      // here indicates data corruption rather than a wrong passphrase.
+      throw EncryptedBackupException(
+        'Decryption failed — the backup data may be corrupted.',
+      );
     }
 
     // 4. Import via the underlying service.
