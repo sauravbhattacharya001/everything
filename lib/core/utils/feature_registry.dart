@@ -78,6 +78,7 @@ import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
 import '../../views/home/random_decision_screen.dart';
+import '../../views/home/sleep_calculator_screen.dart';
 import '../../views/home/unit_converter_screen.dart';
 import '../../views/home/base_converter_screen.dart';
 import '../../views/home/vehicle_maintenance_screen.dart';
@@ -400,6 +401,12 @@ class FeatureRegistry {
       icon: Icons.bedtime,
       category: FeatureCategory.health,
       builder: (_) => const SleepTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Sleep Calculator',
+      icon: Icons.nightlight_round,
+      category: FeatureCategory.health,
+      builder: (_) => const SleepCalculatorScreen(),
     ),
     FeatureEntry(
       label: 'Symptom Tracker',
