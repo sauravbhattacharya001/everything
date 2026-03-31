@@ -78,6 +78,7 @@ import '../../views/home/bookmark_screen.dart';
 import '../../views/home/time_capsule_screen.dart';
 import '../../views/home/wishlist_screen.dart';
 import '../../views/home/workout_tracker_screen.dart';
+import '../../views/home/daily_standup_screen.dart';
 import '../../views/home/random_decision_screen.dart';
 import '../../views/home/sleep_calculator_screen.dart';
 import '../../views/home/unit_converter_screen.dart';
@@ -261,6 +262,12 @@ class FeatureRegistry {
       icon: Icons.radar,
       category: FeatureCategory.planning,
       builder: (_) => const WheelOfLifeScreen(),
+    ),
+    FeatureEntry(
+      label: 'Daily Standup',
+      icon: Icons.record_voice_over,
+      category: FeatureCategory.planning,
+      builder: (_) => const DailyStandupScreen(),
     ),
 
     // ── Productivity ──
