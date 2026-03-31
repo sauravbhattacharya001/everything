@@ -259,6 +259,20 @@ class SensitiveKeys {
     'habit_tracker_data',
     'goal_tracker_entries',
     'time_tracker_entries',
+
+    // Health — previously missing from encryption
+    'caffeine_tracker_entries',
+    'weight_tracker_entries',
+    'pet_care_tracker_entries', // pet medical records
+
+    // Behavioral patterns — reveal daily routines and habits
+    'screen_time_tracker_data',
+    'routine_builder_data',
+    'skill_tracker_entries',
+    'chore_tracker_entries',
+
+    // Freeform text that may contain sensitive content
+    'quick_capture_data',
   };
 
   /// Returns true if [key] contains sensitive personal data that
