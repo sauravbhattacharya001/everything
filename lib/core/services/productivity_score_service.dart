@@ -432,6 +432,96 @@ class ProductivityScoreService {
     return min(ratio * 100, 100);
   }
 
+  // ── Batch Multi-Day Scoring ──────────────────────────────────
+
+  /// Compute daily scores for multiple dates efficiently.
+  ///
+  /// Pre-indexes events and sleep entries by date key (O(n) once) so
+  /// each day's scoring is O(1) lookup instead of O(n) linear scan.
+  /// For a 30-day period with 1000 events this reduces from O(30×1000)
+  /// to O(1000 + 30).
+  List<DailyProductivityScore> computeMultiDayScores({
+    required List<DateTime> dates,
+    required List<EventModel> events,
+    required List<Habit> habits,
+    required Map<String, List<DateTime>> habitCompletions,
+    required List<Goal> goals,
+    required List<SleepEntry> sleepEntries,
+    required List<MoodEntry> moodEntries,
+    required Map<DateTime, int> focusMinutesByDay,
+  }) {
+    // Pre-index for O(1) per-day lookups
+    final eventIndex = _indexEventsByDay(events);
+    final sleepIndex = _indexSleepByDay(sleepEntries);
+
+    // Pre-index mood entries by day
+    final moodIndex = <int, List<MoodEntry>>{};
+    for (final m in moodEntries) {
+      final key = m.timestamp.year * 10000 + m.timestamp.month * 100 + m.timestamp.day;
+      moodIndex.putIfAbsent(key, () => []).add(m);
+    }
+
+    return dates.map((date) {
+      final key = date.year * 10000 + date.month * 100 + date.day;
+      final dayEvents = eventIndex[key] ?? [];
+      final daySleep = sleepIndex[key];
+      final dayMoods = moodIndex[key] ?? [];
+
+      final eventScore = scoreEvents(dayEvents, date);
+      final habitScore = scoreHabits(habits, habitCompletions, date);
+      final goalScore = scoreGoals(goals, date);
+
+      // Use indexed sleep/mood directly instead of linear scans
+      double sleepScore = 0;
+      if (daySleep != null) {
+        sleepScore += (daySleep.quality.value / 5.0) * 60;
+        final hours = daySleep.durationHours;
+        if (hours >= 7 && hours <= 9) {
+          sleepScore += 40;
+        } else if (hours >= 6 && hours < 7) {
+          sleepScore += 25;
+        } else if (hours > 9 && hours <= 10) {
+          sleepScore += 30;
+        } else if (hours >= 5 && hours < 6) {
+          sleepScore += 15;
+        } else {
+          sleepScore += 5;
+        }
+        sleepScore = min(sleepScore, 100);
+      }
+
+      double moodScore = 0;
+      if (dayMoods.isNotEmpty) {
+        final avgMood = dayMoods.map((e) => e.mood.value).reduce((a, b) => a + b) / dayMoods.length;
+        moodScore = (avgMood / 5.0) * 100;
+      }
+
+      final focusMins = focusMinutesByDay[date] ?? 0;
+      final focusScore = scoreFocus(focusMins);
+
+      final dimensions = [
+        DimensionScore(name: 'Events', score: _round(eventScore), weight: weights.events, contribution: _round(eventScore * weights.events), insight: _eventInsight(eventScore)),
+        DimensionScore(name: 'Habits', score: _round(habitScore), weight: weights.habits, contribution: _round(habitScore * weights.habits), insight: _habitInsight(habitScore)),
+        DimensionScore(name: 'Goals', score: _round(goalScore), weight: weights.goals, contribution: _round(goalScore * weights.goals), insight: _goalInsight(goalScore)),
+        DimensionScore(name: 'Sleep', score: _round(sleepScore), weight: weights.sleep, contribution: _round(sleepScore * weights.sleep), insight: _sleepInsight(sleepScore)),
+        DimensionScore(name: 'Mood', score: _round(moodScore), weight: weights.mood, contribution: _round(moodScore * weights.mood), insight: _moodInsight(moodScore)),
+        DimensionScore(name: 'Focus', score: _round(focusScore), weight: weights.focus, contribution: _round(focusScore * weights.focus), insight: _focusInsight(focusScore, focusMins)),
+      ];
+
+      final overall = dimensions.fold<double>(0, (sum, d) => sum + d.contribution);
+      final roundedOverall = _round(overall);
+
+      return DailyProductivityScore(
+        date: date,
+        overallScore: roundedOverall,
+        grade: _gradeFromScore(roundedOverall),
+        dimensions: dimensions,
+        strengths: dimensions.where((d) => d.score >= 75 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
+        improvements: dimensions.where((d) => d.score < 50 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
+      );
+    }).toList();
+  }
+
   // ── Daily Composite Score ──────────────────────────────────
 
   /// Compute a composite daily productivity score (0-100).
@@ -544,29 +634,40 @@ class ProductivityScoreService {
     final sorted = List<DailyProductivityScore>.from(scores)
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    final avg = sorted.map((s) => s.overallScore).reduce((a, b) => a + b) /
-        sorted.length;
-
+    // Single pass: compute sum, best, worst, and linear regression
+    // accumulators simultaneously instead of 4 separate iterations.
+    double sumScore = 0;
     double best = -1;
     double worst = 101;
     DateTime? bestDay;
     DateTime? worstDay;
+    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    final n = sorted.length;
 
-    for (final s in sorted) {
-      if (s.overallScore > best) {
-        best = s.overallScore;
+    for (int i = 0; i < n; i++) {
+      final s = sorted[i];
+      final score = s.overallScore;
+      sumScore += score;
+      if (score > best) {
+        best = score;
         bestDay = s.date;
       }
-      if (s.overallScore < worst) {
-        worst = s.overallScore;
+      if (score < worst) {
+        worst = score;
         worstDay = s.date;
       }
+      // Linear regression accumulators
+      sumX += i;
+      sumY += score;
+      sumXY += i * score;
+      sumX2 += i * i;
     }
 
-    // Linear regression for trend
-    final slope = _linearSlope(
-      sorted.map((s) => s.overallScore).toList(),
-    );
+    final avg = sumScore / n;
+
+    // Linear regression slope (inline to avoid extra list allocation)
+    final denom = n * sumX2 - sumX * sumX;
+    final slope = denom == 0 ? 0.0 : (n * sumXY - sumX * sumY) / denom;
 
     TrendDirection direction;
     if (slope > 1.0) {
@@ -577,18 +678,19 @@ class ProductivityScoreService {
       direction = TrendDirection.stable;
     }
 
-    // Dimension averages
-    final dimNames = ['Events', 'Habits', 'Goals', 'Sleep', 'Mood', 'Focus'];
-    final dimAverages = <String, double>{};
-    for (final name in dimNames) {
-      final dimScores = sorted
-          .expand((s) => s.dimensions.where((d) => d.name == name))
-          .map((d) => d.score)
-          .toList();
-      if (dimScores.isNotEmpty) {
-        dimAverages[name] =
-            _round(dimScores.reduce((a, b) => a + b) / dimScores.length);
+    // Dimension averages — single pass over all scores instead of
+    // 6 separate expand+where+map passes (was O(6·n·d), now O(n·d)).
+    final dimSums = <String, double>{};
+    final dimCounts = <String, int>{};
+    for (final s in sorted) {
+      for (final d in s.dimensions) {
+        dimSums[d.name] = (dimSums[d.name] ?? 0) + d.score;
+        dimCounts[d.name] = (dimCounts[d.name] ?? 0) + 1;
       }
+    }
+    final dimAverages = <String, double>{};
+    for (final name in dimSums.keys) {
+      dimAverages[name] = _round(dimSums[name]! / dimCounts[name]!);
     }
 
     // Top strength / weakness
@@ -673,6 +775,31 @@ class ProductivityScoreService {
   }
 
   // ── Helpers ────────────────────────────────────────────────
+
+  /// Pre-indexes events by date key for O(1) lookups per day.
+  ///
+  /// Call this once before scoring multiple days to avoid
+  /// O(n) linear scans per day in [_eventsForDay].
+  Map<int, List<EventModel>> _indexEventsByDay(List<EventModel> events) {
+    final index = <int, List<EventModel>>{};
+    for (final e in events) {
+      final key = e.date.year * 10000 + e.date.month * 100 + e.date.day;
+      index.putIfAbsent(key, () => []).add(e);
+    }
+    return index;
+  }
+
+  /// Pre-indexes sleep entries by wake-date key for O(1) lookups.
+  Map<int, SleepEntry> _indexSleepByDay(List<SleepEntry> entries) {
+    final index = <int, SleepEntry>{};
+    for (final entry in entries) {
+      final d = entry.wakeTime;
+      final key = d.year * 10000 + d.month * 100 + d.day;
+      // Last entry for a given day wins (most recent)
+      index[key] = entry;
+    }
+    return index;
+  }
 
   List<EventModel> _eventsForDay(List<EventModel> events, DateTime date) {
     return events.where((e) {
