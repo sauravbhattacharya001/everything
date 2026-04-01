@@ -149,45 +149,47 @@ class CorrelationAnalyzerService {
     required List<EventModel> events,
   }) {
     // Collect all dates with any data.
-    final dateSet = <String>{};
+    // Uses integer date keys (YYYYMMDD) instead of formatted strings
+    // to avoid per-entry string allocations and speed up hashing.
+    final dateSet = <int>{};
 
     for (final s in sleepEntries) {
-      dateSet.add(_dateKey(s.date));
+      dateSet.add(_dateKeyInt(s.date));
     }
     for (final m in moodEntries) {
-      dateSet.add(_dateKey(m.timestamp));
+      dateSet.add(_dateKeyInt(m.timestamp));
     }
     for (final c in completions) {
-      dateSet.add(_dateKey(c.date));
+      dateSet.add(_dateKeyInt(c.date));
     }
     for (final e in events) {
-      dateSet.add(_dateKey(e.date));
+      dateSet.add(_dateKeyInt(e.date));
     }
 
     if (dateSet.isEmpty) return [];
 
     // Index data by date.
-    final sleepByDate = <String, List<SleepEntry>>{};
+    final sleepByDate = <int, List<SleepEntry>>{};
     for (final s in sleepEntries) {
-      final key = _dateKey(s.date);
+      final key = _dateKeyInt(s.date);
       sleepByDate.putIfAbsent(key, () => []).add(s);
     }
 
-    final moodByDate = <String, List<MoodEntry>>{};
+    final moodByDate = <int, List<MoodEntry>>{};
     for (final m in moodEntries) {
-      final key = _dateKey(m.timestamp);
+      final key = _dateKeyInt(m.timestamp);
       moodByDate.putIfAbsent(key, () => []).add(m);
     }
 
-    final completionsByDate = <String, List<HabitCompletion>>{};
+    final completionsByDate = <int, List<HabitCompletion>>{};
     for (final c in completions) {
-      final key = _dateKey(c.date);
+      final key = _dateKeyInt(c.date);
       completionsByDate.putIfAbsent(key, () => []).add(c);
     }
 
-    final eventsByDate = <String, List<EventModel>>{};
+    final eventsByDate = <int, List<EventModel>>{};
     for (final e in events) {
-      final key = _dateKey(e.date);
+      final key = _dateKeyInt(e.date);
       eventsByDate.putIfAbsent(key, () => []).add(e);
     }
 
@@ -197,12 +199,15 @@ class CorrelationAnalyzerService {
     final dates = dateSet.toList()..sort();
     final snapshots = <DailySnapshot>[];
 
-    for (final dateStr in dates) {
-      final date = DateTime.parse(dateStr);
+    for (final dateInt in dates) {
+      final year = dateInt ~/ 10000;
+      final month = (dateInt ~/ 100) % 100;
+      final day = dateInt % 100;
+      final date = DateTime(year, month, day);
       final weekday = date.weekday;
 
       // Sleep: average if multiple entries.
-      final sleepList = sleepByDate[dateStr] ?? [];
+      final sleepList = sleepByDate[dateInt] ?? [];
       double? sleepHours;
       int? sleepQuality;
       int? awakenings;
@@ -226,7 +231,7 @@ class CorrelationAnalyzerService {
       }
 
       // Mood: average if multiple entries.
-      final moodList = moodByDate[dateStr] ?? [];
+      final moodList = moodByDate[dateInt] ?? [];
       int? moodScore;
       final allMoodActivities = <MoodActivity>[];
 
@@ -241,14 +246,14 @@ class CorrelationAnalyzerService {
 
       // Habits: count due and completed.
       final due = activeHabits.where((h) => h.isScheduledFor(weekday)).length;
-      final dayCompletions = completionsByDate[dateStr] ?? [];
+      final dayCompletions = completionsByDate[dateInt] ?? [];
       final completedIds = dayCompletions.map((c) => c.habitId).toSet();
       final completed = activeHabits
           .where((h) => h.isScheduledFor(weekday) && completedIds.contains(h.id))
           .length;
 
       // Events: count and total hours.
-      final dayEvents = eventsByDate[dateStr] ?? [];
+      final dayEvents = eventsByDate[dateInt] ?? [];
       final eventCount = dayEvents.length;
       double eventHours = 0;
       for (final e in dayEvents) {
@@ -625,9 +630,9 @@ class CorrelationAnalyzerService {
     );
   }
 
-  /// Date key for indexing (YYYY-MM-DD).
-  String _dateKey(DateTime dt) =>
-      '${dt.year.toString().padLeft(4, '0')}-'
-      '${dt.month.toString().padLeft(2, '0')}-'
-      '${dt.day.toString().padLeft(2, '0')}';
+  /// Integer date key for indexing (YYYYMMDD).
+  ///
+  /// Uses integer encoding instead of string formatting to avoid
+  /// per-entry string allocations. Consistent with HeatmapService.
+  int _dateKeyInt(DateTime dt) => dt.year * 10000 + dt.month * 100 + dt.day;
 }
