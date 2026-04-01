@@ -136,6 +136,7 @@ import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
 import '../../views/home/tax_calculator_screen.dart';
+import '../../views/home/fire_calculator_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/scientific_calculator_screen.dart';
 import '../../views/home/matrix_calculator_screen.dart';
@@ -707,6 +708,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.finance,
       builder: (_) => const TaxCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'FIRE Calculator',
+      icon: Icons.local_fire_department,
+      category: FeatureCategory.finance,
+      builder: (_) => const FireCalculatorScreen(),
     ),
 
     // ── Lifestyle ──
