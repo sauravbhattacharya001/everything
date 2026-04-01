@@ -146,6 +146,7 @@ import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
 import '../../views/home/cipher_tool_screen.dart';
 import '../../views/home/regex_tester_screen.dart';
+import '../../views/home/json_formatter_screen.dart';
 import '../../views/home/sobriety_counter_screen.dart';
 import '../../views/home/spin_wheel_screen.dart';
 import '../../views/home/bill_reminder_screen.dart';
@@ -1115,6 +1116,12 @@ class FeatureRegistry {
       icon: Icons.manage_search,
       category: FeatureCategory.lifestyle,
       builder: (_) => const RegexTesterScreen(),
+    ),
+    FeatureEntry(
+      label: 'JSON Formatter',
+      icon: Icons.data_object,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const JsonFormatterScreen(),
     ),
     FeatureEntry(
       label: 'Spin the Wheel',
