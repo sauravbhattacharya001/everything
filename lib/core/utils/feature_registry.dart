@@ -88,6 +88,7 @@ import '../../views/home/coupon_tracker_screen.dart';
 import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
+import '../../views/home/subnet_calculator_screen.dart';
 import '../../views/home/pace_calculator_screen.dart';
 import '../../views/home/salary_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
@@ -1208,6 +1209,12 @@ class FeatureRegistry {
       icon: Icons.analytics_outlined,
       category: FeatureCategory.productivity,
       builder: (_) => const TextStatsScreen(),
+    ),
+    FeatureEntry(
+      label: 'Subnet Calculator',
+      icon: Icons.lan,
+      category: FeatureCategory.productivity,
+      builder: (_) => const SubnetCalculatorScreen(),
     ),
   ];
 
