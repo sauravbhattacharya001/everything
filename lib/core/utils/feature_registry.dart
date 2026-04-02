@@ -94,6 +94,7 @@ import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/color_palette_screen.dart';
+import '../../views/home/gradient_generator_screen.dart';
 import '../../views/home/currency_converter_screen.dart';
 import '../../views/home/expense_splitter_screen.dart';
 import '../../views/home/stopwatch_screen.dart';
@@ -1003,6 +1004,12 @@ class FeatureRegistry {
       icon: Icons.color_lens,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorPaletteScreen(),
+    ),
+    FeatureEntry(
+      label: 'Gradient Generator',
+      icon: Icons.gradient,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const GradientGeneratorScreen(),
     ),
     FeatureEntry(
       label: 'Score Keeper',
