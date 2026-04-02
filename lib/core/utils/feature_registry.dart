@@ -161,6 +161,7 @@ import '../../views/home/sudoku_screen.dart';
 import '../../views/home/game_2048_screen.dart';
 import '../../views/home/simon_says_screen.dart';
 import '../../views/home/lorem_ipsum_screen.dart';
+import '../../views/home/markdown_preview_screen.dart';
 import '../../views/home/sort_visualizer_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
 import '../../views/home/timezone_converter_screen.dart';
@@ -1191,6 +1192,12 @@ class FeatureRegistry {
       icon: Icons.text_snippet,
       category: FeatureCategory.lifestyle,
       builder: (_) => const LoremIpsumScreen(),
+    ),
+    FeatureEntry(
+      label: 'Markdown Preview',
+      icon: Icons.article,
+      category: FeatureCategory.productivity,
+      builder: (_) => const MarkdownPreviewScreen(),
     ),
     FeatureEntry(
       label: 'Sort Visualizer',
