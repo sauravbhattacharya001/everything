@@ -130,6 +130,7 @@ import '../../views/home/metronome_screen.dart';
 import '../../views/home/caffeine_tracker_screen.dart';
 import '../../views/home/compound_interest_screen.dart';
 import '../../views/home/color_blindness_screen.dart';
+import '../../views/home/color_contrast_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/wiki_screen.dart';
@@ -1108,6 +1109,12 @@ class FeatureRegistry {
       icon: Icons.remove_red_eye,
       category: FeatureCategory.lifestyle,
       builder: (_) => const ColorBlindnessScreen(),
+    ),
+    FeatureEntry(
+      label: 'Color Contrast Checker',
+      icon: Icons.contrast,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const ColorContrastScreen(),
     ),
     FeatureEntry(
       label: 'ASCII Art Generator',
