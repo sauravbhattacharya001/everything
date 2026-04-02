@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'storage_backend.dart';
 
 /// Unified data backup and restore service.
@@ -281,12 +280,17 @@ class DataBackupService {
   }
 
   /// Clear all persisted data. Use with caution.
+  ///
+  /// Routes each key through [StorageBackend.remove] so that sensitive
+  /// keys stored in encrypted storage (flutter_secure_storage) are
+  /// actually deleted. Previously this used [SharedPreferences] directly,
+  /// which left encrypted sensitive data (health, financial, diary)
+  /// intact on disk after a "clear all" operation.
   Future<int> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
     int cleared = 0;
     for (final key in _storageKeys.keys) {
-      if (prefs.containsKey(key)) {
-        await prefs.remove(key);
+      if (await StorageBackend.containsKey(key)) {
+        await StorageBackend.remove(key);
         cleared++;
       }
     }
