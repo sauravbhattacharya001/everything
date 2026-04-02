@@ -32,6 +32,32 @@ class Bookmark {
   final bool isFavorite;
   final bool isArchived;
 
+  /// URI schemes allowed for bookmark URLs.
+  ///
+  /// Blocks dangerous schemes like `javascript:`, `data:`, `vbscript:`,
+  /// and `file:` that could lead to XSS or local filesystem access
+  /// if a bookmark is rendered as a clickable link.
+  static const Set<String> allowedSchemes = {'http', 'https', 'mailto', 'tel'};
+
+  /// Validates that a URL uses a safe scheme.
+  ///
+  /// Returns true for URLs with allowed schemes or no explicit scheme
+  /// (treated as relative, typically prepended with https:// at display).
+  static bool isSafeUrl(String url) {
+    final trimmed = url.trim().toLowerCase();
+    if (trimmed.isEmpty) return true;
+
+    final colonIdx = trimmed.indexOf(':');
+    if (colonIdx < 0) return true; // no scheme → relative, allowed
+
+    final scheme = trimmed.substring(0, colonIdx);
+    if (!RegExp(r'^[a-z][a-z0-9+\-.]*$').hasMatch(scheme)) {
+      return true; // not a valid scheme → treat as relative
+    }
+
+    return allowedSchemes.contains(scheme);
+  }
+
   const Bookmark({
     required this.id,
     required this.title,
@@ -110,10 +136,18 @@ class Bookmark {
         'isArchived': isArchived,
       };
 
-  factory Bookmark.fromJson(Map<String, dynamic> json) => Bookmark(
+  factory Bookmark.fromJson(Map<String, dynamic> json) {
+    // Sanitize URL from persisted data — a corrupted database or
+    // manual edit could inject dangerous schemes like javascript:.
+    var url = json['url'] as String;
+    if (!isSafeUrl(url)) {
+      url = '';
+    }
+
+    return Bookmark(
         id: json['id'] as String,
         title: json['title'] as String,
-        url: json['url'] as String,
+        url: url,
         description: json['description'] as String?,
         folder: BookmarkFolder.values.byName(json['folder'] as String),
         tags: (json['tags'] as List<dynamic>?)
@@ -126,4 +160,5 @@ class Bookmark {
         isFavorite: json['isFavorite'] as bool? ?? false,
         isArchived: json['isArchived'] as bool? ?? false,
       );
+  }
 }
