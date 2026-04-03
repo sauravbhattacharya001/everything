@@ -44,10 +44,10 @@ class DataBackupService {
     // ScreenPersistence-based screens
     'chore_tracker_entries': 'Chore Tracker',
     'commute_tracker_entries': 'Commute Tracker',
-    'contact_tracker_entries': 'Contact Tracker',
+    'contact_tracker_data': 'Contact Tracker',
     'decision_journal_entries': 'Decision Journal',
     'energy_tracker_entries': 'Energy Tracker',
-    'goal_tracker_entries': 'Goal Tracker',
+    'goal_tracker_data': 'Goal Tracker',
     'medication_tracker_entries': 'Medication Tracker',
     'meditation_tracker_entries': 'Meditation Tracker',
     'pet_care_tracker_entries': 'Pet Care Tracker',
@@ -61,8 +61,8 @@ class DataBackupService {
     // Direct SharedPreferences-based services
     'mood_journal_entries': 'Mood Journal',
     'sleep_tracker_entries': 'Sleep Tracker',
-    'expense_tracker_entries': 'Expense Tracker',
-    'gratitude_journal_entries': 'Gratitude Journal',
+    'expense_tracker_data': 'Expense Tracker',
+    'gratitude_journal_data': 'Gratitude Journal',
     'dream_journal_data': 'Dream Journal',
     'habit_tracker_data': 'Habit Tracker',
     'meal_tracker_entries': 'Meal Tracker',
@@ -78,6 +78,17 @@ class DataBackupService {
     'daily_journal_entries': 'Daily Journal',
     'emergency_card_data': 'Emergency Card',
     'symptom_tracker_entries': 'Symptom Tracker',
+
+    // Fix #117 — previously missing services
+    'allergy_tracker_entries': 'Allergy Tracker',
+    'daily_review_entries': 'Daily Review',
+    'movie_tracker_entries': 'Movie Tracker',
+    'music_practice_sessions': 'Music Practice',
+    'pomodoro_sessions': 'Pomodoro',
+    'quick_polls': 'Quick Polls',
+    'event_templates': 'Event Templates',
+    'time_capsule_entries': 'Time Capsule',
+    'library_books': 'Library Books',
   };
 
   /// Reads a value from the appropriate storage backend.
