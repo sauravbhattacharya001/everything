@@ -80,11 +80,13 @@ class DayAnalysis {
   final int contextSwitches;
 
   /// The best (longest) focus block, or null if none.
+  ///
+  /// Uses reduce for O(n) instead of copying + sorting the list
+  /// (O(n log n) + allocation) on every access.
   FocusBlock? get bestBlock =>
       focusBlocks.isEmpty
           ? null
-          : (List.of(focusBlocks)..sort((a, b) => b.minutes - a.minutes))
-              .first;
+          : focusBlocks.reduce((a, b) => a.minutes >= b.minutes ? a : b);
 
   /// Ratio of focus time to total working-hour time (0.0\u20131.0).
   final double focusRatio;
@@ -365,19 +367,19 @@ class FocusTimeService {
       analyses.add(analyzeDay(day, dayEvents));
     }
 
-    // Compute averages
-    final avgFrag = analyses.fold<double>(
-            0, (sum, a) => sum + a.fragmentationScore) /
-        analyses.length;
-    final avgFocus = analyses.fold<double>(
-            0, (sum, a) => sum + a.focusMinutes) /
-        analyses.length;
-    final avgMeetings = analyses.fold<double>(
-            0, (sum, a) => sum + a.meetingCount) /
-        analyses.length;
-    final avgSwitches = analyses.fold<double>(
-            0, (sum, a) => sum + a.contextSwitches) /
-        analyses.length;
+    // Compute averages in a single pass (was 4 separate iterations)
+    double sumFrag = 0, sumFocus = 0, sumMeetings = 0, sumSwitches = 0;
+    for (final a in analyses) {
+      sumFrag += a.fragmentationScore;
+      sumFocus += a.focusMinutes;
+      sumMeetings += a.meetingCount;
+      sumSwitches += a.contextSwitches;
+    }
+    final count = analyses.length;
+    final avgFrag = sumFrag / count;
+    final avgFocus = sumFocus / count;
+    final avgMeetings = sumMeetings / count;
+    final avgSwitches = sumSwitches / count;
 
     // Find best recurring focus windows
     final windows = _findBestWindows(analyses, days.length);
