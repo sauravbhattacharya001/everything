@@ -89,6 +89,7 @@ import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/subnet_calculator_screen.dart';
+import '../../views/home/cron_expression_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/electricity_cost_screen.dart';
 import '../../views/home/pace_calculator_screen.dart';
@@ -1239,6 +1240,12 @@ class FeatureRegistry {
       icon: Icons.lan,
       category: FeatureCategory.productivity,
       builder: (_) => const SubnetCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Cron Expression Builder',
+      icon: Icons.timer_outlined,
+      category: FeatureCategory.productivity,
+      builder: (_) => const CronExpressionScreen(),
     ),
     FeatureEntry(
       label: 'Electricity Cost Calculator',
