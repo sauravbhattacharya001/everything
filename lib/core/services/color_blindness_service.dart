@@ -1,5 +1,6 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
+
+import '../utils/srgb_utils.dart';
 
 /// Types of color vision deficiency.
 enum ColorBlindnessType {
@@ -19,25 +20,10 @@ enum ColorBlindnessType {
 /// Simulates how colors appear to people with color vision deficiency.
 class ColorBlindnessService {
   /// Convert sRGB to linear RGB.
-  static List<double> _srgbToLinear(Color c) {
-    double linearize(int v) {
-      final s = v / 255.0;
-      return s <= 0.04045 ? s / 12.92 : pow((s + 0.055) / 1.055, 2.4).toDouble();
-    }
-    return [linearize(c.red), linearize(c.green), linearize(c.blue)];
-  }
+  static List<double> _srgbToLinear(Color c) => SrgbUtils.colorToLinear(c);
 
   /// Convert linear RGB back to sRGB.
-  static Color _linearToSrgb(List<double> rgb) {
-    int delinearize(double v) {
-      final clamped = v.clamp(0.0, 1.0);
-      final s = clamped <= 0.0031308
-          ? clamped * 12.92
-          : 1.055 * pow(clamped, 1.0 / 2.4) - 0.055;
-      return (s * 255).round().clamp(0, 255);
-    }
-    return Color.fromARGB(255, delinearize(rgb[0]), delinearize(rgb[1]), delinearize(rgb[2]));
-  }
+  static Color _linearToSrgb(List<double> rgb) => SrgbUtils.linearToColor(rgb);
 
   /// Apply a 3x3 matrix transformation to a linear RGB vector.
   static List<double> _applyMatrix(List<List<double>> m, List<double> v) {

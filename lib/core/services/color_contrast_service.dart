@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../utils/srgb_utils.dart';
+
 /// WCAG contrast ratio result with pass/fail for AA and AAA levels.
 class ContrastResult {
   final double ratio;
@@ -21,15 +23,8 @@ class ContrastResult {
 class ColorContrastService {
   /// Calculate the relative luminance of an sRGB color.
   /// Per WCAG 2.1 definition.
-  double relativeLuminance(int r, int g, int b) {
-    double srgbToLinear(int channel) {
-      final s = channel / 255.0;
-      return s <= 0.04045 ? s / 12.92 : pow((s + 0.055) / 1.055, 2.4).toDouble();
-    }
-    return 0.2126 * srgbToLinear(r) +
-        0.7152 * srgbToLinear(g) +
-        0.0722 * srgbToLinear(b);
-  }
+  double relativeLuminance(int r, int g, int b) =>
+      SrgbUtils.relativeLuminance(r, g, b);
 
   /// Calculate contrast ratio between two colors (each as r,g,b 0-255).
   double contrastRatio(int r1, int g1, int b1, int r2, int g2, int b2) {
