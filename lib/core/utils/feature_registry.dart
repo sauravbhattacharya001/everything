@@ -133,6 +133,7 @@ import '../../views/home/compound_interest_screen.dart';
 import '../../views/home/color_blindness_screen.dart';
 import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
+import '../../views/home/readability_screen.dart';
 import '../../views/home/wiki_screen.dart';
 import '../../views/home/typing_speed_screen.dart';
 import '../../views/home/pixel_art_screen.dart';
@@ -1198,6 +1199,12 @@ class FeatureRegistry {
       icon: Icons.compare_arrows,
       category: FeatureCategory.productivity,
       builder: (_) => const TextDiffScreen(),
+    ),
+    FeatureEntry(
+      label: 'Readability Analyzer',
+      icon: Icons.auto_stories,
+      category: FeatureCategory.productivity,
+      builder: (_) => const ReadabilityScreen(),
     ),
     FeatureEntry(
       label: 'Sort Visualizer',
