@@ -162,6 +162,7 @@ import '../../views/home/game_of_life_screen.dart';
 import '../../views/home/sudoku_screen.dart';
 import '../../views/home/game_2048_screen.dart';
 import '../../views/home/simon_says_screen.dart';
+import '../../views/home/wordle_screen.dart';
 import '../../views/home/lorem_ipsum_screen.dart';
 import '../../views/home/sort_visualizer_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
@@ -1181,6 +1182,12 @@ class FeatureRegistry {
       icon: Icons.psychology,
       category: FeatureCategory.lifestyle,
       builder: (_) => const SimonSaysScreen(),
+    ),
+    FeatureEntry(
+      label: 'Wordle',
+      icon: Icons.abc,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const WordleScreen(),
     ),
     FeatureEntry(
       label: 'Meeting Cost Calculator',
