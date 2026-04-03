@@ -532,17 +532,20 @@ class ExpenseTrackerService with ServicePersistence {
 
   SpendingTrend getSpendingTrend({int weeks = 4}) {
     final now = DateTime.now();
-    final weeklyTotals = <double>[];
+    final periodStart = now.subtract(Duration(days: weeks * 7));
+    final weeklyTotals = List<double>.filled(weeks, 0.0);
 
-    for (int w = weeks - 1; w >= 0; w--) {
-      final weekStart = now.subtract(Duration(days: (w + 1) * 7));
-      final weekEnd = now.subtract(Duration(days: w * 7));
-      final entries = getEntriesInRange(weekStart, weekEnd);
-      double total = 0;
-      for (final e in entries) {
-        if (!e.category.isIncome) total += e.amount;
+    // Single pass over entries instead of per-week getEntriesInRange scans.
+    for (final e in _entries) {
+      if (e.category.isIncome) continue;
+      if (e.timestamp.isBefore(periodStart) || !e.timestamp.isBefore(now)) {
+        continue;
       }
-      weeklyTotals.add(total);
+      final daysAgo = now.difference(e.timestamp).inDays;
+      final weekIndex = weeks - 1 - (daysAgo ~/ 7);
+      if (weekIndex >= 0 && weekIndex < weeks) {
+        weeklyTotals[weekIndex] += e.amount;
+      }
     }
 
     // Simple linear trend
@@ -630,10 +633,18 @@ class ExpenseTrackerService with ServicePersistence {
 
   // --- Insights ---
 
-  List<String> generateInsights(int year, int month) {
+  /// Generate insights for a month.
+  ///
+  /// When [report] and [percentages] are provided they are reused directly,
+  /// avoiding the redundant full-entry scans that occur when this method is
+  /// called from [getFullReport] (which already computed both).
+  List<String> generateInsights(int year, int month, {
+    MonthlyReport? report,
+    Map<ExpenseCategory, double>? percentages,
+  }) {
     final insights = <String>[];
-    final report = getMonthlyReport(year, month);
-    final percentages = getCategoryPercentages(getEntriesForMonth(year, month));
+    report ??= getMonthlyReport(year, month);
+    percentages ??= getCategoryPercentages(getEntriesForMonth(year, month));
 
     // Top spending category
     if (percentages.isNotEmpty) {
@@ -689,9 +700,11 @@ class ExpenseTrackerService with ServicePersistence {
     final monthlyReport = getMonthlyReport(year, month);
     final trend = getSpendingTrend();
     final topVendors = getTopVendors();
-    final insights = generateInsights(year, month);
-    final percentages =
-        getCategoryPercentages(getEntriesForMonth(year, month));
+    // Reuse the already-computed monthly entries to avoid re-scanning.
+    final monthEntries = getEntriesForMonth(year, month);
+    final percentages = getCategoryPercentages(monthEntries);
+    final insights = generateInsights(year, month,
+        report: monthlyReport, percentages: percentages);
 
     return ExpenseReport(
       currentMonth: monthlyReport,
