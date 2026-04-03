@@ -171,6 +171,7 @@ import '../../views/home/markdown_preview_screen.dart';
 import '../../views/home/sort_visualizer_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
 import '../../views/home/timezone_converter_screen.dart';
+import '../../views/home/minesweeper_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1192,6 +1193,12 @@ class FeatureRegistry {
       icon: Icons.apps,
       category: FeatureCategory.lifestyle,
       builder: (_) => const Game2048Screen(),
+    ),
+    FeatureEntry(
+      label: 'Minesweeper',
+      icon: Icons.grid_on,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const MinesweeperScreen(),
     ),
     FeatureEntry(
       label: 'Simon Says',
