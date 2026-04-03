@@ -151,6 +151,7 @@ import '../../views/home/reaction_time_screen.dart';
 import '../../views/home/sketch_pad_screen.dart';
 import '../../views/home/interval_timer_screen.dart';
 import '../../views/home/cipher_tool_screen.dart';
+import '../../views/home/hash_generator_screen.dart';
 import '../../views/home/regex_tester_screen.dart';
 import '../../views/home/json_formatter_screen.dart';
 import '../../views/home/sobriety_counter_screen.dart';
@@ -1243,6 +1244,12 @@ class FeatureRegistry {
       icon: Icons.date_range,
       category: FeatureCategory.productivity,
       builder: (_) => const DateCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Hash Generator',
+      icon: Icons.fingerprint,
+      category: FeatureCategory.productivity,
+      builder: (_) => const HashGeneratorScreen(),
     ),
   ];
 
