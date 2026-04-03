@@ -107,6 +107,7 @@ import '../../views/home/score_keeper_screen.dart';
 import '../../views/home/age_calculator_screen.dart';
 import '../../views/home/aspect_ratio_screen.dart';
 import '../../views/home/morse_code_screen.dart';
+import '../../views/home/nato_phonetic_screen.dart';
 import '../../views/home/music_practice_screen.dart';
 import '../../views/home/daily_journal_screen.dart';
 import '../../views/home/dice_roller_screen.dart';
@@ -783,6 +784,12 @@ class FeatureRegistry {
       icon: Icons.radio,
       category: FeatureCategory.lifestyle,
       builder: (_) => const MorseCodeScreen(),
+    ),
+    FeatureEntry(
+      label: 'NATO Phonetic',
+      icon: Icons.military_tech,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const NatoPhoneticScreen(),
     ),
     FeatureEntry(
       label: 'Vocabulary Builder',
