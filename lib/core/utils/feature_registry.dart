@@ -89,6 +89,7 @@ import '../../views/home/price_tracker_screen.dart';
 import '../../views/home/world_clock_screen.dart';
 import '../../views/home/tip_calculator_screen.dart';
 import '../../views/home/subnet_calculator_screen.dart';
+import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/electricity_cost_screen.dart';
 import '../../views/home/pace_calculator_screen.dart';
 import '../../views/home/salary_calculator_screen.dart';
@@ -1236,6 +1237,12 @@ class FeatureRegistry {
       icon: Icons.bolt,
       category: FeatureCategory.productivity,
       builder: (_) => const ElectricityCostScreen(),
+    ),
+    FeatureEntry(
+      label: 'Date Calculator',
+      icon: Icons.date_range,
+      category: FeatureCategory.productivity,
+      builder: (_) => const DateCalculatorScreen(),
     ),
   ];
 
