@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
@@ -36,6 +38,36 @@ class _LoginScreenState extends State<LoginScreen> {
   /// to prevent duplicate submissions.
   bool _isLoading = false;
 
+  // ── Brute-force rate limiting ──────────────────────────────────
+  //
+  // Prevents rapid-fire login attempts that could be used for
+  // credential stuffing or brute-force attacks. After [_maxAttempts]
+  // consecutive failures, the login button is locked for an
+  // exponentially increasing cooldown period (base 30s, doubled
+  // each time the limit is hit again, capped at 15 minutes).
+  //
+  // Firebase has server-side rate limiting too, but client-side
+  // throttling provides faster feedback and reduces unnecessary
+  // network traffic from automated attacks.
+
+  /// Maximum consecutive failed attempts before lockout.
+  static const int _maxAttempts = 5;
+
+  /// Base lockout duration (doubles after each lockout cycle).
+  static const Duration _baseLockout = Duration(seconds: 30);
+
+  /// Maximum lockout duration cap.
+  static const Duration _maxLockout = Duration(minutes: 15);
+
+  /// Number of consecutive failed login attempts.
+  int _failedAttempts = 0;
+
+  /// Number of times the lockout has been triggered (for exponential backoff).
+  int _lockoutCycles = 0;
+
+  /// When the current lockout expires (null if not locked out).
+  DateTime? _lockoutUntil;
+
   @override
   void dispose() {
     emailController.dispose();
@@ -52,6 +84,51 @@ class _LoginScreenState extends State<LoginScreen> {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
+  /// Returns the remaining lockout duration, or null if not locked out.
+  Duration? get _remainingLockout {
+    if (_lockoutUntil == null) return null;
+    final remaining = _lockoutUntil!.difference(DateTime.now());
+    return remaining.isNegative ? null : remaining;
+  }
+
+  /// Whether the login button should be disabled due to rate limiting.
+  bool get _isLockedOut => _remainingLockout != null;
+
+  /// Formats a duration as a human-readable string for the lockout message.
+  String _formatLockout(Duration d) {
+    if (d.inMinutes >= 1) {
+      final mins = d.inMinutes;
+      final secs = d.inSeconds % 60;
+      return secs > 0 ? '$mins min $secs sec' : '$mins min';
+    }
+    return '${d.inSeconds} sec';
+  }
+
+  /// Records a failed login attempt and triggers lockout if threshold is hit.
+  void _recordFailure() {
+    _failedAttempts++;
+    if (_failedAttempts >= _maxAttempts) {
+      // Exponential backoff: 30s, 60s, 120s, ... capped at 15 min.
+      final multiplier = pow(2, _lockoutCycles).toInt();
+      final lockoutDuration = Duration(
+        seconds: min(
+          _baseLockout.inSeconds * multiplier,
+          _maxLockout.inSeconds,
+        ),
+      );
+      _lockoutUntil = DateTime.now().add(lockoutDuration);
+      _lockoutCycles++;
+      _failedAttempts = 0; // Reset counter for next cycle.
+    }
+  }
+
+  /// Resets rate-limiting state after a successful login.
+  void _resetRateLimit() {
+    _failedAttempts = 0;
+    _lockoutCycles = 0;
+    _lockoutUntil = null;
+  }
+
   /// Validates inputs and attempts Firebase email/password authentication.
   ///
   /// On success:
@@ -63,7 +140,22 @@ class _LoginScreenState extends State<LoginScreen> {
   ///
   /// On failure, shows a snackbar with a safe, user-friendly message.
   /// Internal error details (stack traces, service names) are never exposed.
+  ///
+  /// Rate-limited: after [_maxAttempts] consecutive failures, the button
+  /// is disabled for an exponentially increasing cooldown period.
   Future<void> _login(BuildContext context) async {
+    // Check rate limit before processing.
+    final lockout = _remainingLockout;
+    if (lockout != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Too many failed attempts. Try again in ${_formatLockout(lockout)}.'),
+        ),
+      );
+      return;
+    }
+
     final email = emailController.text.trim();
     final password = passwordController.text;
 
@@ -91,6 +183,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final firebaseUser = await _authService.loginWithEmail(email, password);
       if (firebaseUser != null) {
+        _resetRateLimit();
+
         final user = UserModel(
           id: firebaseUser.uid,
           name: firebaseUser.displayName ?? email.split('@').first,
@@ -112,6 +206,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
+      _recordFailure();
+
       // Don't expose internal error details to the user — they could
       // leak stack traces, service names, or auth provider details.
       String userMessage;
@@ -130,6 +226,16 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         userMessage = 'Login failed. Please try again.';
       }
+
+      // Append lockout warning if threshold was just hit.
+      final newLockout = _remainingLockout;
+      if (newLockout != null) {
+        userMessage += '\nAccount locked for ${_formatLockout(newLockout)}.';
+      } else if (_failedAttempts >= _maxAttempts - 2) {
+        userMessage +=
+            '\n${_maxAttempts - _failedAttempts} attempt(s) remaining before lockout.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(userMessage)),
       );
@@ -164,14 +270,20 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _isLoading ? null : () => _login(context),
+              onPressed: (_isLoading || _isLockedOut)
+                  ? null
+                  : () => _login(context),
               child: _isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Login'),
+                  : _isLockedOut
+                      ? Text(
+                          'Locked (${_formatLockout(_remainingLockout!)})',
+                        )
+                      : const Text('Login'),
             ),
           ],
         ),
