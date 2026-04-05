@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
 /// A single poll with a question and options.
 class Poll {
@@ -72,8 +72,7 @@ class QuickPollService {
 
   Future<void> load() async {
     if (_loaded) return;
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_storageKey);
+    final raw = await StorageBackend.read(_storageKey);
     if (raw != null) {
       final list = jsonDecode(raw) as List;
       _polls = list.map((e) => Poll.fromJson(e as Map<String, dynamic>)).toList();
@@ -82,8 +81,7 @@ class QuickPollService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_polls.map((p) => p.toJson()).toList()));
+    await StorageBackend.write(_storageKey, jsonEncode(_polls.map((p) => p.toJson()).toList()));
   }
 
   Future<Poll> createPoll(String question, List<String> options) async {

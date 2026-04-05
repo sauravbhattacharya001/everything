@@ -15,9 +15,9 @@
 ///   - **Streak**: consecutive days with a review entry.
 
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/event_model.dart';
 import '../utils/formatting_utils.dart';
+import 'storage_backend.dart';
 
 // ─── Data Classes ───────────────────────────────────────────────
 
@@ -297,8 +297,7 @@ class DailyReviewService {
   Future<void> init() async {
     if (_initialized) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString(_storageKey);
+      final data = await StorageBackend.read(_storageKey);
       if (data != null && data.isNotEmpty) {
         final list = jsonDecode(data) as List<dynamic>;
         for (final item in list) {
@@ -316,8 +315,7 @@ class DailyReviewService {
   /// Persist reviews to SharedPreferences.
   Future<void> _save() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
+      await StorageBackend.write(
         _storageKey,
         jsonEncode(_reviews.map((r) => r.toJson()).toList()),
       );

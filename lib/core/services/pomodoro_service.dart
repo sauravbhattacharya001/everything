@@ -8,7 +8,7 @@
 ///   - Long break: 15 minutes (every 4 pomodoros)
 
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
 class PomodoroSettings {
   final int workMinutes;
@@ -119,8 +119,7 @@ class PomodoroService {
   Future<void> init() async {
     if (_initialized) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString(_storageKey);
+      final data = await StorageBackend.read(_storageKey);
       if (data != null && data.isNotEmpty) {
         final list = jsonDecode(data) as List<dynamic>;
         _sessions.addAll(
@@ -134,8 +133,7 @@ class PomodoroService {
   /// Persist sessions to SharedPreferences.
   Future<void> _save() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
+      await StorageBackend.write(
         _storageKey,
         jsonEncode(_sessions.map((s) => s.toJson()).toList()),
       );

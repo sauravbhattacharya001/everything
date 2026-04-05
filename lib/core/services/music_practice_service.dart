@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
 /// Music Practice Tracker service — log instrument practice sessions,
 /// track streaks, and monitor progress toward goals.
@@ -42,30 +42,30 @@ class MusicPracticeService {
   // ── Persistence ──
 
   static Future<List<PracticeSession>> loadSessions() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_storageKey) ?? [];
-    return raw.map((e) => PracticeSession.fromJson(jsonDecode(e))).toList()
+    final raw = await StorageBackend.read(_storageKey);
+    if (raw == null || raw.isEmpty) return [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list
+        .map((e) => PracticeSession.fromJson(e as Map<String, dynamic>))
+        .toList()
       ..sort((a, b) => b.date.compareTo(a.date));
   }
 
   static Future<void> saveSessions(List<PracticeSession> sessions) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
+    await StorageBackend.write(
       _storageKey,
-      sessions.map((s) => jsonEncode(s.toJson())).toList(),
+      jsonEncode(sessions.map((s) => s.toJson()).toList()),
     );
   }
 
   static Future<PracticeGoal?> loadGoal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_goalsKey);
-    if (raw == null) return null;
+    final raw = await StorageBackend.read(_goalsKey);
+    if (raw == null || raw.isEmpty) return null;
     return PracticeGoal.fromJson(jsonDecode(raw));
   }
 
   static Future<void> saveGoal(PracticeGoal goal) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_goalsKey, jsonEncode(goal.toJson()));
+    await StorageBackend.write(_goalsKey, jsonEncode(goal.toJson()));
   }
 
   // ── Analytics ──

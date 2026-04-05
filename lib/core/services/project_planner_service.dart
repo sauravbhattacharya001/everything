@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
 /// A single task within a project milestone.
 class ProjectTask {
@@ -130,8 +130,7 @@ class ProjectPlannerService {
   List<Project> get projects => List.unmodifiable(_projects);
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
+    final raw = await StorageBackend.read(_key);
     if (raw != null) {
       final list = jsonDecode(raw) as List<dynamic>;
       _projects =
@@ -140,8 +139,7 @@ class ProjectPlannerService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
+    await StorageBackend.write(
         _key, jsonEncode(_projects.map((p) => p.toJson()).toList()));
   }
 

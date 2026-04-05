@@ -1,5 +1,5 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/time_capsule_entry.dart';
+import 'storage_backend.dart';
 
 /// Service for managing time capsules with local persistence.
 class TimeCapsuleService {
@@ -15,8 +15,7 @@ class TimeCapsuleService {
 
   Future<void> init() async {
     if (_initialized) return;
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString(_storageKey);
+    final data = await StorageBackend.read(_storageKey);
     if (data != null && data.isNotEmpty) {
       _entries = TimeCapsuleEntry.decodeList(data);
     }
@@ -25,8 +24,7 @@ class TimeCapsuleService {
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, TimeCapsuleEntry.encodeList(_entries));
+    await StorageBackend.write(_storageKey, TimeCapsuleEntry.encodeList(_entries));
   }
 
   /// Create a new time capsule.
