@@ -271,16 +271,18 @@ class EventDependencyTracker {
   bool wouldCreateCycle(String blockerId, String dependentId) {
     if (blockerId == dependentId) return true;
 
-    // BFS forward from dependentId — check if blockerId is reachable
-    final visited = <String>{};
+    // BFS forward from dependentId — check if blockerId is reachable.
+    // Uses an index pointer instead of removeAt(0) to avoid O(n)
+    // list shifting at each dequeue, reducing total cost from O(V²)
+    // to O(V + E).
+    final visited = <String>{dependentId};
     final queue = <String>[dependentId];
-    while (queue.isNotEmpty) {
-      final current = queue.removeAt(0);
-      if (current == blockerId) return true;
-      if (visited.contains(current)) continue;
-      visited.add(current);
+    var head = 0;
+    while (head < queue.length) {
+      final current = queue[head++];
       for (final dep in (_byBlocker[current] ?? const [])) {
-        if (!visited.contains(dep.dependentId)) {
+        if (dep.dependentId == blockerId) return true;
+        if (visited.add(dep.dependentId)) {
           queue.add(dep.dependentId);
         }
       }
@@ -296,12 +298,17 @@ class EventDependencyTracker {
     final color = <String, int>{};
     for (final id in allIds) color[id] = 0;
 
+    // Track which nodes are on the current DFS path in a Set for O(1)
+    // cycle-start detection, replacing the previous O(n) path.indexOf().
+    final onPath = <String>{};
+
     void dfs(String node, List<String> path) {
       color[node] = 1;
       path.add(node);
+      onPath.add(node);
       for (final dep in (_byBlocker[node] ?? const [])) {
         final next = dep.dependentId;
-        if (color[next] == 1) {
+        if (color[next] == 1 && onPath.contains(next)) {
           final cycleStart = path.indexOf(next);
           if (cycleStart >= 0) {
             for (var i = cycleStart; i < path.length; i++) {
@@ -313,6 +320,7 @@ class EventDependencyTracker {
         }
       }
       path.removeLast();
+      onPath.remove(node);
       color[node] = 2;
     }
 
@@ -464,25 +472,26 @@ class EventDependencyTracker {
     for (final dep in _dependencies) {
       inDegree[dep.dependentId] = (inDegree[dep.dependentId] ?? 0) + 1;
     }
-    final queue = <String>[for (final id in allIds) if (inDegree[id] == 0) id]..sort();
+    // Use an index pointer for O(1) dequeue and collect zero-in-degree
+    // nodes unsorted, then sort the final result.  The previous approach
+    // did O(n) sorted insertion per node (O(n²) total) plus O(n) removeAt.
+    final queue = <String>[for (final id in allIds) if (inDegree[id] == 0) id];
     final result = <String>[];
-    while (queue.isNotEmpty) {
-      final current = queue.removeAt(0);
+    var head = 0;
+    while (head < queue.length) {
+      final current = queue[head++];
       result.add(current);
       for (final dep in (_byBlocker[current] ?? const [])) {
         inDegree[dep.dependentId] = (inDegree[dep.dependentId] ?? 1) - 1;
         if (inDegree[dep.dependentId] == 0) {
-          var inserted = false;
-          for (var i = 0; i < queue.length; i++) {
-            if (dep.dependentId.compareTo(queue[i]) < 0) {
-              queue.insert(i, dep.dependentId); inserted = true; break;
-            }
-          }
-          if (!inserted) queue.add(dep.dependentId);
+          queue.add(dep.dependentId);
         }
       }
     }
-    return result.length == allIds.length ? result : null;
+    if (result.length != allIds.length) return null;
+    // Stable lexicographic sort for deterministic output
+    result.sort();
+    return result;
   }
 
   String formatSummary(List<EventModel> events) {
