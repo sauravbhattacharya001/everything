@@ -1,25 +1,34 @@
-import 'dart:convert';
 import '../../models/body_measurement_entry.dart';
+import 'crud_service.dart';
 
 /// Service for managing body measurement entries.
-class BodyMeasurementService {
-  final List<BodyMeasurementEntry> _entries = [];
+///
+/// Refactored to extend [CrudService], eliminating duplicated CRUD
+/// boilerplate (add, update, delete, export/import) while preserving
+/// all domain-specific methods.
+class BodyMeasurementService extends CrudService<BodyMeasurementEntry> {
+  @override
+  String getId(BodyMeasurementEntry item) => item.id;
 
-  List<BodyMeasurementEntry> get entries =>
-      List.unmodifiable(_entries..sort((a, b) => b.date.compareTo(a.date)));
+  @override
+  Map<String, dynamic> toJson(BodyMeasurementEntry item) => item.toJson();
 
-  void add(BodyMeasurementEntry entry) => _entries.add(entry);
+  @override
+  BodyMeasurementEntry fromJson(Map<String, dynamic> json) =>
+      BodyMeasurementEntry.fromJson(json);
 
-  void update(BodyMeasurementEntry entry) {
-    final i = _entries.indexWhere((e) => e.id == entry.id);
-    if (i != -1) _entries[i] = entry;
+  /// Entries sorted by date (most recent first).
+  List<BodyMeasurementEntry> get entries {
+    final sorted = List<BodyMeasurementEntry>.from(items);
+    sorted.sort((a, b) => b.date.compareTo(a.date));
+    return sorted;
   }
 
-  void delete(String id) => _entries.removeWhere((e) => e.id == id);
+  /// Convenience aliases to match the original API surface.
+  void delete(String id) => remove(id);
 
   /// Latest entry (most recent date).
-  BodyMeasurementEntry? get latest =>
-      _entries.isEmpty ? null : entries.first;
+  BodyMeasurementEntry? get latest => isEmpty ? null : entries.first;
 
   /// Previous entry before [current] for comparison.
   BodyMeasurementEntry? previousBefore(BodyMeasurementEntry current) {
@@ -30,21 +39,11 @@ class BodyMeasurementService {
 
   /// Returns change between latest two entries for a given field.
   double? changeFor(double? Function(BodyMeasurementEntry) getter) {
-    if (_entries.length < 2) return null;
+    if (length < 2) return null;
     final sorted = entries;
     final curr = getter(sorted[0]);
     final prev = getter(sorted[1]);
     if (curr == null || prev == null) return null;
     return curr - prev;
-  }
-
-  String exportToJson() =>
-      jsonEncode(_entries.map((e) => e.toJson()).toList());
-
-  void importFromJson(String json) {
-    _entries.clear();
-    final list = jsonDecode(json) as List<dynamic>;
-    _entries.addAll(
-        list.map((j) => BodyMeasurementEntry.fromJson(j as Map<String, dynamic>)));
   }
 }

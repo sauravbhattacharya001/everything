@@ -1,5 +1,5 @@
-import 'dart:convert';
 import '../../models/bill_entry.dart';
+import 'crud_service.dart';
 
 /// Summary of monthly bill spending.
 class BillSummary {
@@ -20,37 +20,46 @@ class BillSummary {
 }
 
 /// Service for managing bill reminders.
-class BillReminderService {
-  final List<BillEntry> _bills = [];
+///
+/// Refactored to extend [CrudService], eliminating duplicated CRUD
+/// boilerplate (add/update/remove, export/import) while preserving
+/// all domain-specific methods (markPaid, getSorted, summaries).
+class BillReminderService extends CrudService<BillEntry> {
+  @override
+  String getId(BillEntry item) => item.id;
 
-  List<BillEntry> get bills => List.unmodifiable(_bills);
+  @override
+  Map<String, dynamic> toJson(BillEntry item) => item.toJson();
 
-  void addBill(BillEntry bill) => _bills.add(bill);
+  @override
+  BillEntry fromJson(Map<String, dynamic> json) => BillEntry.fromJson(json);
 
-  void updateBill(BillEntry bill) {
-    final idx = _bills.indexWhere((b) => b.id == bill.id);
-    if (idx >= 0) _bills[idx] = bill;
-  }
+  /// Convenience aliases to match the original API surface.
+  List<BillEntry> get bills => items;
 
-  void removeBill(String id) => _bills.removeWhere((b) => b.id == id);
+  void addBill(BillEntry bill) => add(bill);
+
+  void updateBill(BillEntry bill) => update(bill);
+
+  void removeBill(String id) => remove(id);
 
   void markPaid(String id) {
-    final idx = _bills.indexWhere((b) => b.id == id);
+    final idx = indexById(id);
     if (idx >= 0) {
-      _bills[idx] = _bills[idx].copyWith(isPaid: true, paidDate: DateTime.now());
+      updateAt(idx, itemsMutable[idx].copyWith(isPaid: true, paidDate: DateTime.now()));
     }
   }
 
   void markUnpaid(String id) {
-    final idx = _bills.indexWhere((b) => b.id == id);
+    final idx = indexById(id);
     if (idx >= 0) {
-      _bills[idx] = _bills[idx].copyWith(isPaid: false, paidDate: null);
+      updateAt(idx, itemsMutable[idx].copyWith(isPaid: false, paidDate: null));
     }
   }
 
   /// Get bills sorted by due date.
   List<BillEntry> getSorted({bool? paidFilter}) {
-    var list = List<BillEntry>.from(_bills);
+    var list = List<BillEntry>.from(items);
     if (paidFilter != null) {
       list = list.where((b) => b.isPaid == paidFilter).toList();
     }
@@ -60,18 +69,18 @@ class BillReminderService {
 
   /// Get overdue bills.
   List<BillEntry> get overdueBills =>
-      _bills.where((b) => b.isOverdue).toList()
+      items.where((b) => b.isOverdue).toList()
         ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
   /// Get bills due soon (within N days).
   List<BillEntry> getDueSoon([int days = 7]) =>
-      _bills.where((b) => b.isDueSoon(days)).toList()
+      items.where((b) => b.isDueSoon(days)).toList()
         ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
   /// Monthly cost estimate (normalizes all frequencies to monthly).
   double get estimatedMonthlyCost {
     double total = 0;
-    for (final bill in _bills) {
+    for (final bill in items) {
       switch (bill.frequency) {
         case BillFrequency.weekly:
           total += bill.amount * 4.33;
@@ -102,7 +111,7 @@ class BillReminderService {
   BillSummary getSummary() {
     final byCategory = <BillCategory, double>{};
     double paid = 0, unpaid = 0;
-    for (final bill in _bills) {
+    for (final bill in items) {
       byCategory[bill.category] =
           (byCategory[bill.category] ?? 0) + bill.amount;
       if (bill.isPaid) {
@@ -119,16 +128,5 @@ class BillReminderService {
       dueSoonCount: getDueSoon().length,
       byCategory: byCategory,
     );
-  }
-
-  String exportToJson() =>
-      jsonEncode(_bills.map((b) => b.toJson()).toList());
-
-  void importFromJson(String json) {
-    _bills.clear();
-    final list = jsonDecode(json) as List;
-    for (final item in list) {
-      _bills.add(BillEntry.fromJson(item as Map<String, dynamic>));
-    }
   }
 }
