@@ -37,7 +37,7 @@ jobs:
           cd build/web
           zip -r ../../everything-web-${{ github.ref_name }}.zip .
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: everything-web-${{ github.ref_name }}.zip
@@ -64,7 +64,7 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --release --split-per-abi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apk-build
           path: build/app/outputs/flutter-apk/*.apk
@@ -97,7 +97,7 @@ jobs:
           cd build/linux/x64/release/bundle
           tar czf ../../../../../everything-linux-x64-${{ github.ref_name }}.tar.gz .
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux-build
           path: everything-linux-x64-${{ github.ref_name }}.tar.gz
@@ -125,7 +125,7 @@ jobs:
         run: |
           Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath everything-windows-x64-${{ github.ref_name }}.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows-build
           path: everything-windows-x64-${{ github.ref_name }}.zip
