@@ -1,10 +1,9 @@
-# Build & Publish Flutter Artifacts
+# Build & Publish Flutter Artifacts (Multi-Platform)
 #
-# Builds Flutter web app and Android APK when a version tag is pushed.
-# Attaches build artifacts to the GitHub Release automatically.
+# Builds Flutter web, Android APK, Linux, and Windows desktop apps when a
+# version tag is pushed.  Attaches all build artifacts to the GitHub Release.
 #
 # Usage: git tag v1.1.0 && git push origin v1.1.0
-# This triggers a build and attaches web.zip + app-release.apk to the release.
 
 name: Build & Publish
 
@@ -21,8 +20,7 @@ jobs:
     name: Build Flutter Web
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -31,19 +29,15 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build web release
-        run: flutter build web --release --web-renderer canvaskit
+      - run: flutter pub get
+      - run: flutter build web --release --web-renderer canvaskit
 
       - name: Package web build
         run: |
           cd build/web
           zip -r ../../everything-web-${{ github.ref_name }}.zip .
 
-      - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: everything-web-${{ github.ref_name }}.zip
@@ -53,11 +47,9 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -69,44 +61,105 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+      - run: flutter pub get
+      - run: flutter build apk --release --split-per-abi
 
-      - name: Build APK
-        run: flutter build apk --release --split-per-abi
-
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: apk-build
           path: build/app/outputs/flutter-apk/*.apk
           retention-days: 30
 
-  publish-release:
-    name: Publish Release
-    needs: [build-web, build-apk]
+  build-linux:
+    name: Build Linux Desktop
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev libsqlite3-dev
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - name: Package Linux build
+        run: |
+          cd build/linux/x64/release/bundle
+          tar czf ../../../../../everything-linux-x64-${{ github.ref_name }}.tar.gz .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: everything-linux-x64-${{ github.ref_name }}.tar.gz
+          retention-days: 30
+
+  build-windows:
+    name: Build Windows Desktop
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Package Windows build
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath everything-windows-x64-${{ github.ref_name }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: everything-windows-x64-${{ github.ref_name }}.zip
+          retention-days: 30
+
+  publish-release:
+    name: Publish Release
+    needs: [build-web, build-apk, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download web artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: web-build
 
-      - name: Download APK artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: apk-build
           path: apk-artifacts/
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+
       - name: Generate changelog
         id: changelog
         run: |
-          # Get previous tag
           PREV_TAG=$(git tag --sort=-version:refname | head -2 | tail -1)
           if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "${{ github.ref_name }}" ]; then
             echo "body=Initial release" >> $GITHUB_OUTPUT
@@ -115,7 +168,6 @@ jobs:
             if [ -z "$CHANGES" ]; then
               CHANGES="- Bug fixes and improvements"
             fi
-            # Write multiline output
             echo "body<<EOF" >> $GITHUB_OUTPUT
             echo "## What's Changed" >> $GITHUB_OUTPUT
             echo "" >> $GITHUB_OUTPUT
@@ -124,6 +176,8 @@ jobs:
             echo "## Artifacts" >> $GITHUB_OUTPUT
             echo "- **Web**: Download \`everything-web-${{ github.ref_name }}.zip\`, extract, and serve with any static file server" >> $GITHUB_OUTPUT
             echo "- **Android**: Download the APK for your architecture (arm64-v8a recommended for modern devices)" >> $GITHUB_OUTPUT
+            echo "- **Linux**: Download \`everything-linux-x64-${{ github.ref_name }}.tar.gz\`, extract, and run \`./everything\`" >> $GITHUB_OUTPUT
+            echo "- **Windows**: Download \`everything-windows-x64-${{ github.ref_name }}.zip\`, extract, and run \`everything.exe\`" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
 
@@ -133,6 +187,8 @@ jobs:
           for apk in apk-artifacts/*.apk; do
             sha256sum "$apk" >> SHA256SUMS.txt
           done
+          sha256sum everything-linux-x64-${{ github.ref_name }}.tar.gz >> SHA256SUMS.txt
+          sha256sum everything-windows-x64-${{ github.ref_name }}.zip >> SHA256SUMS.txt
 
       - name: Build release body
         id: body
@@ -155,6 +211,8 @@ jobs:
           files: |
             everything-web-${{ github.ref_name }}.zip
             apk-artifacts/*.apk
+            everything-linux-x64-${{ github.ref_name }}.tar.gz
+            everything-windows-x64-${{ github.ref_name }}.zip
             SHA256SUMS.txt
           generate_release_notes: true
         env:
