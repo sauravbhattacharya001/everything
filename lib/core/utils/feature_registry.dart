@@ -97,6 +97,7 @@ import '../../views/home/salary_calculator_screen.dart';
 import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
+import '../../views/home/password_strength_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/gradient_generator_screen.dart';
 import '../../views/home/currency_converter_screen.dart';
@@ -1292,6 +1293,12 @@ class FeatureRegistry {
       icon: Icons.fingerprint,
       category: FeatureCategory.productivity,
       builder: (_) => const HashGeneratorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Password Strength Analyzer',
+      icon: Icons.shield,
+      category: FeatureCategory.organization,
+      builder: (_) => const PasswordStrengthScreen(),
     ),
   ];
 
