@@ -174,6 +174,7 @@ import '../../views/home/sort_visualizer_screen.dart';
 import '../../views/home/meeting_cost_screen.dart';
 import '../../views/home/timezone_converter_screen.dart';
 import '../../views/home/minesweeper_screen.dart';
+import '../../views/home/lights_out_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1219,6 +1220,12 @@ class FeatureRegistry {
       icon: Icons.text_fields,
       category: FeatureCategory.lifestyle,
       builder: (_) => const HangmanScreen(),
+    ),
+    FeatureEntry(
+      label: 'Lights Out',
+      icon: Icons.lightbulb_outline,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const LightsOutScreen(),
     ),
     FeatureEntry(
       label: 'Meeting Cost Calculator',
