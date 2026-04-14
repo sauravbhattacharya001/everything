@@ -140,6 +140,7 @@ import '../../views/home/roman_numeral_screen.dart';
 import '../../views/home/date_calculator_screen.dart';
 import '../../views/home/wiki_screen.dart';
 import '../../views/home/typing_speed_screen.dart';
+import '../../views/home/math_drill_screen.dart';
 import '../../views/home/pixel_art_screen.dart';
 import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
@@ -334,6 +335,12 @@ class FeatureRegistry {
       icon: Icons.keyboard,
       category: FeatureCategory.productivity,
       builder: (_) => const TypingSpeedScreen(),
+    ),
+    FeatureEntry(
+      label: 'Quick Math Drill',
+      icon: Icons.calculate,
+      category: FeatureCategory.productivity,
+      builder: (_) => const MathDrillScreen(),
     ),
     FeatureEntry(
       label: 'Speed Reader',
