@@ -269,19 +269,43 @@ class VehicleMaintenanceService {
     });
   }
 
+  /// Maximum number of vehicles or records allowed per import list.
+  static const int maxImportEntries = 50000;
+
+  /// Import vehicles and records from a JSON string, replacing current state.
+  ///
+  /// Throws [ArgumentError] if either list exceeds [maxImportEntries]
+  /// to prevent memory exhaustion from untrusted input.
   void importFromJson(String jsonStr) {
     final data = jsonDecode(jsonStr) as Map<String, dynamic>;
-    _vehicles.clear();
-    _records.clear();
 
     final vehicleList = data['vehicles'] as List<dynamic>? ?? [];
-    for (final v in vehicleList) {
-      _vehicles.add(Vehicle.fromJson(v as Map<String, dynamic>));
+    final recordList = data['records'] as List<dynamic>? ?? [];
+
+    if (vehicleList.length > maxImportEntries) {
+      throw ArgumentError(
+        'Vehicle import exceeds maximum of $maxImportEntries entries '
+        '(got ${vehicleList.length}).',
+      );
+    }
+    if (recordList.length > maxImportEntries) {
+      throw ArgumentError(
+        'Record import exceeds maximum of $maxImportEntries entries '
+        '(got ${recordList.length}).',
+      );
     }
 
-    final recordList = data['records'] as List<dynamic>? ?? [];
-    for (final r in recordList) {
-      _records.add(MaintenanceRecord.fromJson(r as Map<String, dynamic>));
-    }
+    // Parse first, then clear — preserves existing data on parse failure.
+    final parsedVehicles = vehicleList
+        .map((v) => Vehicle.fromJson(v as Map<String, dynamic>))
+        .toList();
+    final parsedRecords = recordList
+        .map((r) => MaintenanceRecord.fromJson(r as Map<String, dynamic>))
+        .toList();
+
+    _vehicles.clear();
+    _records.clear();
+    _vehicles.addAll(parsedVehicles);
+    _records.addAll(parsedRecords);
   }
 }

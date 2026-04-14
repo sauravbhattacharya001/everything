@@ -341,12 +341,27 @@ class BudgetPlannerService {
   String exportToJson() => jsonEncode(
       _budgets.map((b) => b.toJson()).toList());
 
+  /// Maximum number of budgets allowed via import.
+  static const int maxImportEntries = 10000;
+
   /// Import budgets from a JSON string, replacing current state.
+  ///
+  /// Throws [ArgumentError] if the decoded list exceeds [maxImportEntries]
+  /// to prevent memory exhaustion from untrusted input.
   void importFromJson(String json) {
     final data = jsonDecode(json) as List<dynamic>;
+    if (data.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${data.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    final parsed = data
+        .map((b) => MonthlyBudget.fromJson(b as Map<String, dynamic>))
+        .toList();
     _budgets.clear();
-    _budgets.addAll(
-        data.map((b) => MonthlyBudget.fromJson(b as Map<String, dynamic>)));
+    _budgets.addAll(parsed);
   }
 
   void loadBudgets(List<MonthlyBudget> budgets) {

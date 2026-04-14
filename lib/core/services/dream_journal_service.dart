@@ -180,9 +180,25 @@ class DreamJournalService {
 
   String exportToJson() => DreamEntry.encodeList(_entries);
 
+  /// Maximum number of entries allowed via import.
+  ///
+  /// Prevents memory exhaustion from a maliciously crafted JSON file.
+  static const int maxImportEntries = 100000;
+
   void importFromJson(String json) {
+    final decoded = jsonDecode(json) as List<dynamic>;
+    if (decoded.length > maxImportEntries) {
+      throw ArgumentError(
+        'Import exceeds maximum of $maxImportEntries entries '
+        '(got ${decoded.length}). This limit prevents memory exhaustion '
+        'from corrupted or malicious data.',
+      );
+    }
+    final parsed = decoded
+        .map((e) => DreamEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
     _entries.clear();
-    _entries.addAll(DreamEntry.decodeList(json));
+    _entries.addAll(parsed);
     _entries.sort((a, b) => b.date.compareTo(a.date));
   }
 }
