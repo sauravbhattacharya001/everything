@@ -98,6 +98,7 @@ import '../../views/home/loan_calculator_screen.dart';
 import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/password_strength_screen.dart';
+import '../../views/home/life_score_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/gradient_generator_screen.dart';
 import '../../views/home/currency_converter_screen.dart';
@@ -1306,6 +1307,12 @@ class FeatureRegistry {
       icon: Icons.shield,
       category: FeatureCategory.organization,
       builder: (_) => const PasswordStrengthScreen(),
+    ),
+    FeatureEntry(
+      label: 'Life Score Dashboard',
+      icon: Icons.radar,
+      category: FeatureCategory.tracking,
+      builder: (_) => const LifeScoreScreen(),
     ),
   ];
 
