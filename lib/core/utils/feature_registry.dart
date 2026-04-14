@@ -169,6 +169,7 @@ import '../../views/home/game_of_life_screen.dart';
 import '../../views/home/sudoku_screen.dart';
 import '../../views/home/game_2048_screen.dart';
 import '../../views/home/snake_game_screen.dart';
+import '../../views/home/tetris_game_screen.dart';
 import '../../views/home/hangman_screen.dart';
 import '../../views/home/simon_says_screen.dart';
 import '../../views/home/lorem_ipsum_screen.dart';
@@ -1211,6 +1212,12 @@ class FeatureRegistry {
       icon: Icons.linear_scale,
       category: FeatureCategory.lifestyle,
       builder: (_) => const SnakeGameScreen(),
+    ),
+    FeatureEntry(
+      label: 'Tetris',
+      icon: Icons.grid_view_rounded,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const TetrisGameScreen(),
     ),
     FeatureEntry(
       label: 'Minesweeper',
