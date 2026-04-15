@@ -442,16 +442,46 @@ class LifeDashboardService {
     final now = DateTime.now();
     final snapshots = <DailySnapshot>[];
 
+    // Pre-index all entry types by day key (year*10000+month*100+day)
+    // to avoid O(days × entries) rescanning per dimension.  For 30 days
+    // with 1000 entries this reduces from 180 linear scans to 6 single
+    // passes (one per entry type) plus O(1) lookups per day.
+    int _dayKey(DateTime dt) => dt.year * 10000 + dt.month * 100 + dt.day;
+
+    final sleepByDay = <int, List<SleepEntry>>{};
+    for (final e in sleepEntries) {
+      sleepByDay.putIfAbsent(_dayKey(e.bedtime), () => []).add(e);
+    }
+    final waterByDay = <int, List<WaterEntry>>{};
+    for (final e in waterEntries) {
+      waterByDay.putIfAbsent(_dayKey(e.timestamp), () => []).add(e);
+    }
+    final energyByDay = <int, List<EnergyEntry>>{};
+    for (final e in energyEntries) {
+      energyByDay.putIfAbsent(_dayKey(e.timestamp), () => []).add(e);
+    }
+    final moodByDay = <int, List<MoodEntry>>{};
+    for (final e in moodEntries) {
+      moodByDay.putIfAbsent(_dayKey(e.timestamp), () => []).add(e);
+    }
+    final workoutByDay = <int, List<WorkoutEntry>>{};
+    for (final e in workoutEntries) {
+      workoutByDay.putIfAbsent(_dayKey(e.startTime), () => []).add(e);
+    }
+    final mealByDay = <int, List<MealEntry>>{};
+    for (final e in mealEntries) {
+      mealByDay.putIfAbsent(_dayKey(e.timestamp), () => []).add(e);
+    }
+
     for (int i = days - 1; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
       final dayStart = DateTime(date.year, date.month, date.day);
-      final dayEnd = dayStart.add(const Duration(days: 1));
+      final key = _dayKey(dayStart);
 
       final scores = <String, double>{};
 
       // Sleep
-      final daySleep =
-          sleepEntries.where((e) => _sameDay(e.bedtime, dayStart)).toList();
+      final daySleep = sleepByDay[key] ?? const [];
       if (daySleep.isEmpty) {
         scores['sleep'] = 50.0;
       } else {
@@ -469,18 +499,12 @@ class LifeDashboardService {
       }
 
       // Water
-      final dayWater = waterEntries
-          .where((e) =>
-              e.timestamp.isAfter(dayStart) && e.timestamp.isBefore(dayEnd))
-          .toList();
+      final dayWater = waterByDay[key] ?? const [];
       final waterMl = dayWater.fold<int>(0, (s, e) => s + e.amountMl);
       scores['hydration'] = (waterMl / 2000 * 100).clamp(0, 100);
 
       // Energy
-      final dayEnergy = energyEntries
-          .where((e) =>
-              e.timestamp.isAfter(dayStart) && e.timestamp.isBefore(dayEnd))
-          .toList();
+      final dayEnergy = energyByDay[key] ?? const [];
       scores['energy'] = dayEnergy.isEmpty
           ? 50.0
           : (dayEnergy.fold<double>(0, (s, e) => s + e.level.index) /
@@ -490,10 +514,7 @@ class LifeDashboardService {
               .clamp(0, 100);
 
       // Mood
-      final dayMood = moodEntries
-          .where((e) =>
-              e.timestamp.isAfter(dayStart) && e.timestamp.isBefore(dayEnd))
-          .toList();
+      final dayMood = moodByDay[key] ?? const [];
       scores['mood'] = dayMood.isEmpty
           ? 50.0
           : (dayMood.fold<double>(0, (s, e) => s + e.mood.index) /
@@ -503,17 +524,11 @@ class LifeDashboardService {
               .clamp(0, 100);
 
       // Exercise
-      final dayWorkouts = workoutEntries
-          .where((e) =>
-              e.startTime.isAfter(dayStart) && e.startTime.isBefore(dayEnd))
-          .toList();
+      final dayWorkouts = workoutByDay[key] ?? const [];
       scores['exercise'] = dayWorkouts.isEmpty ? 0.0 : 100.0;
 
       // Nutrition
-      final dayMeals = mealEntries
-          .where((e) =>
-              e.timestamp.isAfter(dayStart) && e.timestamp.isBefore(dayEnd))
-          .toList();
+      final dayMeals = mealByDay[key] ?? const [];
       scores['nutrition'] =
           (dayMeals.length / 3.0 * 100).clamp(0.0, 100.0);
 
