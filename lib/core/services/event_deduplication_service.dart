@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../models/event_model.dart';
 import '../utils/date_utils.dart';
 import 'dart:math' as math;
@@ -405,16 +407,38 @@ class EventDeduplicationService {
   }
 
   /// Finds all events that are duplicates of a given event.
+  ///
+  /// Pre-computes lowercased titles, tags, and locations for all
+  /// candidates to avoid redundant string work in the comparison loop.
   List<DuplicateMatch> findDuplicatesOf(
     EventModel target,
     List<EventModel> allEvents,
   ) {
+    // Pre-compute caches the same way scan() does — eliminates
+    // redundant toLowerCase() calls per comparison.
+    final titleCache = <String, String>{};
+    final tagCache = <String, Set<String>>{};
+    final locationCache = <String, String>{};
+    for (final e in allEvents) {
+      titleCache[e.id] = e.title.trim().toLowerCase();
+      if (e.tags.isNotEmpty) {
+        tagCache[e.id] = e.tags.map((t) => t.name.toLowerCase()).toSet();
+      }
+      if (e.location.isNotEmpty) {
+        locationCache[e.id] = e.location.trim().toLowerCase();
+      }
+    }
+    // Also cache the target if not already in allEvents.
+    titleCache.putIfAbsent(
+        target.id, () => target.title.trim().toLowerCase());
+
     final matches = <DuplicateMatch>[];
     for (final other in allEvents) {
       if (other.id == target.id) continue;
       final gapMinutes =
           other.date.difference(target.date).inMinutes.abs();
-      final match = _compareEvents(target, other, gapMinutes);
+      final match = _compareEvents(
+          target, other, gapMinutes, titleCache, tagCache, locationCache);
       if (match != null && match.similarity >= config.minimumOverallScore) {
         matches.add(match);
       }
@@ -643,8 +667,12 @@ class EventDeduplicationService {
     }
 
     final bLen = b.length;
-    var prev = List<int>.generate(bLen + 1, (i) => i);
-    var curr = List<int>.filled(bLen + 1, 0);
+    // Use typed Uint16List instead of boxed List<int> — avoids heap
+    // allocation per element and improves cache locality. Event titles
+    // are short enough that Uint16 (max 65535) is always sufficient.
+    var prev = Uint16List(bLen + 1);
+    for (int i = 0; i <= bLen; i++) prev[i] = i;
+    var curr = Uint16List(bLen + 1);
 
     for (int i = 1; i <= a.length; i++) {
       curr[0] = i;
