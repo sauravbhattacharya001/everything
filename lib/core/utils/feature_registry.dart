@@ -179,6 +179,7 @@ import '../../views/home/meeting_cost_screen.dart';
 import '../../views/home/timezone_converter_screen.dart';
 import '../../views/home/minesweeper_screen.dart';
 import '../../views/home/lights_out_screen.dart';
+import '../../views/home/decision_matrix_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -823,6 +824,12 @@ class FeatureRegistry {
       icon: Icons.balance,
       category: FeatureCategory.lifestyle,
       builder: (_) => const DecisionJournalScreen(),
+    ),
+    FeatureEntry(
+      label: 'Decision Matrix',
+      icon: Icons.grid_view,
+      category: FeatureCategory.productivity,
+      builder: (_) => const DecisionMatrixScreen(),
     ),
     FeatureEntry(
       label: 'Daily Journal',
