@@ -159,9 +159,10 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
   }
 
   void _applyFilter(String query) {
+    final lowerQuery = query.toLowerCase();
     final scored = <MapEntry<PaletteAction, double>>[];
     for (final action in _allActions) {
-      final score = action.matchScore(query);
+      final score = action.matchScore(lowerQuery);
       if (score > 0.0) {
         scored.add(MapEntry(action, score));
       }
@@ -318,6 +319,8 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
 
   Widget _buildResultList(Color selectedColor, Color hintColor) {
     String? lastCategory;
+    final recentIds = CommandPaletteService.instance.recentScreenIds;
+    final showRecents = _controller.text.isEmpty;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 4),
       shrinkWrap: true,
@@ -327,8 +330,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
         final isSelected = index == _selectedIndex;
         final showCategory = action.category != lastCategory;
         lastCategory = action.category;
-        final recentIds = CommandPaletteService.instance.recentScreenIds;
-        final isRecent = recentIds.contains(action.id) && _controller.text.isEmpty;
+        final isRecent = recentIds.contains(action.id) && showRecents;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

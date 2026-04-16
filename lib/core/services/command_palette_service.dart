@@ -34,10 +34,12 @@ class PaletteAction {
   ///
   /// Expects [query] to already be lowercased by the caller for best
   /// performance when scoring multiple actions against the same query.
-  /// Falls back to lowercasing internally if not.
   double matchScore(String query) {
     if (query.isEmpty) return 1.0;
-    final q = query.toLowerCase();
+    // Trust the caller to pass a pre-lowercased query (documented contract).
+    // Avoid the redundant toLowerCase() that was allocating a new String
+    // per action per keystroke (~50 allocations/keystroke).
+    final q = query;
 
     // Exact prefix match on label is highest
     if (_labelLower.startsWith(q)) return 1.0;
@@ -81,9 +83,20 @@ class CommandPaletteService {
 
   List<String> get recentScreenIds => List.unmodifiable(_recentScreenIds);
 
-  /// Build the full action list. Call with a context that has access to
-  /// navigation (e.g., from within the overlay).
+  /// Cached action list — computed once on first access since the
+  /// palette entries are static. Avoids allocating ~50 PaletteAction
+  /// objects (each with late-init lowercase fields) every time the
+  /// command palette overlay opens.
+  List<PaletteAction>? _cachedActions;
+
+  /// Build the full action list. Results are cached after the first
+  /// call since the set of available screens/actions is fixed at
+  /// compile time.
   List<PaletteAction> buildActions() {
+    return _cachedActions ??= _buildActionsImpl();
+  }
+
+  List<PaletteAction> _buildActionsImpl() {
     return [
       // ── Navigation ─────────────────────────────────────────────
       _nav('nav_calendar', 'Calendar', Icons.calendar_today, 'Navigation',
