@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/auth_rate_limiter.dart';
 import '../../core/services/secure_storage_service.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../models/user_model.dart';
@@ -8,51 +9,50 @@ import '../../state/providers/user_provider.dart';
 
 /// Login screen that authenticates users via Firebase email/password.
 ///
+/// Uses Flutter's [Form] + [TextFormField] for built-in validation with
+/// inline error messages, replacing the previous manual-validation +
+/// SnackBar approach. Rate limiting is handled by [AuthRateLimiter],
+/// a reusable class shared across authentication flows.
+///
 /// On successful login, the user profile is persisted to local storage
 /// (via [UserRepository]) and secure storage (via [SecureStorageService])
-/// for quick session restoration. The user is then set in [UserProvider]
-/// and navigated to the home screen.
-///
-/// Validates email format using a compiled regex pattern and displays
-/// user-friendly error messages without exposing internal details.
+/// for quick session restoration.
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  /// Controller for the email input field.
-  final TextEditingController emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
-  /// Controller for the password input field.
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  /// Focus node for the password field — used to shift focus from email
+  /// to password when the user presses Enter/Next on the email field.
+  final FocusNode _passwordFocus = FocusNode();
 
   final AuthService _authService = AuthService();
   final UserRepository _userRepository = UserRepository();
+  final AuthRateLimiter _rateLimiter = AuthRateLimiter();
 
   /// Whether a login request is currently in progress.
-  ///
-  /// When true, the login button is disabled and shows a spinner
-  /// to prevent duplicate submissions.
   bool _isLoading = false;
+
+  /// Pre-compiled email validation regex.
+  static final RegExp _emailRegex = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
-  /// Pre-compiled email validation regex.
-  ///
-  /// Matches standard email formats: local-part@domain.tld where the
-  /// local part allows alphanumeric characters plus `._%+-`, and the
-  /// domain requires at least a 2-character TLD.
-  static final RegExp _emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
-
-  /// Validates inputs and attempts Firebase email/password authentication.
+  /// Validates the form and attempts Firebase email/password authentication.
   ///
   /// On success:
   /// 1. Creates a [UserModel] from the Firebase user
@@ -62,35 +62,29 @@ class _LoginScreenState extends State<LoginScreen> {
   /// 5. Navigates to `/home`, replacing the login route
   ///
   /// On failure, shows a snackbar with a safe, user-friendly message.
-  /// Internal error details (stack traces, service names) are never exposed.
-  Future<void> _login(BuildContext context) async {
+  Future<void> _login() async {
+    // Check rate limit before doing anything else.
+    if (_rateLimiter.isLockedOut) {
+      _showError(
+        'Too many failed attempts. Try again in '
+        '${_rateLimiter.formatRemaining()}.',
+      );
+      return;
+    }
+
+    // Validate form fields (shows inline errors under each field).
+    if (!_formKey.currentState!.validate()) return;
+
     final email = emailController.text.trim();
     final password = passwordController.text;
-
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email')),
-      );
-      return;
-    }
-    if (!_emailRegex.hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
-    if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your password')),
-      );
-      return;
-    }
 
     setState(() => _isLoading = true);
 
     try {
       final firebaseUser = await _authService.loginWithEmail(email, password);
       if (firebaseUser != null) {
+        _rateLimiter.reset();
+
         final user = UserModel(
           id: firebaseUser.uid,
           name: firebaseUser.displayName ?? email.split('@').first,
@@ -101,38 +95,15 @@ class _LoginScreenState extends State<LoginScreen> {
             Provider.of<UserProvider>(context, listen: false);
         userProvider.setUser(user);
 
-        // Persist user profile to local storage so it survives restarts
-        // and Firebase token refresh edge cases.
         await _userRepository.saveUser(user.toJson());
-
-        // Store the user ID in secure storage for quick session checks.
         await SecureStorageService.write(
             SecureStorageService.keyUserId, firebaseUser.uid);
 
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
-      // Don't expose internal error details to the user — they could
-      // leak stack traces, service names, or auth provider details.
-      String userMessage;
-      if (e is AuthException) {
-        switch (e.code) {
-          case 'user-not-found':
-          case 'wrong-password':
-            userMessage = 'Invalid email or password';
-            break;
-          case 'invalid-email':
-            userMessage = 'Invalid email format';
-            break;
-          default:
-            userMessage = 'Login failed. Please try again.';
-        }
-      } else {
-        userMessage = 'Login failed. Please try again.';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userMessage)),
-      );
+      _rateLimiter.recordFailure();
+      _showError(_mapErrorMessage(e));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -140,40 +111,109 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Builds the login form with email and password fields.
+  /// Maps exceptions to user-friendly error messages.
   ///
-  /// The login button is disabled while [_isLoading] is true, showing
-  /// a [CircularProgressIndicator] instead of the button label.
+  /// Never exposes internal details (stack traces, service names).
+  /// Appends lockout warnings when the rate limiter threshold is near
+  /// or has been reached.
+  String _mapErrorMessage(Object error) {
+    String message;
+    if (error is AuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+          message = 'Invalid email or password';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email format';
+          break;
+        default:
+          message = 'Login failed. Please try again.';
+      }
+    } else {
+      message = 'Login failed. Please try again.';
+    }
+
+    // Append lockout / warning info.
+    if (_rateLimiter.isLockedOut) {
+      message +=
+          '\nAccount locked for ${_rateLimiter.formatRemaining()}.';
+    } else {
+      final remaining = _rateLimiter.attemptsRemaining ?? 0;
+      if (remaining <= 2 && remaining > 0) {
+        message += '\n$remaining attempt(s) remaining before lockout.';
+      }
+    }
+
+    return message;
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isLoading ? null : () => _login(context),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Login'),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) =>
+                    FocusScope.of(context).requestFocus(_passwordFocus),
+                validator: (value) {
+                  final trimmed = value?.trim() ?? '';
+                  if (trimmed.isEmpty) return 'Please enter your email';
+                  if (!_emailRegex.hasMatch(trimmed)) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: passwordController,
+                focusNode: _passwordFocus,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _login(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: (_isLoading || _rateLimiter.isLockedOut)
+                    ? null
+                    : _login,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : _rateLimiter.isLockedOut
+                        ? Text(
+                            'Locked (${_rateLimiter.formatRemaining()})',
+                          )
+                        : const Text('Login'),
+              ),
+            ],
+          ),
         ),
       ),
     );
