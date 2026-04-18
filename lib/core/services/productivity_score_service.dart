@@ -383,28 +383,7 @@ class ProductivityScoreService {
   /// Score sleep quality: quality rating (0-60), duration fit (0-40).
   double scoreSleep(List<SleepEntry> entries, DateTime date) {
     final entry = _sleepForDay(entries, date);
-    if (entry == null) return 0;
-
-    double score = 0;
-
-    // Quality rating (1-5 → 0-60)
-    score += (entry.quality.value / 5.0) * 60;
-
-    // Duration fit: 7-9 hours is optimal (0-40)
-    final hours = entry.durationHours;
-    if (hours >= 7 && hours <= 9) {
-      score += 40;
-    } else if (hours >= 6 && hours < 7) {
-      score += 25;
-    } else if (hours > 9 && hours <= 10) {
-      score += 30;
-    } else if (hours >= 5 && hours < 6) {
-      score += 15;
-    } else {
-      score += 5;
-    }
-
-    return min(score, 100);
+    return _scoreSleepEntry(entry);
   }
 
   // ── Mood Score ─────────────────────────────────────────────
@@ -413,13 +392,7 @@ class ProductivityScoreService {
   double scoreMood(List<MoodEntry> entries, DateTime date) {
     final dayEntries =
         entries.where((e) => _sameDay(e.timestamp, date)).toList();
-    if (dayEntries.isEmpty) return 0;
-
-    // Average mood if multiple entries
-    final avgMood =
-        dayEntries.map((e) => e.mood.value).reduce((a, b) => a + b) /
-            dayEntries.length;
-    return (avgMood / 5.0) * 100;
+    return _scoreMoodEntries(dayEntries);
   }
 
   // ── Focus Score ────────────────────────────────────────────
@@ -472,29 +445,8 @@ class ProductivityScoreService {
       final goalScore = scoreGoals(goals, date);
 
       // Use indexed sleep/mood directly instead of linear scans
-      double sleepScore = 0;
-      if (daySleep != null) {
-        sleepScore += (daySleep.quality.value / 5.0) * 60;
-        final hours = daySleep.durationHours;
-        if (hours >= 7 && hours <= 9) {
-          sleepScore += 40;
-        } else if (hours >= 6 && hours < 7) {
-          sleepScore += 25;
-        } else if (hours > 9 && hours <= 10) {
-          sleepScore += 30;
-        } else if (hours >= 5 && hours < 6) {
-          sleepScore += 15;
-        } else {
-          sleepScore += 5;
-        }
-        sleepScore = min(sleepScore, 100);
-      }
-
-      double moodScore = 0;
-      if (dayMoods.isNotEmpty) {
-        final avgMood = dayMoods.map((e) => e.mood.value).reduce((a, b) => a + b) / dayMoods.length;
-        moodScore = (avgMood / 5.0) * 100;
-      }
+      final sleepScore = _scoreSleepEntry(daySleep);
+      final moodScore = _scoreMoodEntries(dayMoods);
 
       final focusMins = focusMinutesByDay[date] ?? 0;
       final focusScore = scoreFocus(focusMins);
@@ -844,20 +796,32 @@ class ProductivityScoreService {
     return ProductivityGrade.needsWork;
   }
 
-  /// Simple linear regression slope for trend detection.
-  double _linearSlope(List<double> values) {
-    if (values.length < 2) return 0;
-    final n = values.length;
-    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-    for (int i = 0; i < n; i++) {
-      sumX += i;
-      sumY += values[i];
-      sumXY += i * values[i];
-      sumX2 += i * i;
+  /// Score a single sleep entry: quality rating (0-60) + duration fit (0-40).
+  double _scoreSleepEntry(SleepEntry? entry) {
+    if (entry == null) return 0;
+    double score = (entry.quality.value / 5.0) * 60;
+    final hours = entry.durationHours;
+    if (hours >= 7 && hours <= 9) {
+      score += 40;
+    } else if (hours >= 6 && hours < 7) {
+      score += 25;
+    } else if (hours > 9 && hours <= 10) {
+      score += 30;
+    } else if (hours >= 5 && hours < 6) {
+      score += 15;
+    } else {
+      score += 5;
     }
-    final denom = n * sumX2 - sumX * sumX;
-    if (denom == 0) return 0;
-    return (n * sumXY - sumX * sumY) / denom;
+    return min(score, 100);
+  }
+
+  /// Score a list of mood entries for a single day: average mood mapped to 0-100.
+  double _scoreMoodEntries(List<MoodEntry> dayEntries) {
+    if (dayEntries.isEmpty) return 0;
+    final avgMood =
+        dayEntries.map((e) => e.mood.value).reduce((a, b) => a + b) /
+            dayEntries.length;
+    return (avgMood / 5.0) * 100;
   }
 
   String _eventInsight(double score) {
