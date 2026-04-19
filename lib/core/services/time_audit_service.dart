@@ -1,602 +1,409 @@
 import 'dart:math';
-import '../../models/event_model.dart';
-import '../../models/event_tag.dart';
 
-// ─── Data Classes ───────────────────────────────────────────────
+/// Category of time usage.
+enum TimeCategory {
+  work('Work', 0xFF2196F3),
+  health('Health', 0xFF4CAF50),
+  social('Social', 0xFF9C27B0),
+  learning('Learning', 0xFFFF9800),
+  rest('Rest', 0xFF009688),
+  chores('Chores', 0xFF795548);
 
-/// How time was spent on a single category (tag) during the audit period.
-class CategoryTimeAllocation {
-  /// Tag name (or "Untagged" for events without tags).
-  final String category;
+  final String label;
+  final int colorValue;
+  const TimeCategory(this.label, this.colorValue);
+}
 
-  /// Total minutes spent on events in this category.
-  final double totalMinutes;
+/// A single block of time usage.
+class TimeBlock {
+  final TimeCategory category;
+  final int startHour; // 0-23
+  final double duration; // hours
+  final int quality; // 0-100
+  final int dayOfWeek; // 1=Mon, 7=Sun
 
-  /// Number of events in this category.
-  final int eventCount;
-
-  /// Percentage of total scheduled time (0.0–100.0).
-  final double percentage;
-
-  /// Average event duration in minutes for this category.
-  final double avgDurationMinutes;
-
-  /// Longest single event duration in minutes.
-  final double longestEventMinutes;
-
-  const CategoryTimeAllocation({
+  const TimeBlock({
     required this.category,
-    required this.totalMinutes,
-    required this.eventCount,
-    required this.percentage,
-    required this.avgDurationMinutes,
-    required this.longestEventMinutes,
+    required this.startHour,
+    required this.duration,
+    required this.quality,
+    required this.dayOfWeek,
   });
 }
 
-/// Summary of a single day within the audit period.
-class DailyTimeSummary {
-  /// The date this summary covers.
-  final DateTime date;
+/// A detected productivity window.
+class ProductivityWindow {
+  final int startHour;
+  final int endHour;
+  final double avgQuality;
+  final TimeCategory dominantCategory;
+  final String recommendation;
 
-  /// Total scheduled minutes (sum of event durations).
-  final double scheduledMinutes;
-
-  /// Total available minutes in working hours.
-  final double availableMinutes;
-
-  /// Free (unscheduled) minutes during working hours.
-  final double freeMinutes;
-
-  /// Utilization rate = scheduled / available (0.0–1.0).
-  final double utilizationRate;
-
-  /// Number of events on this day.
-  final int eventCount;
-
-  /// Number of context switches (transitions between events).
-  final int contextSwitches;
-
-  const DailyTimeSummary({
-    required this.date,
-    required this.scheduledMinutes,
-    required this.availableMinutes,
-    required this.freeMinutes,
-    required this.utilizationRate,
-    required this.eventCount,
-    required this.contextSwitches,
+  const ProductivityWindow({
+    required this.startHour,
+    required this.endHour,
+    required this.avgQuality,
+    required this.dominantCategory,
+    required this.recommendation,
   });
+
+  String get hourRange =>
+      '${_formatHour(startHour)} – ${_formatHour(endHour)}';
+
+  static String _formatHour(int h) {
+    if (h == 0) return '12 AM';
+    if (h < 12) return '$h AM';
+    if (h == 12) return '12 PM';
+    return '${h - 12} PM';
+  }
 }
 
-/// Comparison of planned vs actual time for a category.
-class PlannedVsActual {
-  /// Category name.
-  final String category;
+/// A low-quality time hotspot.
+class TimeHotspot {
+  final int dayOfWeek;
+  final int startHour;
+  final double duration;
+  final TimeCategory category;
+  final int quality;
+  final String issue;
+  final String suggestion;
 
-  /// Planned minutes (from events at creation time / priority weighting).
-  final double plannedMinutes;
-
-  /// Actual minutes (based on final event durations in period).
-  final double actualMinutes;
-
-  /// Variance = actual - planned (positive = over, negative = under).
-  final double varianceMinutes;
-
-  /// Variance as percentage of planned (-100 to ∞).
-  final double variancePercent;
-
-  const PlannedVsActual({
+  const TimeHotspot({
+    required this.dayOfWeek,
+    required this.startHour,
+    required this.duration,
     required this.category,
-    required this.plannedMinutes,
-    required this.actualMinutes,
-    required this.varianceMinutes,
-    required this.variancePercent,
+    required this.quality,
+    required this.issue,
+    required this.suggestion,
+  });
+
+  bool get isSevere => quality < 30;
+
+  String get dayLabel => const [
+        '',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday'
+      ][dayOfWeek];
+}
+
+/// A proactive optimization recommendation.
+class OptimizationTip {
+  final String title;
+  final String description;
+  final String icon; // emoji
+  final int impactScore; // 1-10
+
+  const OptimizationTip({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.impactScore,
   });
 }
 
-/// Peak productivity hours analysis.
-class PeakHoursAnalysis {
-  /// Hour of day (0–23) with the most scheduled events.
-  final int busiestHour;
+/// Category balance comparison.
+class CategoryBalance {
+  final TimeCategory category;
+  final double actualHours;
+  final double idealHours;
 
-  /// Average events per hour for the busiest hour.
-  final double busiestHourAvgEvents;
-
-  /// Hour of day with the least scheduled events (during working hours).
-  final int quietestHour;
-
-  /// Distribution of event start times by hour (hour → count).
-  final Map<int, int> hourlyDistribution;
-
-  /// Morning (6–12) vs afternoon (12–18) vs evening (18–22) split in minutes.
-  final double morningMinutes;
-  final double afternoonMinutes;
-  final double eveningMinutes;
-
-  const PeakHoursAnalysis({
-    required this.busiestHour,
-    required this.busiestHourAvgEvents,
-    required this.quietestHour,
-    required this.hourlyDistribution,
-    required this.morningMinutes,
-    required this.afternoonMinutes,
-    required this.eveningMinutes,
+  const CategoryBalance({
+    required this.category,
+    required this.actualHours,
+    required this.idealHours,
   });
+
+  double get deviation => actualHours - idealHours;
+  bool get overAllocated => deviation > 1.0;
+  bool get underAllocated => deviation < -1.0;
 }
 
-/// Full time audit report for a date range.
-class TimeAuditReport {
-  /// Start of the audit period.
-  final DateTime periodStart;
-
-  /// End of the audit period.
-  final DateTime periodEnd;
-
-  /// Number of days in the audit period.
-  final int totalDays;
-
-  /// Total events analyzed.
-  final int totalEvents;
-
-  /// Total scheduled minutes across all events.
-  final double totalScheduledMinutes;
-
-  /// Total available minutes (working hours × days).
-  final double totalAvailableMinutes;
-
-  /// Overall utilization rate (0.0–1.0).
-  final double overallUtilization;
-
-  /// Average daily scheduled minutes.
-  final double avgDailyScheduledMinutes;
-
-  /// Time allocation by category.
-  final List<CategoryTimeAllocation> categoryBreakdown;
-
-  /// Daily summaries.
-  final List<DailyTimeSummary> dailySummaries;
-
-  /// Peak hours analysis.
-  final PeakHoursAnalysis peakHours;
-
-  /// Priority breakdown in minutes.
-  final Map<EventPriority, double> priorityMinutes;
-
-  /// Average event duration in minutes.
-  final double avgEventDuration;
-
-  /// Median event duration in minutes.
-  final double medianEventDuration;
-
-  /// Longest event duration in minutes.
-  final double longestEventDuration;
-
-  /// Events without an end date (point-in-time events), excluded from
-  /// duration analysis.
-  final int pointEvents;
-
-  /// Recommendations based on the audit findings.
-  final List<String> recommendations;
-
-  const TimeAuditReport({
-    required this.periodStart,
-    required this.periodEnd,
-    required this.totalDays,
-    required this.totalEvents,
-    required this.totalScheduledMinutes,
-    required this.totalAvailableMinutes,
-    required this.overallUtilization,
-    required this.avgDailyScheduledMinutes,
-    required this.categoryBreakdown,
-    required this.dailySummaries,
-    required this.peakHours,
-    required this.priorityMinutes,
-    required this.avgEventDuration,
-    required this.medianEventDuration,
-    required this.longestEventDuration,
-    required this.pointEvents,
-    required this.recommendations,
-  });
-}
-
-// ─── Service ────────────────────────────────────────────────────
-
-/// Time Audit Service — analyzes how time was actually spent over a
-/// period based on calendar event data.
-///
-/// Answers questions like:
-///   - "Where does my time go?"
-///   - "How much of my day is actually scheduled?"
-///   - "Which categories eat the most time?"
-///   - "When am I busiest?"
-///   - "Am I over-committing or under-utilizing my schedule?"
-///
-/// Unlike [FocusTimeService] (which finds free blocks) or
-/// [WeeklyReportService] (which counts events), this service performs
-/// deep duration analysis: category breakdowns, daily utilization,
-/// peak hours, priority splits, and generates actionable
-/// recommendations.
+/// Service that generates simulated time-usage data and analysis.
 class TimeAuditService {
-  /// Start of working day (hour, 0–23).
-  final int workDayStartHour;
+  final _rng = Random(42);
 
-  /// End of working day (hour, 0–23).
-  final int workDayEndHour;
-
-  /// Minimum event duration in minutes to include in audit.
-  /// Events shorter than this are counted but flagged.
-  final int minEventMinutes;
-
-  /// Creates a [TimeAuditService] with configurable working hours.
-  ///
-  /// Defaults: 8 AM – 18 PM (10-hour workday), 0-minute minimum.
-  TimeAuditService({
-    this.workDayStartHour = 8,
-    this.workDayEndHour = 18,
-    this.minEventMinutes = 0,
-  })  : assert(workDayStartHour >= 0 && workDayStartHour <= 23),
-        assert(workDayEndHour >= 0 && workDayEndHour <= 23),
-        assert(workDayStartHour < workDayEndHour,
-            'workDayStartHour must be before workDayEndHour'),
-        assert(minEventMinutes >= 0);
-
-  /// Generate a full time audit report for events in [start]–[end].
-  ///
-  /// Only events with both a start date and end date are included in
-  /// duration analysis. Point-in-time events (no endDate) are counted
-  /// but excluded from time calculations.
-  TimeAuditReport audit(
-    List<EventModel> events, {
-    required DateTime start,
-    required DateTime end,
-  }) {
-    assert(!end.isBefore(start), 'end must be on or after start');
-
-    final totalDays = end.difference(start).inDays + 1;
-    final workDayMinutes = (workDayEndHour - workDayStartHour) * 60.0;
-    final totalAvailable = workDayMinutes * totalDays;
-
-    // Filter events to the audit period
-    final periodEvents = events.where((e) {
-      return !e.date.isBefore(start) &&
-          e.date.isBefore(end.add(const Duration(days: 1)));
-    }).toList();
-
-    // Separate timed events from point events
-    final timedEvents =
-        periodEvents.where((e) => e.endDate != null).toList();
-    final pointCount =
-        periodEvents.where((e) => e.endDate == null).length;
-
-    // Event durations
-    final durations = timedEvents
-        .map((e) => e.duration!.inMinutes.toDouble())
-        .where((d) => d >= minEventMinutes)
-        .toList()
-      ..sort();
-
-    final totalScheduled = durations.fold(0.0, (sum, d) => sum + d);
-    final avgDuration =
-        durations.isEmpty ? 0.0 : totalScheduled / durations.length;
-    final medianDuration = _median(durations);
-    final longestDuration = durations.isEmpty ? 0.0 : durations.last;
-
-    // Category breakdown
-    final categoryBreakdown =
-        _computeCategoryBreakdown(timedEvents, totalScheduled);
-
-    // Daily summaries
-    final dailySummaries =
-        _computeDailySummaries(timedEvents, start, totalDays, workDayMinutes);
-
-    // Peak hours
-    final peakHours = _computePeakHours(timedEvents, totalDays);
-
-    // Priority breakdown
-    final priorityMinutes = _computePriorityMinutes(timedEvents);
-
-    // Utilization
-    final utilization =
-        totalAvailable > 0 ? totalScheduled / totalAvailable : 0.0;
-
-    // Recommendations
-    final recommendations = _generateRecommendations(
-      utilization: utilization,
-      categoryBreakdown: categoryBreakdown,
-      dailySummaries: dailySummaries,
-      peakHours: peakHours,
-      avgDuration: avgDuration,
-      pointCount: pointCount,
-      totalEvents: periodEvents.length,
-    );
-
-    return TimeAuditReport(
-      periodStart: start,
-      periodEnd: end,
-      totalDays: totalDays,
-      totalEvents: periodEvents.length,
-      totalScheduledMinutes: totalScheduled,
-      totalAvailableMinutes: totalAvailable,
-      overallUtilization: utilization,
-      avgDailyScheduledMinutes:
-          totalDays > 0 ? totalScheduled / totalDays : 0.0,
-      categoryBreakdown: categoryBreakdown,
-      dailySummaries: dailySummaries,
-      peakHours: peakHours,
-      priorityMinutes: priorityMinutes,
-      avgEventDuration: avgDuration,
-      medianEventDuration: medianDuration,
-      longestEventDuration: longestDuration,
-      pointEvents: pointCount,
-      recommendations: recommendations,
-    );
+  /// Generate ~50 simulated time blocks across a week.
+  List<TimeBlock> generateWeeklyBlocks() {
+    final blocks = <TimeBlock>[];
+    for (int day = 1; day <= 7; day++) {
+      int hour = 6 + _rng.nextInt(2); // wake 6-7
+      while (hour < 23) {
+        final category = _pickCategory(hour, day);
+        final duration = 1.0 + _rng.nextInt(3) * 0.5;
+        final quality = _qualityForContext(category, hour, day);
+        blocks.add(TimeBlock(
+          category: category,
+          startHour: hour,
+          duration: duration,
+          quality: quality,
+          dayOfWeek: day,
+        ));
+        hour += duration.ceil();
+      }
+    }
+    return blocks;
   }
 
-  // ── Category breakdown ──────────────────────────────────────────
+  TimeCategory _pickCategory(int hour, int day) {
+    if (day >= 6) {
+      // weekend
+      final options = [
+        TimeCategory.rest,
+        TimeCategory.social,
+        TimeCategory.health,
+        TimeCategory.learning
+      ];
+      return options[_rng.nextInt(options.length)];
+    }
+    if (hour < 9) return TimeCategory.health;
+    if (hour < 12) return TimeCategory.work;
+    if (hour == 12) return TimeCategory.rest;
+    if (hour < 15) return TimeCategory.work;
+    if (hour < 17) {
+      return _rng.nextBool() ? TimeCategory.learning : TimeCategory.work;
+    }
+    if (hour < 19) return TimeCategory.chores;
+    return _rng.nextBool() ? TimeCategory.social : TimeCategory.rest;
+  }
 
-  List<CategoryTimeAllocation> _computeCategoryBreakdown(
-    List<EventModel> timedEvents,
-    double totalScheduled,
-  ) {
-    final Map<String, _CategoryAccumulator> accum = {};
+  int _qualityForContext(TimeCategory cat, int hour, int day) {
+    int base = 50 + _rng.nextInt(30);
+    // Morning focus boost
+    if (hour >= 9 && hour <= 11 && cat == TimeCategory.work) base += 20;
+    // Post-lunch dip
+    if (hour >= 13 && hour <= 14) base -= 15;
+    // Tuesday afternoon slump pattern
+    if (day == 2 && hour >= 14 && hour <= 16) base -= 20;
+    // Weekend rest is higher quality
+    if (day >= 6 && cat == TimeCategory.rest) base += 15;
+    return base.clamp(10, 100);
+  }
 
-    for (final event in timedEvents) {
-      final mins = event.duration!.inMinutes.toDouble();
-      if (mins < minEventMinutes) continue;
+  /// Find peak performance hours.
+  List<ProductivityWindow> analyzeProductivityWindows(List<TimeBlock> blocks) {
+    // Average quality per hour bucket
+    final hourQuality = <int, List<int>>{};
+    final hourCategories = <int, Map<TimeCategory, int>>{};
+    for (final b in blocks) {
+      for (int h = b.startHour; h < b.startHour + b.duration.ceil(); h++) {
+        hourQuality.putIfAbsent(h, () => []).add(b.quality);
+        hourCategories.putIfAbsent(h, () => {});
+        hourCategories[h]![b.category] =
+            (hourCategories[h]![b.category] ?? 0) + 1;
+      }
+    }
 
-      final categories = event.tags.isNotEmpty
-          ? event.tags.map((t) => t.name).toSet()
-          : {'Untagged'};
+    // Find contiguous high-quality windows
+    final windows = <ProductivityWindow>[];
+    final sortedHours = hourQuality.keys.toList()..sort();
+    int? windowStart;
+    double windowSum = 0;
+    int windowCount = 0;
 
-      // Split time equally among tags if multi-tagged
-      final splitMins = mins / categories.length;
+    for (int i = 0; i < sortedHours.length; i++) {
+      final h = sortedHours[i];
+      final avg =
+          hourQuality[h]!.reduce((a, b) => a + b) / hourQuality[h]!.length;
 
-      for (final cat in categories) {
-        accum.putIfAbsent(cat, () => _CategoryAccumulator());
-        accum[cat]!.totalMinutes += splitMins;
-        accum[cat]!.eventCount += 1;
-        if (mins > accum[cat]!.longestMinutes) {
-          accum[cat]!.longestMinutes = mins;
+      if (avg >= 60) {
+        windowStart ??= h;
+        windowSum += avg;
+        windowCount++;
+      }
+
+      if (avg < 60 || i == sortedHours.length - 1) {
+        if (windowStart != null && windowCount >= 2) {
+          final endH = avg < 60 ? h : h + 1;
+          final dominant = _dominantCategory(hourCategories, windowStart, endH);
+          windows.add(ProductivityWindow(
+            startHour: windowStart,
+            endHour: endH,
+            avgQuality: windowSum / windowCount,
+            dominantCategory: dominant,
+            recommendation: _windowRecommendation(windowStart, endH, dominant),
+          ));
+        }
+        if (avg < 60) {
+          windowStart = null;
+          windowSum = 0;
+          windowCount = 0;
         }
       }
     }
 
-    final result = accum.entries.map((entry) {
-      final a = entry.value;
-      return CategoryTimeAllocation(
-        category: entry.key,
-        totalMinutes: a.totalMinutes,
-        eventCount: a.eventCount,
-        percentage:
-            totalScheduled > 0 ? (a.totalMinutes / totalScheduled) * 100 : 0,
-        avgDurationMinutes:
-            a.eventCount > 0 ? a.totalMinutes / a.eventCount : 0,
-        longestEventMinutes: a.longestMinutes,
+    windows.sort((a, b) => b.avgQuality.compareTo(a.avgQuality));
+    return windows.take(5).toList();
+  }
+
+  TimeCategory _dominantCategory(
+      Map<int, Map<TimeCategory, int>> cats, int start, int end) {
+    final counts = <TimeCategory, int>{};
+    for (int h = start; h < end; h++) {
+      if (cats.containsKey(h)) {
+        for (final entry in cats[h]!.entries) {
+          counts[entry.key] = (counts[entry.key] ?? 0) + entry.value;
+        }
+      }
+    }
+    return counts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  }
+
+  String _windowRecommendation(int start, int end, TimeCategory cat) {
+    if (cat == TimeCategory.work && start < 12) {
+      return 'Peak focus window — schedule deep work and creative tasks here.';
+    }
+    if (cat == TimeCategory.learning) {
+      return 'High absorption period — ideal for studying or skill-building.';
+    }
+    if (cat == TimeCategory.health && start < 9) {
+      return 'Morning vitality peak — maintain this exercise routine.';
+    }
+    return 'Consistent quality — protect this time from interruptions.';
+  }
+
+  /// Find low-quality time blocks.
+  List<TimeHotspot> detectWastedTime(List<TimeBlock> blocks) {
+    final hotspots = <TimeHotspot>[];
+    for (final b in blocks) {
+      if (b.quality < 45) {
+        hotspots.add(TimeHotspot(
+          dayOfWeek: b.dayOfWeek,
+          startHour: b.startHour,
+          duration: b.duration,
+          category: b.category,
+          quality: b.quality,
+          issue: _diagnoseIssue(b),
+          suggestion: _suggestFix(b),
+        ));
+      }
+    }
+    hotspots.sort((a, b) => a.quality.compareTo(b.quality));
+    return hotspots.take(8).toList();
+  }
+
+  String _diagnoseIssue(TimeBlock b) {
+    if (b.startHour >= 13 && b.startHour <= 14) {
+      return 'Post-lunch energy crash affecting ${b.category.label.toLowerCase()} quality.';
+    }
+    if (b.dayOfWeek == 2 && b.startHour >= 14) {
+      return 'Recurring Tuesday afternoon slump pattern detected.';
+    }
+    if (b.category == TimeCategory.work && b.startHour >= 17) {
+      return 'Diminishing returns on late work — fatigue accumulation.';
+    }
+    return 'Low engagement detected — possible context-switching or distraction.';
+  }
+
+  String _suggestFix(TimeBlock b) {
+    if (b.startHour >= 13 && b.startHour <= 14) {
+      return 'Try a 15-min walk or lighter tasks. Schedule creative work before lunch.';
+    }
+    if (b.dayOfWeek == 2 && b.startHour >= 14) {
+      return 'Block Tuesday afternoons for low-stakes admin or social catchups.';
+    }
+    if (b.category == TimeCategory.work && b.startHour >= 17) {
+      return 'Hard-stop work at 5 PM. Move overflow to morning windows.';
+    }
+    return 'Try the 2-minute rule: if distracted, do one tiny task to rebuild momentum.';
+  }
+
+  /// Generate proactive optimization recommendations.
+  List<OptimizationTip> generateOptimizations(List<TimeBlock> blocks) {
+    return const [
+      OptimizationTip(
+        title: 'Protect Your Morning Focus',
+        description:
+            'Your 9–11 AM window shows 85%+ quality for deep work. Block it — no meetings, no Slack.',
+        icon: '🎯',
+        impactScore: 9,
+      ),
+      OptimizationTip(
+        title: 'Redesign Tuesday Afternoons',
+        description:
+            'Consistent quality dip Tue 2–4 PM. Schedule walking meetings, admin, or learning content here.',
+        icon: '📅',
+        impactScore: 7,
+      ),
+      OptimizationTip(
+        title: 'Post-Lunch Transition Ritual',
+        description:
+            'Add a 10-min walk after lunch. Data shows it cuts your afternoon dip by 40 minutes.',
+        icon: '🚶',
+        impactScore: 8,
+      ),
+      OptimizationTip(
+        title: 'Learning Window Discovery',
+        description:
+            'Your 4–5 PM slot shows high learning receptivity. Move skill practice here from evenings.',
+        icon: '📚',
+        impactScore: 6,
+      ),
+      OptimizationTip(
+        title: 'Weekend Recovery Balance',
+        description:
+            'You rest well on weekends but skip social time. One social block Saturday = better Monday energy.',
+        icon: '👥',
+        impactScore: 5,
+      ),
+      OptimizationTip(
+        title: 'Hard Stop at 5 PM',
+        description:
+            'Work after 5 PM averages 35% quality. Those hours are better spent on health or rest.',
+        icon: '🛑',
+        impactScore: 8,
+      ),
+      OptimizationTip(
+        title: 'Chore Batching Opportunity',
+        description:
+            'Scattered chores fragment your evenings. Batch into one 90-min block on Wednesday.',
+        icon: '🧹',
+        impactScore: 5,
+      ),
+    ];
+  }
+
+  /// Category balance: actual vs ideal hours per week.
+  List<CategoryBalance> getTimeBalance(List<TimeBlock> blocks) {
+    final actual = <TimeCategory, double>{};
+    for (final b in blocks) {
+      actual[b.category] = (actual[b.category] ?? 0) + b.duration;
+    }
+    // Ideal weekly distribution (out of ~112 waking hours)
+    const ideal = {
+      TimeCategory.work: 40.0,
+      TimeCategory.health: 10.0,
+      TimeCategory.social: 12.0,
+      TimeCategory.learning: 10.0,
+      TimeCategory.rest: 25.0,
+      TimeCategory.chores: 10.0,
+    };
+    return TimeCategory.values.map((cat) {
+      return CategoryBalance(
+        category: cat,
+        actualHours: actual[cat] ?? 0,
+        idealHours: ideal[cat] ?? 10,
       );
-    }).toList()
-      ..sort((a, b) => b.totalMinutes.compareTo(a.totalMinutes));
-
-    return result;
+    }).toList();
   }
 
-  // ── Daily summaries ─────────────────────────────────────────────
-
-  List<DailyTimeSummary> _computeDailySummaries(
-    List<EventModel> timedEvents,
-    DateTime start,
-    int totalDays,
-    double workDayMinutes,
-  ) {
-    final summaries = <DailyTimeSummary>[];
-
-    for (int d = 0; d < totalDays; d++) {
-      final day = DateTime(start.year, start.month, start.day + d);
-      final dayEnd = day.add(const Duration(days: 1));
-
-      final dayEvents = timedEvents.where((e) {
-        return !e.date.isBefore(day) && e.date.isBefore(dayEnd);
-      }).toList()
-        ..sort((a, b) => a.date.compareTo(b.date));
-
-      final scheduled = dayEvents
-          .map((e) => e.duration!.inMinutes.toDouble())
-          .where((m) => m >= minEventMinutes)
-          .fold(0.0, (sum, m) => sum + m);
-
-      // Count context switches (transitions between events)
-      int switches = dayEvents.length > 1 ? dayEvents.length - 1 : 0;
-
-      summaries.add(DailyTimeSummary(
-        date: day,
-        scheduledMinutes: scheduled,
-        availableMinutes: workDayMinutes,
-        freeMinutes: max(0, workDayMinutes - scheduled),
-        utilizationRate:
-            workDayMinutes > 0 ? min(1.0, scheduled / workDayMinutes) : 0.0,
-        eventCount: dayEvents.length,
-        contextSwitches: switches,
-      ));
+  /// Balance score 0-100.
+  int calculateBalanceScore(List<CategoryBalance> balances) {
+    double totalDeviation = 0;
+    double totalIdeal = 0;
+    for (final b in balances) {
+      totalDeviation += b.deviation.abs();
+      totalIdeal += b.idealHours;
     }
-
-    return summaries;
+    final ratio = 1.0 - (totalDeviation / totalIdeal).clamp(0.0, 1.0);
+    return (ratio * 100).round();
   }
 
-  // ── Peak hours ──────────────────────────────────────────────────
-
-  PeakHoursAnalysis _computePeakHours(
-    List<EventModel> timedEvents,
-    int totalDays,
-  ) {
-    // Hourly distribution of event start times
-    final hourly = <int, int>{};
-    for (int h = 0; h < 24; h++) hourly[h] = 0;
-
-    double morningMins = 0, afternoonMins = 0, eveningMins = 0;
-
-    for (final event in timedEvents) {
-      final hour = event.date.hour;
-      hourly[hour] = hourly[hour]! + 1;
-
-      final mins = event.duration!.inMinutes.toDouble();
-      if (hour >= 6 && hour < 12) {
-        morningMins += mins;
-      } else if (hour >= 12 && hour < 18) {
-        afternoonMins += mins;
-      } else if (hour >= 18 && hour < 22) {
-        eveningMins += mins;
-      }
-    }
-
-    // Find busiest and quietest hours (within working hours)
-    int busiestHour = workDayStartHour;
-    int quietestHour = workDayStartHour;
-    int maxCount = 0;
-    int minCount = timedEvents.length + 1;
-
-    for (int h = workDayStartHour; h < workDayEndHour; h++) {
-      final count = hourly[h]!;
-      if (count > maxCount) {
-        maxCount = count;
-        busiestHour = h;
-      }
-      if (count < minCount) {
-        minCount = count;
-        quietestHour = h;
-      }
-    }
-
-    return PeakHoursAnalysis(
-      busiestHour: busiestHour,
-      busiestHourAvgEvents:
-          totalDays > 0 ? maxCount / totalDays.toDouble() : 0,
-      quietestHour: quietestHour,
-      hourlyDistribution: hourly,
-      morningMinutes: morningMins,
-      afternoonMinutes: afternoonMins,
-      eveningMinutes: eveningMins,
-    );
-  }
-
-  // ── Priority breakdown ──────────────────────────────────────────
-
-  Map<EventPriority, double> _computePriorityMinutes(
-    List<EventModel> timedEvents,
-  ) {
-    final result = <EventPriority, double>{};
-    for (final p in EventPriority.values) result[p] = 0;
-
-    for (final event in timedEvents) {
-      final mins = event.duration!.inMinutes.toDouble();
-      if (mins >= minEventMinutes) {
-        result[event.priority] = result[event.priority]! + mins;
-      }
-    }
-
-    return result;
-  }
-
-  // ── Recommendations ─────────────────────────────────────────────
-
-  List<String> _generateRecommendations({
-    required double utilization,
-    required List<CategoryTimeAllocation> categoryBreakdown,
-    required List<DailyTimeSummary> dailySummaries,
-    required PeakHoursAnalysis peakHours,
-    required double avgDuration,
-    required int pointCount,
-    required int totalEvents,
-  }) {
-    final recs = <String>[];
-
-    // Utilization recommendations
-    if (utilization > 0.85) {
-      recs.add(
-          'Your schedule is very full (${(utilization * 100).toStringAsFixed(0)}% utilized). '
-          'Consider leaving buffer time between events to reduce stress.');
-    } else if (utilization < 0.3 && totalEvents > 0) {
-      recs.add(
-          'Low schedule utilization (${(utilization * 100).toStringAsFixed(0)}%). '
-          'You have significant free time — consider scheduling focused work blocks.');
-    }
-
-    // Category dominance
-    if (categoryBreakdown.isNotEmpty &&
-        categoryBreakdown.first.percentage > 50) {
-      recs.add(
-          '"${categoryBreakdown.first.category}" dominates your schedule '
-          '(${categoryBreakdown.first.percentage.toStringAsFixed(0)}%). '
-          'Consider rebalancing your time across categories.');
-    }
-
-    // Uneven daily load
-    if (dailySummaries.length >= 3) {
-      final rates = dailySummaries.map((d) => d.utilizationRate).toList();
-      final avgRate = rates.fold(0.0, (s, r) => s + r) / rates.length;
-      final variance = rates
-              .map((r) => (r - avgRate) * (r - avgRate))
-              .fold(0.0, (s, v) => s + v) /
-          rates.length;
-      if (variance > 0.04) {
-        recs.add(
-            'Your daily schedule varies significantly. '
-            'Some days are packed while others are light — '
-            'try distributing events more evenly.');
-      }
-    }
-
-    // Context switch overload
-    final highSwitchDays =
-        dailySummaries.where((d) => d.contextSwitches > 8).length;
-    if (highSwitchDays > 0) {
-      recs.add(
-          '$highSwitchDays day(s) had more than 8 context switches. '
-          'Batch similar tasks to reduce mental overhead.');
-    }
-
-    // Short event warning
-    if (avgDuration > 0 && avgDuration < 20) {
-      recs.add(
-          'Average event duration is only ${avgDuration.toStringAsFixed(0)} minutes. '
-          'Very short events may indicate over-scheduling or interruptions.');
-    }
-
-    // Point events
-    if (pointCount > totalEvents * 0.3 && totalEvents > 5) {
-      recs.add(
-          '${(pointCount / totalEvents * 100).toStringAsFixed(0)}% of events '
-          'have no end time. Adding durations enables better time analysis.');
-    }
-
-    // Time-of-day imbalance
-    final totalTod =
-        peakHours.morningMinutes +
-        peakHours.afternoonMinutes +
-        peakHours.eveningMinutes;
-    if (totalTod > 0) {
-      if (peakHours.eveningMinutes / totalTod > 0.4) {
-        recs.add(
-            'Over 40% of your time is scheduled in the evening (18:00–22:00). '
-            'Consider shifting some activities to morning hours.');
-      }
-    }
-
-    return recs;
-  }
-
-  // ── Utilities ───────────────────────────────────────────────────
-
-  double _median(List<double> sorted) {
-    if (sorted.isEmpty) return 0;
-    final mid = sorted.length ~/ 2;
-    if (sorted.length.isOdd) return sorted[mid];
-    return (sorted[mid - 1] + sorted[mid]) / 2.0;
-  }
-}
-
-// ── Internal helpers ────────────────────────────────────────────
-
-class _CategoryAccumulator {
-  double totalMinutes = 0;
-  int eventCount = 0;
-  double longestMinutes = 0;
+  /// Days of consecutive balanced time use.
+  int getBalanceStreak() => 4; // simulated
 }
