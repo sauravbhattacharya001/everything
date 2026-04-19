@@ -275,9 +275,11 @@ class TimeBudgetService {
     DateTime? until,
     bool includeRecurring = true,
   }) {
-    final allEvents = _expandEvents(events, includeRecurring: includeRecurring);
     final startDate = since != null ? _dateOnly(since) : _today.subtract(const Duration(days: 30));
     final endDate = until != null ? _dateOnly(until) : _today;
+    final allEvents = includeRecurring
+        ? _expandEventsInRange(events, startDate, endDate.add(const Duration(days: 1)))
+        : events;
     final daysInPeriod = endDate.difference(startDate).inDays + 1;
     final weeksInPeriod = daysInPeriod / 7.0;
 
@@ -549,6 +551,25 @@ class TimeBudgetService {
       expanded.add(e);
       if (e.isRecurring) {
         expanded.addAll(e.generateOccurrences());
+      }
+    }
+    return expanded;
+  }
+
+  /// Bounded variant: only materialises occurrences within [start, end).
+  List<EventModel> _expandEventsInRange(
+    List<EventModel> events,
+    DateTime start,
+    DateTime end,
+  ) {
+    final expanded = <EventModel>[];
+    for (final e in events) {
+      final d = _dateOnly(e.date);
+      if (!d.isBefore(start) && d.isBefore(end)) {
+        expanded.add(e);
+      }
+      if (e.isRecurring) {
+        expanded.addAll(e.generateOccurrencesInRange(start, end));
       }
     }
     return expanded;

@@ -161,6 +161,36 @@ class EventModel {
     }).toList();
   }
 
+  /// Generates occurrences of this recurring event within [start, end).
+  ///
+  /// Unlike [generateOccurrences], this stops generating dates as soon as
+  /// they exceed [end], avoiding unnecessary [copyWith] allocations.
+  /// For a 7-day window on a weekly event, this creates ~1 model instead
+  /// of up to 52.
+  List<EventModel> generateOccurrencesInRange(
+    DateTime start,
+    DateTime end, {
+    int maxOccurrences = 52,
+  }) {
+    if (recurrence == null) return [];
+    final dates = recurrence!.generateOccurrences(date, maxOccurrences: maxOccurrences);
+    final results = <EventModel>[];
+    var index = 0;
+    for (int i = 1; i < dates.length; i++) {
+      final d = dates[i];
+      if (!d.isBefore(end)) break; // Sorted dates — no need to continue
+      if (d.isBefore(start)) continue;
+      index++;
+      final shift = d.difference(date);
+      results.add(copyWith(
+        id: '${id}_$index',
+        date: d,
+        endDate: endDate?.add(shift),
+      ));
+    }
+    return results;
+  }
+
   /// Deserializes an [EventModel] from a JSON map (typically from SQLite).
   ///
   /// Handles polymorphic tag/recurrence fields: values stored as JSON

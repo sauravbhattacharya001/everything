@@ -676,6 +676,11 @@ class WeeklyPlannerService {
   }
 
   /// Expand recurring events into individual occurrences within the period.
+  ///
+  /// Uses [EventModel.generateOccurrencesInRange] to produce only the
+  /// occurrences that fall within [start, end). For a 7-day planning
+  /// window, a weekly recurring event now creates ~1 EventModel copy
+  /// instead of up to 52 (the previous `generateOccurrences()` default).
   List<EventModel> _expandEvents(
     List<EventModel> events,
     DateTime start,
@@ -688,12 +693,7 @@ class WeeklyPlannerService {
         expanded.add(e);
       }
       if (e.isRecurring) {
-        for (final occurrence in e.generateOccurrences()) {
-          final occDate = _dateOnly(occurrence.date);
-          if (!occDate.isBefore(start) && occDate.isBefore(end)) {
-            expanded.add(occurrence);
-          }
-        }
+        expanded.addAll(e.generateOccurrencesInRange(start, end));
       }
     }
     return expanded;

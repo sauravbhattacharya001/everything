@@ -350,8 +350,11 @@ class FocusTimeService {
       );
     }
 
-    // Expand recurring events
-    final expanded = _expandRecurring(events);
+    // Expand recurring events within the analysis window only.
+    // Using generateOccurrencesInRange avoids materialising up to 52
+    // EventModel copies per recurring event when only a handful fall
+    // within [from, to].
+    final expanded = _expandRecurringInRange(events, fromDate, toDate.add(const Duration(days: 1)));
 
     // Group events by date
     final eventsByDate = <DateTime, List<EventModel>>{};
@@ -741,6 +744,27 @@ class FocusTimeService {
       expanded.add(e);
       if (e.isRecurring) {
         expanded.addAll(e.generateOccurrences());
+      }
+    }
+    return expanded;
+  }
+
+  /// Expands recurring events, but only generates occurrences within
+  /// [start, end). Much cheaper than [_expandRecurring] when the
+  /// analysis window is small relative to the recurrence span.
+  List<EventModel> _expandRecurringInRange(
+    List<EventModel> events,
+    DateTime start,
+    DateTime end,
+  ) {
+    final expanded = <EventModel>[];
+    for (final e in events) {
+      final d = _dateOnly(e.date);
+      if (!d.isBefore(start) && d.isBefore(end)) {
+        expanded.add(e);
+      }
+      if (e.isRecurring) {
+        expanded.addAll(e.generateOccurrencesInRange(start, end));
       }
     }
     return expanded;

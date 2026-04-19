@@ -588,7 +588,7 @@ class EventDeduplicationService {
     // Generate occurrences for a window around the date
     final windowStart = date.subtract(const Duration(days: 1));
     final windowEnd = date.add(const Duration(days: 1));
-    final occurrences = recurring.generateOccurrences(windowStart, windowEnd);
+    final occurrences = recurring.generateOccurrencesInRange(windowStart, windowEnd);
     return occurrences.any((occ) => AppDateUtils.isSameDay(occ.date, date));
   }
 
