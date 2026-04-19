@@ -201,7 +201,6 @@ class CronExpressionService {
   }
 
   static String _plural(String s) {
-    if (s.endsWith('h')) return '${s}es'; // month → monthes? No...
     return '${s}s';
   }
 }
