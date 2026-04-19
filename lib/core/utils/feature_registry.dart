@@ -3,6 +3,7 @@ import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
+import '../../views/home/fuel_gauge_screen.dart';
 import '../../views/home/bucket_list_screen.dart';
 import '../../views/home/budget_planner_screen.dart';
 import '../../views/home/calendar_screen.dart';
@@ -1328,6 +1329,12 @@ class FeatureRegistry {
       icon: Icons.radar,
       category: FeatureCategory.tracking,
       builder: (_) => const LifeScoreScreen(),
+    ),
+    FeatureEntry(
+      label: 'Daily Fuel Gauge',
+      icon: Icons.speed,
+      category: FeatureCategory.health,
+      builder: (_) => const FuelGaugeScreen(),
     ),
     FeatureEntry(
       label: 'Morning Briefing',
