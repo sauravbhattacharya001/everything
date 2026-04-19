@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../../models/water_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Configuration for daily water intake goals.
 class HydrationConfig {
@@ -463,13 +464,9 @@ class WaterTrackerService {
 
   List<WaterEntry> _entriesForDate(List<WaterEntry> entries, DateTime date) {
     return entries
-        .where((e) =>
-            e.timestamp.year == date.year &&
-            e.timestamp.month == date.month &&
-            e.timestamp.day == date.day)
+        .where((e) => AppDateUtils.isSameDay(e.timestamp, date))
         .toList();
   }
 
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _dateKey(DateTime d) => AppDateUtils.dateKey(d);
 }

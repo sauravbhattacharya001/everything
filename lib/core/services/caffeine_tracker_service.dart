@@ -1,5 +1,6 @@
 import 'dart:math' show pow;
 import '../../models/caffeine_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Configuration for caffeine tracking.
 class CaffeineConfig {
@@ -70,10 +71,7 @@ class CaffeineTrackerService {
   List<CaffeineEntry> entriesForDate(
       List<CaffeineEntry> entries, DateTime date) {
     return entries
-        .where((e) =>
-            e.timestamp.year == date.year &&
-            e.timestamp.month == date.month &&
-            e.timestamp.day == date.day)
+        .where((e) => AppDateUtils.isSameDay(e.timestamp, date))
         .toList();
   }
 

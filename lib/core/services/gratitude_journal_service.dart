@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import '../utils/date_utils.dart';
 import '../../models/gratitude_entry.dart';
 import 'service_persistence.dart';
 
@@ -192,9 +193,7 @@ class GratitudeJournalService with ServicePersistence {
 
   List<GratitudeEntry> getEntriesForDate(DateTime date) {
     return _entries.where((e) =>
-        e.timestamp.year == date.year &&
-        e.timestamp.month == date.month &&
-        e.timestamp.day == date.day).toList();
+        AppDateUtils.isSameDay(e.timestamp, date)).toList();
   }
 
   List<GratitudeEntry> getEntriesInRange(DateTime start, DateTime end) {

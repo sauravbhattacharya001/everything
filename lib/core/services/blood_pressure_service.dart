@@ -1,4 +1,5 @@
 import '../../models/blood_pressure_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Summary statistics for a collection of BP readings.
 class BPSummary {
@@ -145,10 +146,7 @@ class BloodPressureService {
     DateTime date,
   ) {
     return entries
-        .where((e) =>
-            e.timestamp.year == date.year &&
-            e.timestamp.month == date.month &&
-            e.timestamp.day == date.day)
+        .where((e) => AppDateUtils.isSameDay(e.timestamp, date))
         .toList();
   }
 

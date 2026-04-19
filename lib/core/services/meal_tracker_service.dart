@@ -1,4 +1,5 @@
 import '../../models/meal_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Nutrition goals configuration.
 class NutritionConfig {
@@ -317,9 +318,7 @@ class MealTrackerService {
 
   List<MealEntry> getMealsForDate(DateTime date) {
     return _entries.where((e) =>
-        e.timestamp.year == date.year &&
-        e.timestamp.month == date.month &&
-        e.timestamp.day == date.day).toList()
+        AppDateUtils.isSameDay(e.timestamp, date)).toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 

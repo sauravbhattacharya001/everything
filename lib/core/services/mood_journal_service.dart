@@ -1,5 +1,6 @@
 import '../../models/mood_entry.dart';
 import '../utils/collection_utils.dart';
+import '../utils/date_utils.dart';
 import 'encrypted_preferences_service.dart';
 
 /// Service for managing mood journal entries with encrypted local persistence.
@@ -57,9 +58,7 @@ class MoodJournalService {
   /// Get entries for a specific date.
   List<MoodEntry> entriesForDate(DateTime date) {
     return _entries.where((e) =>
-        e.timestamp.year == date.year &&
-        e.timestamp.month == date.month &&
-        e.timestamp.day == date.day).toList();
+        AppDateUtils.isSameDay(e.timestamp, date)).toList();
   }
 
   /// Get entries for the last N days.

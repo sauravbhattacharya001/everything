@@ -48,6 +48,14 @@ class AppDateUtils {
   static DateTime dateOnly(DateTime dt) =>
       DateTime(dt.year, dt.month, dt.day);
 
+  /// Returns a `YYYY-MM-DD` string key for grouping entries by date.
+  ///
+  /// Many tracker services need to group or bucket entries by calendar
+  /// day. This avoids the duplicated `padLeft` formatting scattered
+  /// across 15+ services.
+  static String dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   /// Safely parses a date string, returning [fallback] (default: epoch) on
   /// malformed or null input instead of throwing [FormatException].
   ///
