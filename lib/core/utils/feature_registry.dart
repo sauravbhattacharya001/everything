@@ -99,6 +99,7 @@ import '../../views/home/mortgage_calculator_screen.dart';
 import '../../views/home/password_generator_screen.dart';
 import '../../views/home/password_strength_screen.dart';
 import '../../views/home/life_score_screen.dart';
+import '../../views/home/morning_briefing_screen.dart';
 import '../../views/home/color_palette_screen.dart';
 import '../../views/home/gradient_generator_screen.dart';
 import '../../views/home/currency_converter_screen.dart';
@@ -1327,6 +1328,12 @@ class FeatureRegistry {
       icon: Icons.radar,
       category: FeatureCategory.tracking,
       builder: (_) => const LifeScoreScreen(),
+    ),
+    FeatureEntry(
+      label: 'Morning Briefing',
+      icon: Icons.wb_sunny,
+      category: FeatureCategory.planning,
+      builder: (_) => const MorningBriefingScreen(),
     ),
   ];
 
