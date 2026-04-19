@@ -182,6 +182,7 @@ import '../../views/home/timezone_converter_screen.dart';
 import '../../views/home/minesweeper_screen.dart';
 import '../../views/home/lights_out_screen.dart';
 import '../../views/home/decision_matrix_screen.dart';
+import '../../views/home/life_coach_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1317,6 +1318,12 @@ class FeatureRegistry {
       icon: Icons.fingerprint,
       category: FeatureCategory.productivity,
       builder: (_) => const HashGeneratorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Life Coach',
+      icon: Icons.psychology,
+      category: FeatureCategory.productivity,
+      builder: (_) => const LifeCoachScreen(),
     ),
     FeatureEntry(
       label: 'Password Strength Analyzer',
