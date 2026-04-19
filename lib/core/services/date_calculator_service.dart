@@ -28,13 +28,8 @@ class DateCalculatorService {
     final totalHours = later.difference(earlier).inHours;
     final totalMinutes = later.difference(earlier).inMinutes;
 
-    // Business days (Mon-Fri) approximation
-    int businessDays = 0;
-    var cursor = earlier;
-    while (cursor.isBefore(later)) {
-      if (cursor.weekday <= 5) businessDays++;
-      cursor = cursor.add(const Duration(days: 1));
-    }
+    // Business days (Mon-Fri) — O(1) calculation instead of day-by-day loop
+    final int businessDays = _countBusinessDays(earlier, later);
 
     return DateDifference(
       years: years,
@@ -84,11 +79,17 @@ class DateCalculatorService {
     return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
   }
 
-  /// Week number (ISO 8601 approximation).
+  /// Week number (ISO 8601).
+  ///
+  /// Correctly handles edge cases where early-January days belong to
+  /// week 52/53 of the prior year, and late-December days belong to
+  /// week 1 of the next year.
   static int weekOfYear(DateTime date) {
-    final jan1 = DateTime(date.year, 1, 1);
-    final dayOfYr = date.difference(jan1).inDays;
-    return ((dayOfYr - date.weekday + 10) / 7).floor();
+    // Find the Thursday of the current week (ISO weeks are defined by Thursday)
+    final thursday = date.add(Duration(days: DateTime.thursday - date.weekday));
+    final jan1 = DateTime(thursday.year, 1, 1);
+    final dayOfYear = thursday.difference(jan1).inDays;
+    return (dayOfYear / 7).floor() + 1;
   }
 
   /// Whether [year] is a leap year.
@@ -108,6 +109,26 @@ class DateCalculatorService {
       'Friday', 'Saturday', 'Sunday',
     ];
     return names[(weekday - 1) % 7];
+  }
+
+  /// Count business days (Mon-Fri) between two dates in O(1) time.
+  static int _countBusinessDays(DateTime from, DateTime to) {
+    if (!from.isBefore(to)) return 0;
+
+    final totalDays = to.difference(from).inDays;
+    final fullWeeks = totalDays ~/ 7;
+    final remainingDays = totalDays % 7;
+
+    int businessDays = fullWeeks * 5;
+
+    // Count business days in the remaining partial week
+    var dayOfWeek = from.weekday; // 1=Mon, 7=Sun
+    for (int i = 0; i < remainingDays; i++) {
+      if (dayOfWeek <= 5) businessDays++;
+      dayOfWeek = dayOfWeek % 7 + 1;
+    }
+
+    return businessDays;
   }
 }
 
