@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/storage_backend.dart';
 import '../../core/services/dream_journal_service.dart';
 import '../../models/dream_entry.dart';
 
@@ -27,8 +27,7 @@ class _DreamJournalScreenState extends State<DreamJournalScreen>
   }
 
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString(_storageKey);
+    final json = await StorageBackend.read(_storageKey);
     if (json != null && json.isNotEmpty) {
       try {
         _service.importFromJson(json);
@@ -38,8 +37,7 @@ class _DreamJournalScreenState extends State<DreamJournalScreen>
   }
 
   Future<void> _saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, _service.exportToJson());
+    await StorageBackend.write(_storageKey, _service.exportToJson());
   }
 
   @override

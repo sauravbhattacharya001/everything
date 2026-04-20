@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'storage_backend.dart';
 
 /// The 8 life dimensions tracked by the Life Score Dashboard.
 enum LifeDimension {
@@ -102,10 +102,12 @@ class LifeScoreService {
   List<LifeScoreEntry> get entries => List.unmodifiable(_entries);
 
   /// Load all entries from persistent storage.
+  ///
+  /// Routes through [StorageBackend] so life-score data benefits from
+  /// the unified sensitivity-aware storage layer.
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_storageKey);
-    if (raw != null) {
+    final raw = await StorageBackend.read(_storageKey);
+    if (raw != null && raw.isNotEmpty) {
       final list = jsonDecode(raw) as List;
       _entries = list
           .map((e) => LifeScoreEntry.fromJson(e as Map<String, dynamic>))
@@ -130,8 +132,7 @@ class LifeScoreService {
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
+    await StorageBackend.write(
         _storageKey, jsonEncode(_entries.map((e) => e.toJson()).toList()));
   }
 
