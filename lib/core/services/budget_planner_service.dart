@@ -96,9 +96,13 @@ class BudgetPlannerService {
       ));
     }
 
-    // Include categories with spending but no budget
+    // Include categories with spending but no budget — use a Set for O(1)
+    // lookups instead of O(n) .any() scan per spending entry.
+    final budgetedCategories = <ExpenseCategory>{
+      for (final a in budget.allocations) a.category,
+    };
     for (final entry in spending.entries) {
-      if (!comparisons.any((c) => c.category == entry.key)) {
+      if (!budgetedCategories.contains(entry.key)) {
         comparisons.add(BudgetComparison(
           category: entry.key,
           budgeted: 0.0,

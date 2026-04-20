@@ -110,13 +110,41 @@ class ChoreTrackerService {
     return total;
   }
 
+  /// Build a map from choreId → latest completion in a single O(m) pass.
+  Map<String, ChoreCompletion> _buildLastCompletionMap(
+      List<ChoreCompletion> completions) {
+    final map = <String, ChoreCompletion>{};
+    for (final c in completions) {
+      final existing = map[c.choreId];
+      if (existing == null || c.completedAt.isAfter(existing.completedAt)) {
+        map[c.choreId] = c;
+      }
+    }
+    return map;
+  }
+
+  /// [daysUntilDue] variant using a pre-built last-completion map.
+  int _daysUntilDueFromMap(
+      Chore chore, Map<String, ChoreCompletion> lastMap) {
+    if (chore.frequency == ChoreFrequency.asNeeded) return 999;
+    final last = lastMap[chore.id];
+    if (last == null) return -1;
+    final daysSince = DateTime.now().difference(last.completedAt).inDays;
+    return chore.frequency.intervalDays - daysSince;
+  }
+
   /// Sort chores by urgency (most overdue first).
+  ///
+  /// Pre-computes a choreId→lastCompletion map in O(m) instead of calling
+  /// [lastCompletion] (O(m·log m) filter+sort) per comparator invocation,
+  /// reducing cost from O(n·m·log m) to O(m + n·log n).
   List<Chore> sortByUrgency(
       List<Chore> chores, List<ChoreCompletion> completions) {
+    final lastMap = _buildLastCompletionMap(completions);
     final sorted = List<Chore>.from(chores);
     sorted.sort((a, b) {
-      final da = daysUntilDue(a, completions);
-      final db = daysUntilDue(b, completions);
+      final da = _daysUntilDueFromMap(a, lastMap);
+      final db = _daysUntilDueFromMap(b, lastMap);
       return da.compareTo(db);
     });
     return sorted;
