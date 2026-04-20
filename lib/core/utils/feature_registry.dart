@@ -184,6 +184,7 @@ import '../../views/home/lights_out_screen.dart';
 import '../../views/home/decision_matrix_screen.dart';
 import '../../views/home/life_coach_screen.dart';
 import '../../views/home/time_audit_screen.dart';
+import '../../views/home/habit_insights_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1355,6 +1356,12 @@ class FeatureRegistry {
       icon: Icons.schedule_send,
       category: FeatureCategory.productivity,
       builder: (_) => const TimeAuditScreen(),
+    ),
+    FeatureEntry(
+      label: 'Habit Insights',
+      icon: Icons.psychology,
+      category: FeatureCategory.health,
+      builder: (_) => const HabitInsightsScreen(),
     ),
   ];
 
