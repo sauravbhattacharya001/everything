@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../views/home/daily_challenge_screen.dart';
 import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
@@ -277,6 +278,12 @@ class FeatureRegistry {
       icon: Icons.rate_review,
       category: FeatureCategory.planning,
       builder: (_) => const DailyReviewScreen(),
+    ),
+    FeatureEntry(
+      label: 'Daily Challenge',
+      icon: Icons.emoji_events,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const DailyChallengeScreen(),
     ),
     FeatureEntry(
       label: 'Life Dashboard',
