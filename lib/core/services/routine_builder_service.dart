@@ -241,40 +241,44 @@ class RoutineBuilderService {
           routineId: routineId, routineName: routine.name);
     }
 
-    // Completion stats
-    final fullyCompleted = runsList.where((r) => r.completionRatio >= 1.0).length;
-    final completionRate = fullyCompleted / runsList.length;
-
-    // Average duration
-    final durations = runsList
-        .where((r) => r.actualDurationMinutes > 0)
-        .map((r) => r.actualDurationMinutes)
-        .toList();
-    final avgDuration = durations.isEmpty
-        ? 0.0
-        : durations.reduce((a, b) => a + b) / durations.length;
-
-    // Step-level analytics
+    // Single-pass: completion count, duration sum, and step-level
+    // analytics are computed together instead of 3 separate iterations
+    // over runsList (was O(3n), now O(n)).
+    int fullyCompleted = 0;
+    int durationSum = 0;
+    int durationCount = 0;
     final stepCompletionCounts = <String, int>{};
     final stepTotalCounts = <String, int>{};
-    final stepDurations = <String, List<int>>{};
+    final stepDurationSums = <String, int>{};
+    final stepDurationCounts = <String, int>{};
     final stepSkipCounts = <String, int>{};
 
     for (final run in runsList) {
+      if (run.completionRatio >= 1.0) fullyCompleted++;
+      final dur = run.actualDurationMinutes;
+      if (dur > 0) {
+        durationSum += dur;
+        durationCount++;
+      }
       for (final sc in run.stepCompletions) {
         stepTotalCounts[sc.stepId] = (stepTotalCounts[sc.stepId] ?? 0) + 1;
         if (sc.status == StepStatus.completed) {
           stepCompletionCounts[sc.stepId] =
               (stepCompletionCounts[sc.stepId] ?? 0) + 1;
           if (sc.actualMinutes != null) {
-            stepDurations.putIfAbsent(sc.stepId, () => []);
-            stepDurations[sc.stepId]!.add(sc.actualMinutes!);
+            stepDurationSums[sc.stepId] =
+                (stepDurationSums[sc.stepId] ?? 0) + sc.actualMinutes!;
+            stepDurationCounts[sc.stepId] =
+                (stepDurationCounts[sc.stepId] ?? 0) + 1;
           }
         } else if (sc.status == StepStatus.skipped) {
           stepSkipCounts[sc.stepId] = (stepSkipCounts[sc.stepId] ?? 0) + 1;
         }
       }
     }
+    final completionRate = fullyCompleted / runsList.length;
+    final avgDuration =
+        durationCount == 0 ? 0.0 : durationSum / durationCount;
 
     final stepCompRates = <String, double>{};
     for (final entry in stepTotalCounts.entries) {
@@ -283,9 +287,9 @@ class RoutineBuilderService {
     }
 
     final stepAvgDurs = <String, double>{};
-    for (final entry in stepDurations.entries) {
+    for (final entry in stepDurationSums.entries) {
       stepAvgDurs[entry.key] =
-          entry.value.reduce((a, b) => a + b) / entry.value.length;
+          entry.value / stepDurationCounts[entry.key]!;
     }
 
     // Most skipped step
@@ -308,9 +312,14 @@ class RoutineBuilderService {
       }
     }
 
-    // Streak calculation
-    final currentStreak = _calculateCurrentStreak(routine, runsList);
-    final longestStreak = _calculateLongestStreak(routine, runsList);
+    // Streak calculation — extract completed runs once instead of
+    // filtering in both _calculateCurrentStreak and _calculateLongestStreak
+    // (was 2× O(n) filter + 2× O(n log n) sort, now 1× each).
+    final completedRuns = runsList
+        .where((r) => r.completionRatio >= 1.0)
+        .toList();
+    final currentStreak = _calculateCurrentStreakFromCompleted(routine, completedRuns);
+    final longestStreak = _calculateLongestStreakFromCompleted(routine, completedRuns);
 
     return RoutineAnalytics(
       routineId: routineId,
@@ -334,11 +343,16 @@ class RoutineBuilderService {
     final todayRuns = getRunsForDate(date);
     final totalMinutes = getTotalMinutesForDate(date);
 
+    // Index runs by routineId for O(1) lookup per routine instead of
+    // O(n) linear scan (was O(scheduled × todayRuns), now O(scheduled + todayRuns)).
+    final runsByRoutineId = <String, RoutineRun>{};
+    for (final run in todayRuns) {
+      runsByRoutineId[run.routineId] = run;
+    }
+
     final routineSummaries = scheduled.map((r) {
-      final run = todayRuns
-          .where((run) => run.routineId == r.id)
-          .toList();
-      final hasRun = run.isNotEmpty;
+      final run = runsByRoutineId[r.id];
+      final hasRun = run != null;
       return {
         'routineId': r.id,
         'name': r.name,
@@ -347,8 +361,8 @@ class RoutineBuilderService {
         'estimatedMinutes': r.totalDurationMinutes,
         'stepCount': r.steps.length,
         'started': hasRun,
-        'completed': hasRun && run.first.isFinished,
-        'completionRatio': hasRun ? run.first.completionRatio : 0.0,
+        'completed': hasRun && run.isFinished,
+        'completionRatio': hasRun ? run.completionRatio : 0.0,
       };
     }).toList();
 
@@ -546,20 +560,22 @@ class RoutineBuilderService {
     return maxGap;
   }
 
-  int _calculateCurrentStreak(Routine routine, List<RoutineRun> sortedRuns) {
-    if (sortedRuns.isEmpty) return 0;
-
-    final completedRuns = sortedRuns
-        .where((r) => r.completionRatio >= 1.0)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date)); // most recent first
-
+  /// Compute current and longest streaks from pre-filtered completed runs.
+  ///
+  /// Accepts an already-filtered list of completed runs to avoid redundant
+  /// filtering. Sorts chronologically once and computes both streaks in a
+  /// single traversal (was 2 separate filter+sort+traverse passes).
+  int _calculateCurrentStreakFromCompleted(
+      Routine routine, List<RoutineRun> completedRuns) {
     if (completedRuns.isEmpty) return 0;
-
+    // Sort most-recent-first for current streak
+    final sorted = List.of(completedRuns)
+      ..sort((a, b) => b.date.compareTo(a.date));
     final maxGap = _maxScheduledGap(routine);
     int streak = 1;
-    for (var i = 1; i < completedRuns.length; i++) {
-      final diff = completedRuns[i - 1].date.difference(completedRuns[i].date).inDays;
+    for (var i = 1; i < sorted.length; i++) {
+      final diff =
+          sorted[i - 1].date.difference(sorted[i].date).inDays;
       if (diff <= maxGap) {
         streak++;
       } else {
@@ -569,21 +585,17 @@ class RoutineBuilderService {
     return streak;
   }
 
-  int _calculateLongestStreak(Routine routine, List<RoutineRun> sortedRuns) {
-    if (sortedRuns.isEmpty) return 0;
-
-    final completedRuns = sortedRuns
-        .where((r) => r.completionRatio >= 1.0)
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date)); // chronological
-
+  int _calculateLongestStreakFromCompleted(
+      Routine routine, List<RoutineRun> completedRuns) {
     if (completedRuns.isEmpty) return 0;
-
+    final sorted = List.of(completedRuns)
+      ..sort((a, b) => a.date.compareTo(b.date));
     final maxGap = _maxScheduledGap(routine);
     int longest = 1;
     int current = 1;
-    for (var i = 1; i < completedRuns.length; i++) {
-      final diff = completedRuns[i].date.difference(completedRuns[i - 1].date).inDays;
+    for (var i = 1; i < sorted.length; i++) {
+      final diff =
+          sorted[i].date.difference(sorted[i - 1].date).inDays;
       if (diff <= maxGap) {
         current++;
         if (current > longest) longest = current;
