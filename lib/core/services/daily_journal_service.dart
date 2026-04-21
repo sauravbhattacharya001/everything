@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 import '../../models/journal_entry.dart';
+import '../utils/date_streak_calculator.dart';
 
 /// Service for managing daily journal / diary entries.
 class DailyJournalService {
@@ -15,53 +15,12 @@ class DailyJournalService {
   int get favoriteCount => _entries.where((e) => e.isFavorite).length;
 
   /// Current writing streak (consecutive days ending today or yesterday).
-  int get currentStreak {
-    if (_entries.isEmpty) return 0;
-    final dates = _entries
-        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-    final yesterday = todayDate.subtract(const Duration(days: 1));
-
-    if (dates.first != todayDate && dates.first != yesterday) return 0;
-
-    int streak = 1;
-    for (int i = 1; i < dates.length; i++) {
-      final diff = dates[i - 1].difference(dates[i]).inDays;
-      if (diff == 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }
+  int get currentStreak =>
+      DateStreakCalculator.compute(_entries.map((e) => e.date)).current;
 
   /// Longest writing streak ever.
-  int get longestStreak {
-    if (_entries.isEmpty) return 0;
-    final dates = _entries
-        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
-        .toSet()
-        .toList()
-      ..sort();
-
-    int longest = 1;
-    int current = 1;
-    for (int i = 1; i < dates.length; i++) {
-      if (dates[i].difference(dates[i - 1]).inDays == 1) {
-        current++;
-        longest = max(longest, current);
-      } else {
-        current = 1;
-      }
-    }
-    return max(longest, current);
-  }
+  int get longestStreak =>
+      DateStreakCalculator.compute(_entries.map((e) => e.date)).longest;
 
   void addEntry(JournalEntry entry) {
     _entries.add(entry);

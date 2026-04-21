@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../models/dream_entry.dart';
+import '../utils/date_streak_calculator.dart';
 
 /// Dream pattern analysis result.
 class DreamPattern {
@@ -129,41 +130,11 @@ class DreamJournalService {
           percentage: e.value / _entries.length * 100,
         )).toList();
 
-    // Streak calculation
-    final dates = _entries
-        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    int currentStreak = 0;
-    int longestStreak = 0;
-    if (dates.isNotEmpty) {
-      final today = DateTime.now();
-      final todayDate = DateTime(today.year, today.month, today.day);
-      final diff = todayDate.difference(dates.first).inDays;
-      if (diff <= 1) {
-        currentStreak = 1;
-        for (int i = 1; i < dates.length; i++) {
-          if (dates[i - 1].difference(dates[i]).inDays == 1) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
-      }
-
-      int streak = 1;
-      for (int i = 1; i < dates.length; i++) {
-        if (dates[i - 1].difference(dates[i]).inDays == 1) {
-          streak++;
-        } else {
-          if (streak > longestStreak) longestStreak = streak;
-          streak = 1;
-        }
-      }
-      if (streak > longestStreak) longestStreak = streak;
-    }
+    // Streak calculation — delegated to shared utility.
+    final streakResult =
+        DateStreakCalculator.compute(_entries.map((e) => e.date));
+    final currentStreak = streakResult.current;
+    final longestStreak = streakResult.longest;
 
     return DreamStats(
       totalDreams: _entries.length,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import '../utils/date_utils.dart';
+import '../utils/date_streak_calculator.dart';
 import '../../models/gratitude_entry.dart';
 import 'service_persistence.dart';
 
@@ -260,55 +261,22 @@ class GratitudeJournalService with ServicePersistence {
     if (_entries.isEmpty) {
       return GratitudeStreak(currentStreak: 0, longestStreak: 0);
     }
-    final now = today ?? DateTime.now();
-    final todayDate = DateTime(now.year, now.month, now.day);
 
-    // Get unique dates with entries
-    final dates = <DateTime>{};
-    for (final e in _entries) {
-      dates.add(DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day));
-    }
-    final sorted = dates.toList()..sort((a, b) => b.compareTo(a));
+    final result = DateStreakCalculator.compute(
+      _entries.map((e) => e.timestamp),
+      referenceDate: today,
+    );
 
-    // Current streak
-    int current = 0;
-    var checkDate = todayDate;
-    // Allow today or yesterday as start
-    if (dates.contains(checkDate)) {
-      current = 1;
-      checkDate = checkDate.subtract(const Duration(days: 1));
-    } else {
-      checkDate = checkDate.subtract(const Duration(days: 1));
-      if (dates.contains(checkDate)) {
-        current = 1;
-        checkDate = checkDate.subtract(const Duration(days: 1));
-      }
-    }
-    if (current > 0) {
-      while (dates.contains(checkDate)) {
-        current++;
-        checkDate = checkDate.subtract(const Duration(days: 1));
-      }
-    }
-
-    // Longest streak
-    int longest = 0;
-    int streak = 1;
-    for (int i = 0; i < sorted.length - 1; i++) {
-      final diff = sorted[i].difference(sorted[i + 1]).inDays;
-      if (diff == 1) {
-        streak++;
-      } else {
-        if (streak > longest) longest = streak;
-        streak = 1;
-      }
-    }
-    if (streak > longest) longest = streak;
+    final dates = _entries
+        .map((e) => AppDateUtils.dateOnly(e.timestamp))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
 
     return GratitudeStreak(
-      currentStreak: current,
-      longestStreak: longest,
-      lastEntryDate: sorted.first,
+      currentStreak: result.current,
+      longestStreak: result.longest,
+      lastEntryDate: dates.first,
     );
   }
 
