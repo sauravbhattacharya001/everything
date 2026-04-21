@@ -186,6 +186,7 @@ import '../../views/home/life_coach_screen.dart';
 import '../../views/home/time_audit_screen.dart';
 import '../../views/home/habit_insights_screen.dart';
 import '../../views/home/goal_autopilot_screen.dart';
+import '../../views/home/streak_guardian_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1369,6 +1370,12 @@ class FeatureRegistry {
       icon: Icons.smart_toy,
       category: FeatureCategory.productivity,
       builder: (_) => const GoalAutopilotScreen(),
+    ),
+    FeatureEntry(
+      label: 'Streak Guardian',
+      icon: Icons.shield,
+      category: FeatureCategory.productivity,
+      builder: (_) => const StreakGuardianScreen(),
     ),
   ];
 
