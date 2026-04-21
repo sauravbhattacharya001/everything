@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../views/home/daily_challenge_screen.dart';
+import '../../views/home/pattern_detector_screen.dart';
 import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
@@ -1383,6 +1384,12 @@ class FeatureRegistry {
       icon: Icons.shield,
       category: FeatureCategory.productivity,
       builder: (_) => const StreakGuardianScreen(),
+    ),
+    FeatureEntry(
+      label: 'Pattern Detector',
+      icon: Icons.hub,
+      category: FeatureCategory.health,
+      builder: (_) => const PatternDetectorScreen(),
     ),
   ];
 
