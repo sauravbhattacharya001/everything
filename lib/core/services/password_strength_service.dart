@@ -5,6 +5,16 @@ import 'dart:math';
 class PasswordStrengthService {
   PasswordStrengthService._();
 
+  // Pre-compiled regexes — avoid allocating new RegExp objects on every
+  // analyze() call.  In a real-time password-strength UI where analyze()
+  // fires on every keystroke, this eliminates 6 regex compilations per
+  // keypress and reduces GC pressure.
+  static final _reUpper = RegExp(r'[A-Z]');
+  static final _reLower = RegExp(r'[a-z]');
+  static final _reDigit = RegExp(r'[0-9]');
+  static final _reSymbol = RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`]');
+  static final _reNonAlpha = RegExp(r'[^a-zA-Z]');
+
   /// Analyze a password and return a detailed strength report.
   static PasswordAnalysis analyze(String password) {
     if (password.isEmpty) {
@@ -28,10 +38,10 @@ class PasswordStrengthService {
       );
     }
 
-    final hasUpper = password.contains(RegExp(r'[A-Z]'));
-    final hasLower = password.contains(RegExp(r'[a-z]'));
-    final hasDigit = password.contains(RegExp(r'[0-9]'));
-    final hasSymbol = password.contains(RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`]'));
+    final hasUpper = password.contains(_reUpper);
+    final hasLower = password.contains(_reLower);
+    final hasDigit = password.contains(_reDigit);
+    final hasSymbol = password.contains(_reSymbol);
     final hasUnicode = password.runes.any((r) => r > 127);
 
     int charsetSize = 0;
@@ -177,10 +187,18 @@ class PasswordStrengthService {
 
   static bool _hasRepeatedPattern(String pw) {
     if (pw.length < 4) return false;
+    // Check if pw consists entirely of a repeated prefix of length `len`.
+    // Uses character-by-character comparison instead of allocating
+    // O(len * repeats) concatenated strings for every candidate length.
     for (int len = 2; len <= pw.length ~/ 2; len++) {
-      final pattern = pw.substring(0, len);
-      final repeated = pattern * (pw.length ~/ len);
-      if (pw.startsWith(repeated)) return true;
+      bool match = true;
+      for (int i = len; i < pw.length; i++) {
+        if (pw.codeUnitAt(i) != pw.codeUnitAt(i % len)) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return true;
     }
     return false;
   }
@@ -197,7 +215,7 @@ class PasswordStrengthService {
   }
 
   static bool _isAllSameCase(String pw) {
-    final letters = pw.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+    final letters = pw.replaceAll(_reNonAlpha, '');
     if (letters.isEmpty) return false;
     return letters == letters.toUpperCase() || letters == letters.toLowerCase();
   }
