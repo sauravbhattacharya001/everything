@@ -21,6 +21,7 @@ import '../../views/home/eisenhower_matrix_screen.dart';
 import '../../views/home/emergency_card_screen.dart';
 import '../../views/home/energy_tracker_screen.dart';
 import '../../views/home/expense_tracker_screen.dart';
+import '../../views/home/expense_forecast_screen.dart';
 import '../../views/home/fasting_tracker_screen.dart';
 import '../../views/home/focus_time_screen.dart';
 import '../../views/home/gift_tracker_screen.dart';
@@ -603,6 +604,12 @@ class FeatureRegistry {
       icon: Icons.account_balance_wallet,
       category: FeatureCategory.finance,
       builder: (_) => const ExpenseTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Expense Forecaster',
+      icon: Icons.trending_up,
+      category: FeatureCategory.finance,
+      builder: (_) => const ExpenseForecastScreen(),
     ),
     FeatureEntry(
       label: 'Budget Planner',
