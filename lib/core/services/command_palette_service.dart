@@ -199,6 +199,8 @@ class CommandPaletteService {
           ['movies', 'tv', 'shows', 'watch', 'film', 'series']),
       _nav('nav_gifts', 'Gift Tracker', Icons.redeem, 'Lists',
           ['gifts', 'presents', 'birthday']),
+      _nav('nav_burnout', 'Burnout Detector', Icons.local_fire_department,
+          'Trackers', ['burnout', 'stress', 'wellness', 'health', 'risk']),
 
       // ── Quick Actions ──────────────────────────────────────────
       PaletteAction(
