@@ -710,9 +710,6 @@ class LifeDashboardService {
   static String _dayKey(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
   static Trend _trendFromDelta(double delta) {
     if (delta > 5) return Trend.rising;
     if (delta < -5) return Trend.falling;

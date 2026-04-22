@@ -1,4 +1,5 @@
 import '../../models/medication_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Service for medication tracking logic — adherence, streaks, insights.
 class MedicationTrackerService {
@@ -32,7 +33,7 @@ class MedicationTrackerService {
       totalExpected += expectedPerDay;
       for (final time in med.scheduledTimes) {
         final hasLog = medLogs.any((l) =>
-            l.taken && l.scheduledTime == time && _sameDay(l.timestamp, date));
+            l.taken && l.scheduledTime == time && AppDateUtils.isSameDay(l.timestamp, date));
         if (hasLog) totalTaken++;
       }
     }
@@ -63,7 +64,7 @@ class MedicationTrackerService {
       bool allTaken = true;
       for (final time in med.scheduledTimes) {
         final hasLog = medLogs.any((l) =>
-            l.taken && l.scheduledTime == time && _sameDay(l.timestamp, date));
+            l.taken && l.scheduledTime == time && AppDateUtils.isSameDay(l.timestamp, date));
         if (!hasLog) { allTaken = false; break; }
       }
       if (allTaken) streak++; else break;
@@ -87,7 +88,7 @@ class MedicationTrackerService {
       bool allTaken = true;
       for (final time in med.scheduledTimes) {
         final hasLog = medLogs.any((l) =>
-            l.taken && l.scheduledTime == time && _sameDay(l.timestamp, date));
+            l.taken && l.scheduledTime == time && AppDateUtils.isSameDay(l.timestamp, date));
         if (!hasLog) { allTaken = false; break; }
       }
       if (allTaken) { current++; if (current > longest) longest = current; }
@@ -115,10 +116,10 @@ class MedicationTrackerService {
       for (final time in med.scheduledTimes) {
         final taken = logs.any((l) =>
             l.medicationId == med.id && l.taken &&
-            l.scheduledTime == time && _sameDay(l.timestamp, today));
+            l.scheduledTime == time && AppDateUtils.isSameDay(l.timestamp, today));
         final skipped = logs.any((l) =>
             l.medicationId == med.id && l.skipped &&
-            l.scheduledTime == time && _sameDay(l.timestamp, today));
+            l.scheduledTime == time && AppDateUtils.isSameDay(l.timestamp, today));
         schedule.add({'medication': med, 'doseTime': time, 'taken': taken, 'skipped': skipped});
       }
     }
@@ -177,5 +178,4 @@ class MedicationTrackerService {
     return '#F44336';
   }
 
-  bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 }

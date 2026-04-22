@@ -7,6 +7,7 @@
 import 'dart:convert';
 
 import '../../models/routine.dart';
+import '../utils/date_utils.dart';
 
 // Re-export models so existing imports of this file continue to work.
 export '../../models/routine.dart';
@@ -97,7 +98,7 @@ class RoutineBuilderService {
 
     // Check if already started today
     final existing = _runs.where(
-        (r) => r.routineId == routineId && _sameDay(r.date, dateOnly));
+        (r) => r.routineId == routineId && AppDateUtils.isSameDay(r.date, dateOnly));
     if (existing.isNotEmpty) {
       throw StateError(
           'Routine "$routineId" already started for ${_formatDate(dateOnly)}.');
@@ -201,7 +202,7 @@ class RoutineBuilderService {
     final dateOnly = DateTime(date.year, date.month, date.day);
     try {
       return _runs.firstWhere(
-          (r) => r.routineId == routineId && _sameDay(r.date, dateOnly));
+          (r) => r.routineId == routineId && AppDateUtils.isSameDay(r.date, dateOnly));
     } catch (_) {
       return null;
     }
@@ -210,7 +211,7 @@ class RoutineBuilderService {
   /// Get all runs for a date.
   List<RoutineRun> getRunsForDate(DateTime date) {
     final dateOnly = DateTime(date.year, date.month, date.day);
-    return _runs.where((r) => _sameDay(r.date, dateOnly)).toList();
+    return _runs.where((r) => AppDateUtils.isSameDay(r.date, dateOnly)).toList();
   }
 
   // ΓöÇΓöÇ Analytics ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
@@ -526,16 +527,13 @@ class RoutineBuilderService {
   int _findRunIndex(String routineId, DateTime date) {
     final dateOnly = DateTime(date.year, date.month, date.day);
     final idx = _runs.indexWhere(
-        (r) => r.routineId == routineId && _sameDay(r.date, dateOnly));
+        (r) => r.routineId == routineId && AppDateUtils.isSameDay(r.date, dateOnly));
     if (idx < 0) {
       throw ArgumentError(
           'No run found for routine "$routineId" on ${_formatDate(dateOnly)}.');
     }
     return idx;
   }
-
-  bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

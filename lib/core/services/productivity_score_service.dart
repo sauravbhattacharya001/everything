@@ -4,6 +4,7 @@ import '../../models/habit.dart';
 import '../../models/goal.dart';
 import '../../models/sleep_entry.dart';
 import '../../models/mood_entry.dart';
+import '../utils/date_utils.dart';
 
 /// Configurable weights for each productivity dimension.
 class ProductivityWeights {
@@ -331,7 +332,7 @@ class ProductivityScoreService {
     for (final habit in dueHabits) {
       due++;
       final dates = completions[habit.id] ?? [];
-      final doneToday = dates.any((d) => _sameDay(d, date));
+      final doneToday = dates.any((d) => AppDateUtils.isSameDay(d, date));
       if (doneToday) completed++;
     }
 
@@ -391,7 +392,7 @@ class ProductivityScoreService {
   /// Score mood: directly maps mood level (1-5) to 0-100.
   double scoreMood(List<MoodEntry> entries, DateTime date) {
     final dayEntries =
-        entries.where((e) => _sameDay(e.timestamp, date)).toList();
+        entries.where((e) => AppDateUtils.isSameDay(e.timestamp, date)).toList();
     return _scoreMoodEntries(dayEntries);
   }
 
@@ -755,14 +756,14 @@ class ProductivityScoreService {
 
   List<EventModel> _eventsForDay(List<EventModel> events, DateTime date) {
     return events.where((e) {
-      return _sameDay(e.date, date);
+      return AppDateUtils.isSameDay(e.date, date);
     }).toList();
   }
 
   SleepEntry? _sleepForDay(List<SleepEntry> entries, DateTime date) {
     // Sleep entry for a day is the one where wakeTime falls on that date
     for (final entry in entries) {
-      if (_sameDay(entry.wakeTime, date)) return entry;
+      if (AppDateUtils.isSameDay(entry.wakeTime, date)) return entry;
     }
     return null;
   }
@@ -778,10 +779,6 @@ class ProductivityScoreService {
       case HabitFrequency.custom:
         return habit.customDays.contains(date.weekday);
     }
-  }
-
-  bool _sameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   double _round(double value) {
