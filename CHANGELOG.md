@@ -5,6 +5,51 @@ All notable changes to the Everything App will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.31.0] - 2026-04-23
+
+### Added
+- **Smart Digital Detox Planner** — Autonomous screen time analysis with 4-tab dashboard: health score gauge with streak tracking, hour-of-day usage heatmap and day-of-week patterns, auto-generated detox schedule with adjustable reduction targets and predicted outcomes, and session history with success/fail tracking
+- **Smart Burnout Detector** — Multi-signal burnout risk analysis monitoring 12 wellness signals across sleep, mood, energy, activity, social, and nutrition. Weighted risk scoring, 6 warning pattern detectors, resilience scoring, and phased recovery plans
+- **Smart Energy Optimizer** — Autonomous energy prediction with circadian modeling, caffeine half-life decay, cross-tracker correlation, and proactive work/rest window recommendations. 4 energy profiles, 24-hour energy curves, and automatic deep work / creative / rest window detection
+- **Smart Accountability Partner** — Cross-tracker commitment monitoring with proactive nudge engine, at-risk prediction, weekly trend charts, category breakdown, and one-tap completion
+
+### Changed
+- **ExpenseForecastService:** Single shared byCategory map eliminates 3× O(N) grouping passes; single-pass monthly totals replace O(months×N) filtering
+- **SubscriptionTrackerService:** Single-pass `getSummary()` replaces ~10 separate linear scans
+- **PasswordStrengthService:** Pre-compiled RegExp patterns, O(n) repeated-pattern check replaces O(n²) string concatenation
+- **AppDateUtils:** Deduplicated `_sameDay` from 4 services into shared `isSameDay`
+
+### Tests & Docs
+- 56 new tests for CipherToolService and BaseConverterService
+- Comprehensive docstrings for GameOfLifeService and AgeCalculatorService
+
+## [7.30.0] - 2026-04-22
+
+### Added
+- **Expense Forecaster** — Autonomous spending prediction engine analyzing transaction history to forecast expenses, detect anomalies, and project budget burn rates
+- **Smart Pattern Detector** — Cross-tracker correlation discovery using statistical analysis to find relationships between habits, goals, moods, and other tracked data
+- **Daily Challenge Generator** — Gamified daily challenges with streak tracking, difficulty scaling, completion stats, and challenge history
+- **Smart Streak Guardian** — Autonomous streak risk monitoring with configurable warning thresholds and recovery suggestions
+
+## [7.29.0] - 2026-04-21
+
+### Added
+- **Goal Autopilot** — Autonomous goal monitoring with completion prediction, deadline tracking, and proactive alerts
+- **Smart Habit Insights** — Autonomous habit pattern analysis with streak detection, consistency scoring, and personalized recommendations
+
+### Changed
+- **RoutineBuilderService:** Single-pass analytics with shared streak computation and indexed daily summary
+- **DateStreakCalculator:** Extracted shared streak logic, deduplicated from 4 services (HabitTracker, GoalTracker, RoutineBuilder, WorkoutLog)
+
+### Tests
+- 56 tests for mortgage_calculator, tip_calculator, bmi_calculator, and roman_numeral services
+
+### CI/CD
+- Bump actions/deploy-pages from 4 to 5
+- Bump actions/upload-pages-artifact from 4 to 5
+
+<!-- Releases v3.1.0 through v7.28.0 were tracked via GitHub Releases but not recorded in this file. See https://github.com/sauravbhattacharya001/everything/releases for full history. -->
+
 ## [3.0.0] - 2026-03-07
 
 ### Added
