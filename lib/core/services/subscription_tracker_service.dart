@@ -204,19 +204,71 @@ class SubscriptionTrackerService {
   }
 
   SubscriptionSummary getSummary({int alertDays = 7}) {
-    final activeSubs = active;
-    final ms = totalMonthlySpend;
-    final sorted = List<SubscriptionEntry>.from(activeSubs)..sort((a, b) => b.monthlyCost.compareTo(a.monthlyCost));
-    final pa = getPriceIncreaseAnalysis();
+    // Single pass over _subscriptions to compute status counts, active list,
+    // monthly/annual spend, category grouping, lifetime total, and price
+    // increase stats — replaces ~10 separate linear scans.
+    final activeSubs = <SubscriptionEntry>[];
+    final statusCounts = <SubscriptionStatus, int>{};
+    final categoryGroups = <SubscriptionCategory, List<SubscriptionEntry>>{};
+    double monthlySpend = 0, annualSpend = 0, lifetimeSpent = 0;
+    int totalPriceIncreases = 0;
+    double totalPriceIncreaseAmount = 0;
+
+    for (final s in _subscriptions) {
+      statusCounts[s.status] = (statusCounts[s.status] ?? 0) + 1;
+      lifetimeSpent += s.totalSpent;
+
+      // Price increase stats (inlined from getPriceIncreaseAnalysis)
+      for (final p in s.priceHistory) {
+        if (p.newPrice > p.oldPrice) {
+          totalPriceIncreases++;
+          totalPriceIncreaseAmount += p.changeAmount;
+        }
+      }
+
+      final isActive = s.status == SubscriptionStatus.active ||
+          s.status == SubscriptionStatus.trial;
+      if (isActive) {
+        activeSubs.add(s);
+        monthlySpend += s.monthlyCost;
+        annualSpend += s.annualCost;
+        categoryGroups.putIfAbsent(s.category, () => []).add(s);
+      }
+    }
+
+    // Category breakdown from pre-grouped data
+    final categoryBreakdown = categoryGroups.entries.map((e) {
+      final monthly = e.value.fold(0.0, (sum, s) => sum + s.monthlyCost);
+      return CategoryBreakdown(
+        category: e.key,
+        count: e.value.length,
+        monthlyTotal: monthly,
+        annualTotal: monthly * 12,
+        percentOfTotal: monthlySpend > 0 ? (monthly / monthlySpend) * 100 : 0,
+      );
+    }).toList()
+      ..sort((a, b) => b.monthlyTotal.compareTo(a.monthlyTotal));
+
+    // Sort active subs by cost for most/least expensive
+    final sorted = List<SubscriptionEntry>.from(activeSubs)
+      ..sort((a, b) => b.monthlyCost.compareTo(a.monthlyCost));
+
     return SubscriptionSummary(
-      totalActive: byStatus(SubscriptionStatus.active).length, totalPaused: byStatus(SubscriptionStatus.paused).length,
-      totalCancelled: byStatus(SubscriptionStatus.cancelled).length, totalTrial: byStatus(SubscriptionStatus.trial).length,
-      monthlySpend: ms, annualSpend: totalAnnualSpend, dailySpend: totalAnnualSpend / 365.0,
-      categoryBreakdown: getCategoryBreakdown(), upcomingBillings: getUpcomingBillings(withinDays: alertDays),
-      averagePerSubscription: activeSubs.isNotEmpty ? ms / activeSubs.length : 0,
-      mostExpensive: sorted.isNotEmpty ? sorted.first : null, cheapest: sorted.isNotEmpty ? sorted.last : null,
-      totalLifetimeSpent: _subscriptions.fold(0.0, (sum, s) => sum + s.totalSpent),
-      totalPriceIncreases: pa['totalIncreases'] as int, totalPriceIncreaseAmount: pa['totalIncreaseAmount'] as double,
+      totalActive: statusCounts[SubscriptionStatus.active] ?? 0,
+      totalPaused: statusCounts[SubscriptionStatus.paused] ?? 0,
+      totalCancelled: statusCounts[SubscriptionStatus.cancelled] ?? 0,
+      totalTrial: statusCounts[SubscriptionStatus.trial] ?? 0,
+      monthlySpend: monthlySpend,
+      annualSpend: annualSpend,
+      dailySpend: annualSpend / 365.0,
+      categoryBreakdown: categoryBreakdown,
+      upcomingBillings: getUpcomingBillings(withinDays: alertDays),
+      averagePerSubscription: activeSubs.isNotEmpty ? monthlySpend / activeSubs.length : 0,
+      mostExpensive: sorted.isNotEmpty ? sorted.first : null,
+      cheapest: sorted.isNotEmpty ? sorted.last : null,
+      totalLifetimeSpent: lifetimeSpent,
+      totalPriceIncreases: totalPriceIncreases,
+      totalPriceIncreaseAmount: totalPriceIncreaseAmount,
     );
   }
 
