@@ -1,4 +1,10 @@
-/// Age calculation service with detailed breakdowns and fun life statistics.
+/// Service that computes a detailed age breakdown from a birth date.
+///
+/// In addition to exact years/months/days, it produces fun lifetime
+/// statistics (heartbeats, breaths, steps walked, words spoken, etc.)
+/// and determines the Western zodiac sign and birth day-of-week.
+///
+/// All methods are static; the constructor is private.
 class AgeCalculatorService {
   AgeCalculatorService._();
 
@@ -68,6 +74,10 @@ class AgeCalculatorService {
     );
   }
 
+  /// Returns the Western zodiac sign emoji + name for the given [month]/[day].
+  ///
+  /// Uses the tropical zodiac date boundaries. Edge cases on cusp dates
+  /// follow the conventional cutoff (e.g. Jan 20 → Capricorn, Jan 21 → Aquarius).
   static String _getZodiacSign(int month, int day) {
     const signs = [
       (1, 20, '♑ Capricorn'),
@@ -92,6 +102,8 @@ class AgeCalculatorService {
     return '♑ Capricorn';
   }
 
+  /// Converts a Dart [DateTime.weekday] value (1 = Monday … 7 = Sunday)
+  /// to its English name.
   static String _dayOfWeekName(int weekday) {
     const names = [
       'Monday',
@@ -106,6 +118,8 @@ class AgeCalculatorService {
   }
 }
 
+/// Immutable result of an age calculation containing exact age components,
+/// lifetime statistics, zodiac sign, and countdown to the next birthday.
 class AgeResult {
   final int years;
   final int months;
@@ -143,6 +157,7 @@ class AgeResult {
     this.birthDate,
   });
 
+  /// Sentinel representing zero age (used when [birthDate] is in the future).
   factory AgeResult.zero() => const AgeResult(
         years: 0,
         months: 0,
@@ -161,6 +176,8 @@ class AgeResult {
         dayOfWeekBorn: '',
       );
 
+  /// Returns a human-readable age string, omitting leading zero components
+  /// (e.g. "3 months, 12 days" instead of "0 years, 3 months, 12 days").
   String get formattedAge {
     if (years > 0) {
       return '$years years, $months months, $days days';
