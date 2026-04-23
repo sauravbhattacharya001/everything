@@ -190,6 +190,7 @@ import '../../views/home/time_audit_screen.dart';
 import '../../views/home/habit_insights_screen.dart';
 import '../../views/home/goal_autopilot_screen.dart';
 import '../../views/home/streak_guardian_screen.dart';
+import '../../views/home/accountability_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1397,6 +1398,12 @@ class FeatureRegistry {
       icon: Icons.hub,
       category: FeatureCategory.health,
       builder: (_) => const PatternDetectorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Accountability Partner',
+      icon: Icons.handshake,
+      category: FeatureCategory.productivity,
+      builder: (_) => const AccountabilityScreen(),
     ),
   ];
 
