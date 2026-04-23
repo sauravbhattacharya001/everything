@@ -201,6 +201,9 @@ class CommandPaletteService {
           ['gifts', 'presents', 'birthday']),
       _nav('nav_burnout', 'Burnout Detector', Icons.local_fire_department,
           'Trackers', ['burnout', 'stress', 'wellness', 'health', 'risk']),
+      _nav('nav_energy_optimizer', 'Energy Optimizer',
+          Icons.battery_charging_full, 'Trackers',
+          ['energy', 'optimizer', 'productivity', 'focus', 'work', 'rest']),
 
       // ── Quick Actions ──────────────────────────────────────────
       PaletteAction(

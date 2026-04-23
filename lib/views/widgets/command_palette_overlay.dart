@@ -49,6 +49,7 @@ import '../home/wishlist_screen.dart';
 import '../home/watchlist_screen.dart';
 import '../home/gift_tracker_screen.dart';
 import '../home/burnout_detector_screen.dart';
+import '../home/energy_optimizer_screen.dart';
 
 /// Spotlight-style command palette overlay.
 ///
@@ -141,6 +142,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay> {
     'nav_watchlist': () => WatchlistScreen(),
     'nav_gifts': () => GiftTrackerScreen(),
     'nav_burnout': () => BurnoutDetectorScreen(),
+    'nav_energy_optimizer': () => EnergyOptimizerScreen(),
   };
 
   @override
