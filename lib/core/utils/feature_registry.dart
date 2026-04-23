@@ -58,6 +58,7 @@ import '../../views/home/recipe_book_screen.dart';
 import '../../views/home/routine_builder_screen.dart';
 import '../../views/home/savings_goal_screen.dart';
 import '../../views/home/screen_time_tracker_screen.dart';
+import '../../views/home/digital_detox_screen.dart';
 import '../../views/home/skill_tracker_screen.dart';
 import '../../views/home/sleep_tracker_screen.dart';
 import '../../views/home/symptom_tracker_screen.dart';
@@ -543,6 +544,12 @@ class FeatureRegistry {
       icon: Icons.phone_android,
       category: FeatureCategory.health,
       builder: (_) => const ScreenTimeTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Digital Detox',
+      icon: Icons.phone_disabled,
+      category: FeatureCategory.health,
+      builder: (_) => const DigitalDetoxScreen(),
     ),
     FeatureEntry(
       label: 'Gratitude Journal',
