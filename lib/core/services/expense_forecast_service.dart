@@ -128,8 +128,16 @@ class ExpenseForecastService {
       );
     }
 
-    final categoryForecasts = _forecastCategories(entries);
-    final anomalies = _detectAnomalies(entries);
+    // Group entries by category once, shared across forecast,
+    // anomaly detection, and savings potential calculation.
+    // Previously each method built its own byCategory map — 3×O(N).
+    final byCategory = <ExpenseCategory, List<ExpenseEntry>>{};
+    for (final e in entries) {
+      byCategory.putIfAbsent(e.category, () => []).add(e);
+    }
+
+    final categoryForecasts = _forecastCategories(byCategory);
+    final anomalies = _detectAnomalies(byCategory);
     final recurring = _findRecurring(entries);
     final totalForecast =
         categoryForecasts.fold(0.0, (s, f) => s + f.predictedAmount);
@@ -139,7 +147,7 @@ class ExpenseForecastService {
             categoryForecasts.length;
     final alerts =
         _generateAlerts(categoryForecasts, totalForecast, monthlyBudget);
-    final savingsPotential = _calcSavingsPotential(entries);
+    final savingsPotential = _calcSavingsPotential(byCategory);
     final dataQuality = _calcDataQuality(entries);
 
     return ForecastReport(
@@ -156,16 +164,15 @@ class ExpenseForecastService {
   }
 
   /// Forecast per-category spending using exponential moving average.
-  List<CategoryForecast> _forecastCategories(List<ExpenseEntry> entries) {
+  ///
+  /// Accepts a pre-built category map to avoid redundant grouping.
+  List<CategoryForecast> _forecastCategories(
+      Map<ExpenseCategory, List<ExpenseEntry>> byCategory) {
     final now = DateTime.now();
-    final byCategory = <ExpenseCategory, List<ExpenseEntry>>{};
-    for (final e in entries) {
-      if (e.category == ExpenseCategory.income) continue;
-      byCategory.putIfAbsent(e.category, () => []).add(e);
-    }
 
     final forecasts = <CategoryForecast>[];
     for (final entry in byCategory.entries) {
+      if (entry.key == ExpenseCategory.income) continue;
       final monthly = _monthlyTotals(entry.value, now, 6);
       if (monthly.isEmpty) continue;
 
@@ -193,20 +200,30 @@ class ExpenseForecastService {
   }
 
   /// Get monthly totals for the last N months.
+  ///
+  /// Uses a single pass over entries with integer month-key bucketing
+  /// instead of the previous O(months × entries) approach that ran a
+  /// `.where()` filter for each month.
   List<double> _monthlyTotals(
       List<ExpenseEntry> entries, DateTime now, int months) {
-    final totals = <double>[];
+    // Build the ordered list of month keys we care about.
+    final monthKeys = <int>[];
     for (var i = months - 1; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i, 1);
-      final nextMonth = DateTime(month.year, month.month + 1, 1);
-      final total = entries
-          .where((e) =>
-              e.timestamp.isAfter(month.subtract(const Duration(days: 1))) &&
-              e.timestamp.isBefore(nextMonth))
-          .fold(0.0, (s, e) => s + e.amount);
-      totals.add(total);
+      final m = DateTime(now.year, now.month - i, 1);
+      monthKeys.add(m.year * 12 + m.month);
     }
-    return totals;
+    final keySet = monthKeys.toSet();
+
+    // Single pass: bucket amounts by month key.
+    final buckets = <int, double>{};
+    for (final e in entries) {
+      final key = e.timestamp.year * 12 + e.timestamp.month;
+      if (keySet.contains(key)) {
+        buckets[key] = (buckets[key] ?? 0) + e.amount;
+      }
+    }
+
+    return monthKeys.map((k) => buckets[k] ?? 0.0).toList();
   }
 
   /// Exponential moving average with alpha=0.3.
@@ -245,12 +262,11 @@ class ExpenseForecastService {
   }
 
   /// Detect spending anomalies using z-score.
-  List<SpendingAnomaly> _detectAnomalies(List<ExpenseEntry> entries) {
+  ///
+  /// Accepts a pre-built category map to avoid redundant grouping.
+  List<SpendingAnomaly> _detectAnomalies(
+      Map<ExpenseCategory, List<ExpenseEntry>> byCategory) {
     final anomalies = <SpendingAnomaly>[];
-    final byCategory = <ExpenseCategory, List<ExpenseEntry>>{};
-    for (final e in entries) {
-      byCategory.putIfAbsent(e.category, () => []).add(e);
-    }
 
     for (final entry in byCategory.entries) {
       final amounts = entry.value.map((e) => e.amount).toList();
@@ -394,16 +410,15 @@ class ExpenseForecastService {
   }
 
   /// Identify savings potential from high-variance categories.
-  double _calcSavingsPotential(List<ExpenseEntry> entries) {
+  ///
+  /// Accepts a pre-built category map to avoid redundant grouping.
+  double _calcSavingsPotential(
+      Map<ExpenseCategory, List<ExpenseEntry>> byCategory) {
     final now = DateTime.now();
-    final byCategory = <ExpenseCategory, List<ExpenseEntry>>{};
-    for (final e in entries) {
-      if (e.category == ExpenseCategory.income) continue;
-      byCategory.putIfAbsent(e.category, () => []).add(e);
-    }
 
     var potential = 0.0;
     for (final entry in byCategory.entries) {
+      if (entry.key == ExpenseCategory.income) continue;
       final monthly = _monthlyTotals(entry.value, now, 6);
       if (monthly.length < 2) continue;
       final mean = monthly.reduce((a, b) => a + b) / monthly.length;
