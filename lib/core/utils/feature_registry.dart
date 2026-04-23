@@ -122,6 +122,7 @@ import '../../views/home/daily_journal_screen.dart';
 import '../../views/home/dice_roller_screen.dart';
 import '../../views/home/qr_generator_screen.dart';
 import '../../views/home/ambient_sound_screen.dart';
+import '../../views/home/social_battery_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
@@ -443,6 +444,12 @@ class FeatureRegistry {
     ),
 
     // ── Health & Wellness ──
+    FeatureEntry(
+      label: 'Social Battery',
+      icon: Icons.battery_charging_full,
+      category: FeatureCategory.health,
+      builder: (_) => const SocialBatteryScreen(),
+    ),
     FeatureEntry(
       label: 'Mood Journal',
       icon: Icons.mood,
