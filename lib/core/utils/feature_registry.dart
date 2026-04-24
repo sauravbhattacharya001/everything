@@ -51,6 +51,7 @@ import '../../views/home/pet_care_tracker_screen.dart';
 import '../../views/home/plant_care_tracker_screen.dart';
 import '../../views/home/pomodoro_screen.dart';
 import '../../views/home/daily_planner_screen.dart';
+import '../../views/home/procrastination_buster_screen.dart';
 import '../../views/home/productivity_score_screen.dart';
 import '../../views/home/quick_capture_screen.dart';
 import '../../views/home/quote_collection_screen.dart';
@@ -1432,6 +1433,12 @@ class FeatureRegistry {
       icon: Icons.auto_awesome,
       category: FeatureCategory.productivity,
       builder: (_) => const WeeklyReflectionScreen(),
+    ),
+    FeatureEntry(
+      label: 'Procrastination Buster',
+      icon: Icons.flash_on,
+      category: FeatureCategory.productivity,
+      builder: (_) => const ProcrastinationBusterScreen(),
     ),
   ];
 
