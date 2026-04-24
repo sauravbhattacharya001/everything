@@ -50,6 +50,7 @@ import '../../views/home/parking_spot_screen.dart';
 import '../../views/home/pet_care_tracker_screen.dart';
 import '../../views/home/plant_care_tracker_screen.dart';
 import '../../views/home/pomodoro_screen.dart';
+import '../../views/home/daily_planner_screen.dart';
 import '../../views/home/productivity_score_screen.dart';
 import '../../views/home/quick_capture_screen.dart';
 import '../../views/home/quote_collection_screen.dart';
@@ -316,6 +317,12 @@ class FeatureRegistry {
       icon: Icons.av_timer,
       category: FeatureCategory.productivity,
       builder: (_) => const PomodoroScreen(),
+    ),
+    FeatureEntry(
+      label: 'Smart Daily Planner',
+      icon: Icons.calendar_view_day,
+      category: FeatureCategory.productivity,
+      builder: (_) => const DailyPlannerScreen(),
     ),
     FeatureEntry(
       label: 'Focus Time',
