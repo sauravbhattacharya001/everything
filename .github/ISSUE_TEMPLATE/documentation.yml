@@ -1,0 +1,65 @@
+name: Documentation Issue
+description: Report missing, incorrect, or unclear documentation
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation! Whether it's a typo, missing explanation, or outdated info — let us know.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What kind of documentation is affected?
+      options:
+        - README
+        - API / Code Comments
+        - Architecture / Design Docs
+        - Setup / Installation Guide
+        - In-App Help Text
+        - Contributing Guide
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: Where is the documentation issue? Link to file, section, or page.
+      placeholder: "e.g. README.md § Installation, or lib/src/services/contact_service.dart line 42"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem
+    attributes:
+      label: Problem
+      description: What's wrong with the documentation?
+      multiple: true
+      options:
+        - Missing entirely
+        - Outdated / no longer accurate
+        - Incomplete or unclear
+        - Contains errors
+        - Formatting / broken links
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe what's wrong and what the correct information should be.
+      placeholder: "The installation section says to run `flutter pub get` but doesn't mention the required minimum Flutter version..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Fix
+      description: If you know how to fix it, describe the change or paste corrected text.
+      placeholder: Optional — but appreciated!
