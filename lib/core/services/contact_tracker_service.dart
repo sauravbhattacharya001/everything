@@ -263,9 +263,12 @@ class ContactTrackerService with ServicePersistence {
   }
 
   /// Get contacts that are overdue for follow-up.
-  List<FollowUpReminder> overdueContacts(DateTime now) {
+  ///
+  /// Accepts an optional pre-filtered [active] list to avoid
+  /// recomputing [activeContacts] when the caller already has it.
+  List<FollowUpReminder> overdueContacts(DateTime now, {List<Contact>? active}) {
     final reminders = <FollowUpReminder>[];
-    for (final contact in activeContacts()) {
+    for (final contact in active ?? activeContacts()) {
       if (!contact.isOverdue(now)) continue;
       final daysSince = contact.daysSinceLastContact(now);
       final cycleDays = contact.desiredFrequency.days;
@@ -284,10 +287,13 @@ class ContactTrackerService with ServicePersistence {
   }
 
   /// Get contacts with upcoming birthdays.
+  ///
+  /// Accepts an optional pre-filtered [active] list to avoid
+  /// recomputing [activeContacts] when the caller already has it.
   List<UpcomingBirthday> upcomingBirthdays(DateTime now,
-      {int withinDays = 30}) {
+      {int withinDays = 30, List<Contact>? active}) {
     final birthdays = <UpcomingBirthday>[];
-    for (final contact in activeContacts()) {
+    for (final contact in active ?? activeContacts()) {
       if (!contact.hasBirthdaySoon(now, withinDays: withinDays)) continue;
       final daysUntil = contact.daysUntilBirthday(now)!;
       int? turningAge;
@@ -311,9 +317,12 @@ class ContactTrackerService with ServicePersistence {
   }
 
   /// Compute interaction trends per contact.
-  List<InteractionTrend> interactionTrends() {
+  ///
+  /// Accepts an optional pre-filtered [active] list to avoid
+  /// recomputing [activeContacts] when the caller already has it.
+  List<InteractionTrend> interactionTrends({List<Contact>? active}) {
     final trends = <InteractionTrend>[];
-    for (final contact in activeContacts()) {
+    for (final contact in active ?? activeContacts()) {
       if (contact.interactions.length < 2) continue;
       final sorted = List.of(contact.interactions)
         ..sort((a, b) => a.date.compareTo(b.date));
@@ -353,8 +362,11 @@ class ContactTrackerService with ServicePersistence {
   }
 
   /// Compute network health score and stats.
-  NetworkHealth networkHealth(DateTime now) {
-    final active = activeContacts();
+  ///
+  /// Accepts an optional pre-filtered [activeList] to avoid
+  /// recomputing [activeContacts] when the caller already has it.
+  NetworkHealth networkHealth(DateTime now, {List<Contact>? activeList}) {
+    final active = activeList ?? activeContacts();
     if (active.isEmpty) {
       return const NetworkHealth(
         totalContacts: 0,
@@ -428,13 +440,16 @@ class ContactTrackerService with ServicePersistence {
   }
 
   /// Generate a full contact network report.
+  ///
+  /// Computes [activeContacts] once and threads the result through
+  /// every sub-analysis, eliminating 4 redundant list-filter passes
+  /// over [_contacts].
   ContactReport generateReport(DateTime now) {
-    final health = networkHealth(now);
-    final overdue = overdueContacts(now);
-    final birthdays = upcomingBirthdays(now);
-    final trends = interactionTrends();
-
     final active = activeContacts();
+    final health = networkHealth(now, activeList: active);
+    final overdue = overdueContacts(now, active: active);
+    final birthdays = upcomingBirthdays(now, active: active);
+    final trends = interactionTrends(active: active);
     Contact? mostContacted;
     Contact? leastContacted;
     int totalInteractions = 0;
