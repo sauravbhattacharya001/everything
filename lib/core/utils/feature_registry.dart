@@ -123,6 +123,7 @@ import '../../views/home/dice_roller_screen.dart';
 import '../../views/home/qr_generator_screen.dart';
 import '../../views/home/ambient_sound_screen.dart';
 import '../../views/home/social_battery_screen.dart';
+import '../../views/home/weekly_reflection_screen.dart';
 import '../../views/home/text_analyzer_screen.dart';
 import '../../views/home/birthday_tracker_screen.dart';
 import '../../views/home/breathing_exercise_screen.dart';
@@ -1418,6 +1419,12 @@ class FeatureRegistry {
       icon: Icons.handshake,
       category: FeatureCategory.productivity,
       builder: (_) => const AccountabilityScreen(),
+    ),
+    FeatureEntry(
+      label: 'Weekly Reflection',
+      icon: Icons.auto_awesome,
+      category: FeatureCategory.productivity,
+      builder: (_) => const WeeklyReflectionScreen(),
     ),
   ];
 
