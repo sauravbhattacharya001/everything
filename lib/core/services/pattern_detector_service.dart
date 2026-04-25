@@ -107,15 +107,22 @@ class PatternDetectorService {
   }
 
   // ── Pearson correlation ────────────────────────────────────────
-  double pearson(List<double> x, List<double> y) {
-    final n = min(x.length, y.length);
+  /// Compute Pearson r between x[xOff..xOff+count) and y[yOff..yOff+count).
+  ///
+  /// The optional [xOff], [yOff], and [count] parameters allow computing
+  /// lagged correlations without allocating sublist copies — previously
+  /// discoverLaggedPatterns created two O(n) sublists per tracker pair
+  /// (k² × 2 allocations).
+  double pearson(List<double> x, List<double> y,
+      {int xOff = 0, int yOff = 0, int? count}) {
+    final n = count ?? min(x.length - xOff, y.length - yOff);
     if (n < 3) return 0;
     double mx = 0, my = 0;
-    for (int i = 0; i < n; i++) { mx += x[i]; my += y[i]; }
+    for (int i = 0; i < n; i++) { mx += x[xOff + i]; my += y[yOff + i]; }
     mx /= n; my /= n;
     double num = 0, dx = 0, dy = 0;
     for (int i = 0; i < n; i++) {
-      final a = x[i] - mx, b = y[i] - my;
+      final a = x[xOff + i] - mx, b = y[yOff + i] - my;
       num += a * b; dx += a * a; dy += b * b;
     }
     final denom = sqrt(dx) * sqrt(dy);
@@ -173,15 +180,18 @@ class PatternDetectorService {
   }
 
   // ── Discover lagged patterns (yesterday→today) ────────────────
+  /// Uses offset-based pearson to avoid allocating sublist copies.
   List<DiscoveredPattern> discoverLaggedPatterns(Map<String, List<double>> data) {
     final patterns = <DiscoveredPattern>[];
     final keys = data.keys.toList();
     for (final a in keys) {
+      final xa = data[a]!;
+      final lagCount = xa.length - 1;
+      if (lagCount < 3) continue;
       for (final b in keys) {
         if (a == b) continue;
-        final x = data[a]!.sublist(0, data[a]!.length - 1);
-        final y = data[b]!.sublist(1);
-        final r = pearson(x, y);
+        final yb = data[b]!;
+        final r = pearson(xa, yb, xOff: 0, yOff: 1, count: lagCount);
         final s = classify(r);
         if (s != null) {
           patterns.add(DiscoveredPattern(
@@ -200,27 +210,35 @@ class PatternDetectorService {
   }
 
   // ── Correlation matrix ────────────────────────────────────────
+  /// Computes upper-triangle only and mirrors, halving pearson() calls.
   Map<String, Map<String, double>> correlationMatrix(Map<String, List<double>> data) {
     final keys = data.keys.toList();
-    final matrix = <String, Map<String, double>>{};
-    for (final a in keys) {
-      matrix[a] = {};
-      for (final b in keys) {
-        matrix[a]![b] = a == b ? 1.0 : pearson(data[a]!, data[b]!);
+    final k = keys.length;
+    final matrix = <String, Map<String, double>>{
+      for (final key in keys) key: {key: 1.0},
+    };
+    for (int i = 0; i < k; i++) {
+      for (int j = i + 1; j < k; j++) {
+        final r = pearson(data[keys[i]]!, data[keys[j]]!);
+        matrix[keys[i]]![keys[j]] = r;
+        matrix[keys[j]]![keys[i]] = r;
       }
     }
     return matrix;
   }
 
   // ── Predictability scores ─────────────────────────────────────
+  /// Reuses pre-computed correlation matrix instead of k² redundant calls.
   List<PredictabilityInfo> predictability(Map<String, List<double>> data) {
+    final matrix = correlationMatrix(data);
     final keys = data.keys.toList();
     final result = <PredictabilityInfo>[];
     for (final target in keys) {
+      final row = matrix[target]!;
       final correlations = <MapEntry<String, double>>[];
       for (final other in keys) {
         if (other == target) continue;
-        correlations.add(MapEntry(other, pearson(data[other]!, data[target]!).abs()));
+        correlations.add(MapEntry(other, row[other]!.abs()));
       }
       correlations.sort((a, b) => b.value.compareTo(a.value));
       final top3 = correlations.take(3).toList();
