@@ -236,6 +236,68 @@ group('EventModel', () {
 - If the PR is large, break it into smaller reviewable chunks
 - Draft PRs are welcome for early feedback
 
+## Performance Guidelines
+
+Everything is a productivity app — responsiveness matters. Follow these rules for performance-sensitive contributions:
+
+### State & Data Layer
+
+- **Preserve O(1) lookups** — `EventProvider` maintains an ID→index map. Any code that mutates the event list must update this map. Never degrade to linear scans.
+- **Batch state updates** — When modifying multiple items, use a single `notifyListeners()` call after all mutations, not one per item.
+- **Avoid blocking the UI thread** — Database writes and network calls must be async. Use `compute()` for JSON parsing of large payloads (>100 items).
+- **Minimize rebuilds** — Use `Selector` or `context.select()` instead of `context.watch()` when a widget only depends on a subset of provider state.
+
+### SQLite
+
+- **Index before you query** — If adding a new query pattern (e.g., filtering events by date range), ensure the corresponding columns are indexed in the migration.
+- **Batch inserts** — Use `Batch` for inserting/updating more than 5 rows. Individual `INSERT` calls in a loop create unnecessary transaction overhead.
+
+### Profiling Before Submitting
+
+For UI changes or data-layer refactors, profile before opening a PR:
+
+```bash
+# Launch with performance overlay
+flutter run --profile
+
+# Record a timeline trace
+flutter run --profile --trace-startup
+
+# Check for jank (frames >16ms)
+# Open DevTools → Performance tab → look for red frames
+```
+
+Include before/after metrics in your PR description for performance-related changes.
+
+## Debugging Tips
+
+### Common Issues
+
+| Symptom | Likely Cause | Fix |
+|---------|-------------|-----|
+| `MissingPluginException` | Missing platform setup | Run `flutter clean && flutter pub get` |
+| Firebase auth fails locally | Missing config | Check `google-services.json` / `GoogleService-Info.plist` |
+| Tests pass locally, fail in CI | Platform-dependent code | Mock platform channels in tests |
+| Hot reload doesn't reflect changes | State held in static/singleton | Full restart (`Shift+R`) |
+
+### Useful Commands
+
+```bash
+# Reset everything when builds act weird
+flutter clean && flutter pub get
+
+# Check for outdated dependencies
+flutter pub outdated
+
+# Analyze with strict mode
+dart analyze --fatal-infos
+
+# Generate coverage report (HTML)
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+open coverage/html/index.html
+```
+
 ## Reporting Bugs
 
 Use the [Bug Report template](https://github.com/sauravbhattacharya001/everything/issues/new?template=bug_report.yml) on GitHub Issues. Include:
@@ -248,6 +310,15 @@ Use the [Bug Report template](https://github.com/sauravbhattacharya001/everythin
 ## Requesting Features
 
 Use the [Feature Request template](https://github.com/sauravbhattacharya001/everything/issues/new?template=feature_request.yml). Describe the problem you're solving, not just the solution you want.
+
+## Release Process
+
+Maintainers handle releases. If your contribution warrants a release:
+
+1. Version bump follows [semver](https://semver.org/) — patch for fixes, minor for features, major for breaking changes
+2. Update `version:` in `pubspec.yaml`
+3. CI automatically builds Docker images and publishes artifacts on tagged releases
+4. Changelog is generated from conventional commit messages
 
 ## Questions?
 
