@@ -342,74 +342,88 @@ class QuickCaptureService {
   // ── Statistics ──────────────────────────────────────────────────
 
   /// Get comprehensive inbox statistics.
+  ///
+  /// Single-pass aggregation over [_items] — collects all counters,
+  /// breakdowns, and processing-time sums in one traversal instead of
+  /// 9+ separate `.where()` / `.map()` / `.reduce()` passes that each
+  /// re-iterated the full list (previously O(9·N), now O(N)).
   InboxStats getStats() {
-    final active = _items.where(
-        (i) => i.status != CaptureStatus.deleted).toList();
-    final inbox = active.where(
-        (i) => i.status == CaptureStatus.inbox).toList();
-    final processed = active.where(
-        (i) => i.status == CaptureStatus.processed).toList();
-    final archived = active.where(
-        (i) => i.status == CaptureStatus.archived).toList();
+    int activeCount = 0;
+    int inboxCount = 0;
+    int processedCount = 0;
+    int archivedCount = 0;
+    int staleCount = 0;
+    int agingCount = 0;
+    int pinnedCount = 0;
+    double processingHoursSum = 0;
+    int processingTimeCount = 0;
+    DateTime? earliest;
 
-    // Category breakdown (inbox only)
     final catBreakdown = <CaptureCategory, int>{};
-    for (final item in inbox) {
-      catBreakdown[item.category] =
-          (catBreakdown[item.category] ?? 0) + 1;
-    }
-
-    // Priority breakdown (inbox only)
     final prioBreakdown = <CapturePriority, int>{};
-    for (final item in inbox) {
-      prioBreakdown[item.priority] =
-          (prioBreakdown[item.priority] ?? 0) + 1;
-    }
-
-    // Destination breakdown (processed only)
     final destBreakdown = <ProcessedDestination, int>{};
-    for (final item in processed) {
-      if (item.destination != null) {
-        destBreakdown[item.destination!] =
-            (destBreakdown[item.destination!] ?? 0) + 1;
+
+    for (final item in _items) {
+      if (item.status == CaptureStatus.deleted) continue;
+      activeCount++;
+
+      // Track earliest capturedAt for captures-per-day calculation
+      if (earliest == null || item.capturedAt.isBefore(earliest)) {
+        earliest = item.capturedAt;
+      }
+
+      switch (item.status) {
+        case CaptureStatus.inbox:
+          inboxCount++;
+          catBreakdown[item.category] =
+              (catBreakdown[item.category] ?? 0) + 1;
+          prioBreakdown[item.priority] =
+              (prioBreakdown[item.priority] ?? 0) + 1;
+          if (item.isStale) staleCount++;
+          if (item.isAging) agingCount++;
+          if (item.isPinned) pinnedCount++;
+          break;
+        case CaptureStatus.processed:
+          processedCount++;
+          if (item.destination != null) {
+            destBreakdown[item.destination!] =
+                (destBreakdown[item.destination!] ?? 0) + 1;
+          }
+          if (item.processedAt != null) {
+            processingHoursSum +=
+                item.processedAt!.difference(item.capturedAt).inMinutes / 60.0;
+            processingTimeCount++;
+          }
+          break;
+        case CaptureStatus.archived:
+          archivedCount++;
+          break;
+        default:
+          break;
       }
     }
 
-    // Average processing time
-    double avgHours = 0;
-    final withTime = processed
-        .where((i) => i.processedAt != null)
-        .toList();
-    if (withTime.isNotEmpty) {
-      final totalHours = withTime
-          .map((i) => i.processedAt!.difference(i.capturedAt).inMinutes / 60.0)
-          .reduce((a, b) => a + b);
-      avgHours = totalHours / withTime.length;
-    }
+    final avgHours =
+        processingTimeCount > 0 ? processingHoursSum / processingTimeCount : 0.0;
 
-    // Captures per day
     double perDay = 0;
-    if (active.isNotEmpty) {
-      final earliest = active
-          .map((i) => i.capturedAt)
-          .reduce((a, b) => a.isBefore(b) ? a : b);
+    if (activeCount > 0 && earliest != null) {
       final days = DateTime.now().difference(earliest).inDays + 1;
-      perDay = active.length / days;
+      perDay = activeCount / days;
     }
 
-    // Processing rate (processed / total non-deleted)
-    final rate = active.isNotEmpty
-        ? (processed.length + archived.length) / active.length
+    final rate = activeCount > 0
+        ? (processedCount + archivedCount) / activeCount
         : 0.0;
 
     return InboxStats(
-      totalCaptured: active.length,
-      currentInbox: inbox.length,
-      processedCount: processed.length,
-      archivedCount: archived.length,
-      staleCount: inbox.where((i) => i.isStale).length,
-      agingCount: inbox.where((i) => i.isAging).length,
-      pinnedCount: inbox.where((i) => i.isPinned).length,
+      totalCaptured: activeCount,
+      currentInbox: inboxCount,
+      processedCount: processedCount,
+      archivedCount: archivedCount,
+      staleCount: staleCount,
+      agingCount: agingCount,
+      pinnedCount: pinnedCount,
       avgProcessingHours: double.parse(avgHours.toStringAsFixed(1)),
       categoryBreakdown: catBreakdown,
       priorityBreakdown: prioBreakdown,
@@ -420,49 +434,56 @@ class QuickCaptureService {
   }
 
   /// Generate a weekly inbox report.
+  ///
+  /// Single-pass over [_items] — collects status counts, processing
+  /// time, and category breakdown in one traversal instead of 5
+  /// separate `.where()` passes plus a `.map().reduce()` chain
+  /// (previously O(6·N), now O(N)).
   WeeklyInboxReport getWeeklyReport({DateTime? weekStart}) {
     final start = weekStart ??
         DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
     final weekStartDate = DateTime(start.year, start.month, start.day);
     final weekEndDate = weekStartDate.add(const Duration(days: 7));
 
-    final weekItems = _items.where((i) =>
-        i.status != CaptureStatus.deleted &&
-        i.capturedAt.isAfter(weekStartDate) &&
-        i.capturedAt.isBefore(weekEndDate)).toList();
-
-    final captured = weekItems.length;
-    final processedCount = weekItems
-        .where((i) => i.status == CaptureStatus.processed)
-        .length;
-    final archivedCount = weekItems
-        .where((i) => i.status == CaptureStatus.archived)
-        .length;
-    final remaining = weekItems
-        .where((i) => i.status == CaptureStatus.inbox)
-        .length;
-
-    // Average processing time for week
-    double avgHours = 0;
-    final withTime = weekItems
-        .where((i) =>
-            i.status == CaptureStatus.processed &&
-            i.processedAt != null)
-        .toList();
-    if (withTime.isNotEmpty) {
-      final totalHours = withTime
-          .map((i) => i.processedAt!.difference(i.capturedAt).inMinutes / 60.0)
-          .reduce((a, b) => a + b);
-      avgHours = totalHours / withTime.length;
-    }
-
-    // Top categories
+    int captured = 0;
+    int processedCount = 0;
+    int archivedCount = 0;
+    int remaining = 0;
+    double processingHoursSum = 0;
+    int processingTimeCount = 0;
     final catCount = <CaptureCategory, int>{};
-    for (final item in weekItems) {
+
+    for (final item in _items) {
+      if (item.status == CaptureStatus.deleted) continue;
+      if (!item.capturedAt.isAfter(weekStartDate) ||
+          !item.capturedAt.isBefore(weekEndDate)) continue;
+
+      captured++;
       catCount[item.category] = (catCount[item.category] ?? 0) + 1;
+
+      switch (item.status) {
+        case CaptureStatus.processed:
+          processedCount++;
+          if (item.processedAt != null) {
+            processingHoursSum +=
+                item.processedAt!.difference(item.capturedAt).inMinutes / 60.0;
+            processingTimeCount++;
+          }
+          break;
+        case CaptureStatus.archived:
+          archivedCount++;
+          break;
+        case CaptureStatus.inbox:
+          remaining++;
+          break;
+        default:
+          break;
+      }
     }
 
-    // Grade based on processing rate
+    final avgHours =
+        processingTimeCount > 0 ? processingHoursSum / processingTimeCount : 0.0;
+
     final processRate =
         captured > 0 ? (processedCount + archivedCount) / captured : 1.0;
     String grade;
