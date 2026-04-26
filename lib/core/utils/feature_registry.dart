@@ -196,6 +196,7 @@ import '../../views/home/habit_insights_screen.dart';
 import '../../views/home/goal_autopilot_screen.dart';
 import '../../views/home/streak_guardian_screen.dart';
 import '../../views/home/accountability_screen.dart';
+import '../../views/home/context_switcher_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1439,6 +1440,12 @@ class FeatureRegistry {
       icon: Icons.flash_on,
       category: FeatureCategory.productivity,
       builder: (_) => const ProcrastinationBusterScreen(),
+    ),
+    FeatureEntry(
+      label: 'Context Switcher',
+      icon: Icons.psychology,
+      category: FeatureCategory.productivity,
+      builder: (_) => const ContextSwitcherScreen(),
     ),
   ];
 
