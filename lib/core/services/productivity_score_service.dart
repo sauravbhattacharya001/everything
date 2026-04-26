@@ -441,36 +441,17 @@ class ProductivityScoreService {
       final daySleep = sleepIndex[key];
       final dayMoods = moodIndex[key] ?? [];
 
-      final eventScore = scoreEvents(dayEvents, date);
-      final habitScore = scoreHabits(habits, habitCompletions, date);
-      final goalScore = scoreGoals(goals, date);
-
-      // Use indexed sleep/mood directly instead of linear scans
-      final sleepScore = _scoreSleepEntry(daySleep);
-      final moodScore = _scoreMoodEntries(dayMoods);
-
       final focusMins = focusMinutesByDay[date] ?? 0;
-      final focusScore = scoreFocus(focusMins);
 
-      final dimensions = [
-        DimensionScore(name: 'Events', score: _round(eventScore), weight: weights.events, contribution: _round(eventScore * weights.events), insight: _eventInsight(eventScore)),
-        DimensionScore(name: 'Habits', score: _round(habitScore), weight: weights.habits, contribution: _round(habitScore * weights.habits), insight: _habitInsight(habitScore)),
-        DimensionScore(name: 'Goals', score: _round(goalScore), weight: weights.goals, contribution: _round(goalScore * weights.goals), insight: _goalInsight(goalScore)),
-        DimensionScore(name: 'Sleep', score: _round(sleepScore), weight: weights.sleep, contribution: _round(sleepScore * weights.sleep), insight: _sleepInsight(sleepScore)),
-        DimensionScore(name: 'Mood', score: _round(moodScore), weight: weights.mood, contribution: _round(moodScore * weights.mood), insight: _moodInsight(moodScore)),
-        DimensionScore(name: 'Focus', score: _round(focusScore), weight: weights.focus, contribution: _round(focusScore * weights.focus), insight: _focusInsight(focusScore, focusMins)),
-      ];
-
-      final overall = dimensions.fold<double>(0, (sum, d) => sum + d.contribution);
-      final roundedOverall = _round(overall);
-
-      return DailyProductivityScore(
+      return _buildDailyScore(
         date: date,
-        overallScore: roundedOverall,
-        grade: _gradeFromScore(roundedOverall),
-        dimensions: dimensions,
-        strengths: dimensions.where((d) => d.score >= 75 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
-        improvements: dimensions.where((d) => d.score < 50 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
+        eventScore: scoreEvents(dayEvents, date),
+        habitScore: scoreHabits(habits, habitCompletions, date),
+        goalScore: scoreGoals(goals, date),
+        sleepScore: _scoreSleepEntry(daySleep),
+        moodScore: _scoreMoodEntries(dayMoods),
+        focusScore: scoreFocus(focusMins),
+        focusMinutes: focusMins,
       );
     }).toList();
   }
@@ -488,82 +469,15 @@ class ProductivityScoreService {
     required List<MoodEntry> moodEntries,
     required int focusMinutes,
   }) {
-    final eventScore = scoreEvents(events, date);
-    final habitScore = scoreHabits(habits, habitCompletions, date);
-    final goalScore = scoreGoals(goals, date);
-    final sleepScore = scoreSleep(sleepEntries, date);
-    final moodScore = scoreMood(moodEntries, date);
-    final focusScore = scoreFocus(focusMinutes);
-
-    final dimensions = [
-      DimensionScore(
-        name: 'Events',
-        score: _round(eventScore),
-        weight: weights.events,
-        contribution: _round(eventScore * weights.events),
-        insight: _eventInsight(eventScore),
-      ),
-      DimensionScore(
-        name: 'Habits',
-        score: _round(habitScore),
-        weight: weights.habits,
-        contribution: _round(habitScore * weights.habits),
-        insight: _habitInsight(habitScore),
-      ),
-      DimensionScore(
-        name: 'Goals',
-        score: _round(goalScore),
-        weight: weights.goals,
-        contribution: _round(goalScore * weights.goals),
-        insight: _goalInsight(goalScore),
-      ),
-      DimensionScore(
-        name: 'Sleep',
-        score: _round(sleepScore),
-        weight: weights.sleep,
-        contribution: _round(sleepScore * weights.sleep),
-        insight: _sleepInsight(sleepScore),
-      ),
-      DimensionScore(
-        name: 'Mood',
-        score: _round(moodScore),
-        weight: weights.mood,
-        contribution: _round(moodScore * weights.mood),
-        insight: _moodInsight(moodScore),
-      ),
-      DimensionScore(
-        name: 'Focus',
-        score: _round(focusScore),
-        weight: weights.focus,
-        contribution: _round(focusScore * weights.focus),
-        insight: _focusInsight(focusScore, focusMinutes),
-      ),
-    ];
-
-    final overall = dimensions.fold<double>(
-      0,
-      (sum, d) => sum + d.contribution,
-    );
-    final roundedOverall = _round(overall);
-    final grade = _gradeFromScore(roundedOverall);
-
-    // Find strengths (>= 75) and improvements (< 50)
-    final strengths = dimensions
-        .where((d) => d.score >= 75 && d.weight > 0)
-        .map((d) => '${d.name}: ${d.insight}')
-        .toList();
-    final improvements = dimensions
-        .where((d) => d.score < 50 && d.weight > 0)
-        .map((d) => '${d.name}: ${d.insight}')
-        .toList();
-
-    return DailyProductivityScore(
+    return _buildDailyScore(
       date: date,
-      overallScore: roundedOverall,
-      grade: grade,
-      dimensions: dimensions,
-      strengths: strengths,
-      improvements: improvements,
+      eventScore: scoreEvents(events, date),
+      habitScore: scoreHabits(habits, habitCompletions, date),
+      goalScore: scoreGoals(goals, date),
+      sleepScore: scoreSleep(sleepEntries, date),
+      moodScore: scoreMood(moodEntries, date),
+      focusScore: scoreFocus(focusMinutes),
+      focusMinutes: focusMinutes,
     );
   }
 
@@ -725,6 +639,45 @@ class ProductivityScoreService {
       'topStrength': thisTrend.topStrength,
       'topWeakness': thisTrend.topWeakness,
     };
+  }
+
+  // ── Shared daily-score builder ────────────────────────────
+
+  /// Assembles a [DailyProductivityScore] from pre-computed dimension
+  /// scores.  Both [computeDailyScore] and [computeMultiDayScores]
+  /// delegate here, eliminating ~40 lines of duplicated dimension-list
+  /// construction, overall-score aggregation, and strengths/improvements
+  /// extraction.
+  DailyProductivityScore _buildDailyScore({
+    required DateTime date,
+    required double eventScore,
+    required double habitScore,
+    required double goalScore,
+    required double sleepScore,
+    required double moodScore,
+    required double focusScore,
+    required int focusMinutes,
+  }) {
+    final dimensions = [
+      DimensionScore(name: 'Events', score: _round(eventScore), weight: weights.events, contribution: _round(eventScore * weights.events), insight: _eventInsight(eventScore)),
+      DimensionScore(name: 'Habits', score: _round(habitScore), weight: weights.habits, contribution: _round(habitScore * weights.habits), insight: _habitInsight(habitScore)),
+      DimensionScore(name: 'Goals', score: _round(goalScore), weight: weights.goals, contribution: _round(goalScore * weights.goals), insight: _goalInsight(goalScore)),
+      DimensionScore(name: 'Sleep', score: _round(sleepScore), weight: weights.sleep, contribution: _round(sleepScore * weights.sleep), insight: _sleepInsight(sleepScore)),
+      DimensionScore(name: 'Mood', score: _round(moodScore), weight: weights.mood, contribution: _round(moodScore * weights.mood), insight: _moodInsight(moodScore)),
+      DimensionScore(name: 'Focus', score: _round(focusScore), weight: weights.focus, contribution: _round(focusScore * weights.focus), insight: _focusInsight(focusScore, focusMinutes)),
+    ];
+
+    final overall = dimensions.fold<double>(0, (sum, d) => sum + d.contribution);
+    final roundedOverall = _round(overall);
+
+    return DailyProductivityScore(
+      date: date,
+      overallScore: roundedOverall,
+      grade: _gradeFromScore(roundedOverall),
+      dimensions: dimensions,
+      strengths: dimensions.where((d) => d.score >= 75 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
+      improvements: dimensions.where((d) => d.score < 50 && d.weight > 0).map((d) => '${d.name}: ${d.insight}').toList(),
+    );
   }
 
   // ── Helpers ────────────────────────────────────────────────
