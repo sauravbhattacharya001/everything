@@ -5,7 +5,6 @@
 /// Aggregates streak data from habits, workouts, meditation, water,
 /// sleep, and event activity to detect at-risk streaks before they break.
 
-import 'dart:math';
 
 /// Risk level for a tracked streak.
 enum StreakRisk {

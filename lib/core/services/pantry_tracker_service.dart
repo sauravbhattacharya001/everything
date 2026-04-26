@@ -1,7 +1,6 @@
 /// Pantry Tracker Service — manage pantry items with expiration tracking,
 /// low-stock alerts, and category/location filtering.
 
-import 'dart:convert';
 import '../../models/pantry_item.dart';
 
 /// Summary statistics for the pantry.

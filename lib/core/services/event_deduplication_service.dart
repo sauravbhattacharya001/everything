@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 
 import '../../models/event_model.dart';
 import '../utils/date_utils.dart';

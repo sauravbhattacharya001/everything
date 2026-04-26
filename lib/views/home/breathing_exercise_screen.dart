@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';
 import '../../core/services/breathing_exercise_service.dart';
 
 /// Guided breathing exercise screen with animated circle, multiple patterns,

@@ -1,5 +1,4 @@
 import '../../models/weight_entry.dart';
-import 'dart:math';
 
 /// Service for weight tracking analytics.
 class WeightTrackerService {

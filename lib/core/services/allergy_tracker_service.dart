@@ -1,4 +1,3 @@
-import 'dart:convert';
 import '../../models/allergy_entry.dart';
 import 'encrypted_preferences_service.dart';
 

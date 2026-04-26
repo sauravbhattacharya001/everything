@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Speed reading mode.
 enum SpeedReadMode {
