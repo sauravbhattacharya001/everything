@@ -1,0 +1,129 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label by template and content
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const title = (issue.title || '').toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = `${title} ${body}`;
+            const labels = new Set();
+
+            // ── Template detection ───────────────────────────────
+            // Issue templates inject their name via hidden HTML comments
+            // or we can detect from the form structure fields.
+            if (body.includes('### bug description') || body.includes('### steps to reproduce')) {
+              labels.add('bug');
+            }
+            if (body.includes('### feature description') || body.includes('### use case')) {
+              labels.add('enhancement');
+            }
+            if (body.includes('### documentation section') || body.includes('### suggested improvement')) {
+              labels.add('documentation');
+            }
+            if (body.includes('### performance impact') || body.includes('### profiling data')) {
+              labels.add('performance');
+            }
+            if (body.includes('### vulnerability type') || body.includes('### attack vector')) {
+              labels.add('security');
+            }
+
+            // ── Area detection (keyword → label) ─────────────────
+            const areaRules = [
+              { keywords: ['auth', 'login', 'sign in', 'sign-in', 'token', 'session', 'oauth'], label: 'area:auth' },
+              { keywords: ['ui', 'widget', 'layout', 'theme', 'dark mode', 'screen', 'animation', 'responsive'], label: 'area:ui' },
+              { keywords: ['database', 'storage', 'sqlite', 'hive', 'cache', 'repository', 'persistence'], label: 'area:data' },
+              { keywords: ['bloc', 'cubit', 'provider', 'state management', 'notifier'], label: 'area:state' },
+              { keywords: ['api', 'http', 'network', 'rest', 'graphql', 'endpoint', 'request', 'response'], label: 'area:networking' },
+              { keywords: ['test', 'testing', 'coverage', 'mock', 'unit test', 'integration test', 'widget test'], label: 'area:testing' },
+              { keywords: ['ci', 'cd', 'workflow', 'github actions', 'pipeline', 'deploy', 'docker'], label: 'area:devops' },
+              { keywords: ['notification', 'push', 'firebase', 'fcm', 'messaging'], label: 'area:notifications' },
+              { keywords: ['contact', 'tracker', 'quick capture', 'journal', 'note'], label: 'area:core' },
+            ];
+
+            for (const rule of areaRules) {
+              if (rule.keywords.some(kw => text.includes(kw))) {
+                labels.add(rule.label);
+              }
+            }
+
+            // ── Priority detection ───────────────────────────────
+            const criticalPatterns = ['crash', 'data loss', 'data leak', 'security vulnerability', 'broken', 'cannot start', 'unresponsive'];
+            const highPatterns = ['regression', 'blocking', 'urgent', 'critical', 'severe'];
+
+            if (criticalPatterns.some(p => text.includes(p))) {
+              labels.add('priority:critical');
+            } else if (highPatterns.some(p => text.includes(p))) {
+              labels.add('priority:high');
+            }
+
+            // ── Platform detection ───────────────────────────────
+            if (/\b(ios|iphone|ipad)\b/.test(text)) labels.add('platform:ios');
+            if (/\b(android|pixel|samsung)\b/.test(text)) labels.add('platform:android');
+            if (/\b(web|chrome|firefox|safari|browser)\b/.test(text)) labels.add('platform:web');
+            if (/\b(windows|macos|linux|desktop)\b/.test(text)) labels.add('platform:desktop');
+
+            // ── Apply labels ─────────────────────────────────────
+            const toAdd = [...labels];
+            if (toAdd.length === 0) {
+              labels.add('needs-triage');
+              toAdd.push('needs-triage');
+            }
+
+            // Create any labels that don't exist yet
+            const existingLabels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const existingNames = new Set(existingLabels.data.map(l => l.name));
+
+            const labelColors = {
+              'bug': 'd73a4a',
+              'enhancement': 'a2eeef',
+              'documentation': '0075ca',
+              'performance': 'fbca04',
+              'security': 'e11d48',
+              'needs-triage': 'ededed',
+              'priority:critical': 'b60205',
+              'priority:high': 'ff9f1c',
+              'platform:ios': '147efb',
+              'platform:android': '3ddc84',
+              'platform:web': 'ff6d00',
+              'platform:desktop': '6f42c1',
+            };
+            const areaColor = '1d76db';
+
+            for (const name of toAdd) {
+              if (!existingNames.has(name)) {
+                const color = labelColors[name] || (name.startsWith('area:') ? areaColor : 'c5def5');
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name,
+                  color,
+                });
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: toAdd,
+            });
+
+            core.info(`Applied labels: ${toAdd.join(', ')}`);
