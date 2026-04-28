@@ -1,5 +1,5 @@
-import 'dart:math' show sqrt;
 import '../../models/sleep_entry.dart';
+import '../utils/stats_utils.dart';
 import 'encrypted_preferences_service.dart';
 
 /// Service for managing sleep log entries with local persistence and analytics.
@@ -287,26 +287,14 @@ class SleepTrackerService {
       return (e.wakeTime.hour * 60 + e.wakeTime.minute).toDouble();
     }).toList();
 
-    double bedVar = _variance(bedtimeMinutes);
-    double wakeVar = _variance(wakeMinutes);
+    double bedVar = StatsUtils.populationVariance(bedtimeMinutes);
+    double wakeVar = StatsUtils.populationVariance(wakeMinutes);
 
     // Convert variance to a 0-100 score
     // Low variance = high consistency
     // 0 variance = 100 score; 120 min std dev = ~0 score
-    double avgStdDev = (_stdDev(bedVar) + _stdDev(wakeVar)) / 2;
+    double avgStdDev = (StatsUtils.sqrtSafe(bedVar) + StatsUtils.sqrtSafe(wakeVar)) / 2;
     double score = 100 * (1 - (avgStdDev / 120).clamp(0, 1));
     return score.clamp(0, 100);
-  }
-
-  double _variance(List<double> values) {
-    if (values.length < 2) return 0;
-    double mean = values.reduce((a, b) => a + b) / values.length;
-    double sumSq = values.fold(0.0, (s, v) => s + (v - mean) * (v - mean));
-    return sumSq / values.length;
-  }
-
-  double _stdDev(double variance) {
-    if (variance <= 0) return 0;
-    return sqrt(variance);
   }
 }

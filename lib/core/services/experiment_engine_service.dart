@@ -9,6 +9,8 @@
 /// monitors data quality, detects patterns, and generates verdicts.
 import 'dart:math';
 
+import '../utils/stats_utils.dart';
+
 // ── Enums ──────────────────────────────────────────────────────
 
 /// Status of an experiment lifecycle.
@@ -887,26 +889,12 @@ class ExperimentEngineService {
 
   // ── Math Helpers ─────────────────────────────────────────────
 
-  double _mean(List<double> values) {
-    if (values.isEmpty) return 0;
-    return values.fold<double>(0, (a, b) => a + b) / values.length;
-  }
+  double _mean(List<double> values) => StatsUtils.mean(values);
 
-  double _stdDev(List<double> values) {
-    if (values.length < 2) return 0;
-    final m = _mean(values);
-    final sumSqDiff = values.fold<double>(0, (a, v) => a + (v - m) * (v - m));
-    return sqrt(sumSqDiff / (values.length - 1)); // sample std dev
-  }
+  double _stdDev(List<double> values) => StatsUtils.stdDev(values);
 
-  double _pooledStdDev(double s1, int n1, double s2, int n2) {
-    if (n1 < 2 && n2 < 2) return 0;
-    if (n1 < 2) return s2;
-    if (n2 < 2) return s1;
-    final num = (n1 - 1) * s1 * s1 + (n2 - 1) * s2 * s2;
-    final den = n1 + n2 - 2;
-    return den > 0 ? sqrt(num / den) : 0;
-  }
+  double _pooledStdDev(double s1, int n1, double s2, int n2) =>
+      StatsUtils.pooledStdDev(s1, n1, s2, n2);
 
   /// Complementary error function approximation (Abramowitz & Stegun 7.1.26).
   double _erfcApprox(double x) {

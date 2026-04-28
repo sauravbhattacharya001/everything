@@ -16,6 +16,7 @@
 import 'dart:math' as math;
 
 import '../../models/event_model.dart';
+import '../utils/stats_utils.dart';
 
 // ─── Data Classes ───────────────────────────────────────────────
 
@@ -555,11 +556,8 @@ class EventPatternService {
         .trim();
   }
 
-  double _stdDev(List<double> values, double mean) {
-    if (values.length < 2) return 0.0;
-    final sumSqDiff = values.fold<double>(0, (sum, v) => sum + (v - mean) * (v - mean));
-    return math.sqrt(sumSqDiff / (values.length - 1));
-  }
+  double _stdDev(List<double> values, double mean) =>
+      StatsUtils.stdDev(values, mean);
 
   String _dayName(int weekday) {
     const names = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
