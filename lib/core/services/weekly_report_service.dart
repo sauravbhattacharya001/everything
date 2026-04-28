@@ -81,10 +81,11 @@ class WeeklyReportService {
     final prevWeekEnd = weekStart.subtract(const Duration(seconds: 1));
     final prevWeekEvents = _eventsInRange(allEvents, prevWeekStart, prevWeekEnd);
 
+    // Single-pass priority counting — O(N) instead of O(P×N).
     final priorityBreakdown = <EventPriority, int>{};
-    for (final p in EventPriority.values) {
-      final count = thisWeekEvents.where((e) => e.priority == p).length;
-      if (count > 0) priorityBreakdown[p] = count;
+    for (final e in thisWeekEvents) {
+      priorityBreakdown[e.priority] =
+          (priorityBreakdown[e.priority] ?? 0) + 1;
     }
 
     final dailyBreakdown = <int, int>{};
@@ -113,19 +114,20 @@ class WeeklyReportService {
     final topTags = tagCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Checklist completion rate
+    // Checklist completion rate — single pass, no intermediate lists.
     double? completionRate;
-    final withChecklists = thisWeekEvents.where((e) => e.checklist.hasItems).toList();
-    if (withChecklists.isNotEmpty) {
-      var totalItems = 0;
-      var checkedItems = 0;
-      for (final e in withChecklists) {
-        totalItems += e.checklist.items.length;
-        checkedItems += e.checklist.items.where((i) => i.isChecked).length;
+    var totalItems = 0;
+    var checkedItems = 0;
+    for (final e in thisWeekEvents) {
+      if (e.checklist.hasItems) {
+        for (final item in e.checklist.items) {
+          totalItems++;
+          if (item.isChecked) checkedItems++;
+        }
       }
-      if (totalItems > 0) {
-        completionRate = checkedItems / totalItems;
-      }
+    }
+    if (totalItems > 0) {
+      completionRate = checkedItems / totalItems;
     }
 
     final prevTotal = prevWeekEvents.isNotEmpty ? prevWeekEvents.length : null;

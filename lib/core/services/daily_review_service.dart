@@ -223,24 +223,28 @@ class DayComparison {
 class ReviewTrend {
   final List<DailyReview> reviews;
 
-  const ReviewTrend({required this.reviews});
+  /// Aggregated averages computed in a single pass instead of 3.
+  late final double avgRating;
+  late final double avgMood;
+  late final double avgEnergy;
 
-  double get avgRating {
-    if (reviews.isEmpty) return 0;
-    return reviews.map((r) => r.rating).reduce((a, b) => a + b) /
-        reviews.length;
-  }
-
-  double get avgMood {
-    if (reviews.isEmpty) return 0;
-    return reviews.map((r) => r.mood).reduce((a, b) => a + b) /
-        reviews.length;
-  }
-
-  double get avgEnergy {
-    if (reviews.isEmpty) return 0;
-    return reviews.map((r) => r.energy).reduce((a, b) => a + b) /
-        reviews.length;
+  ReviewTrend({required this.reviews}) {
+    if (reviews.isEmpty) {
+      avgRating = 0;
+      avgMood = 0;
+      avgEnergy = 0;
+    } else {
+      int sumR = 0, sumM = 0, sumE = 0;
+      for (final r in reviews) {
+        sumR += r.rating;
+        sumM += r.mood;
+        sumE += r.energy;
+      }
+      final n = reviews.length;
+      avgRating = sumR / n;
+      avgMood = sumM / n;
+      avgEnergy = sumE / n;
+    }
   }
 
   int get currentStreak {
@@ -288,10 +292,33 @@ class DailyReviewService {
   final List<DailyReview> _reviews;
   bool _initialized = false;
 
+  /// Pre-indexed events by date key (YYYYMMDD) for O(1) day lookups.
+  /// Avoids O(N) linear scans per call to summarize(), compare(),
+  /// topAccomplishments(), and tomorrowEvents().
+  late final Map<int, List<EventModel>> _eventsByDate;
+
   DailyReviewService({
     required this.events,
     List<DailyReview>? reviews,
-  }) : _reviews = reviews ?? [];
+  }) : _reviews = reviews ?? [] {
+    _eventsByDate = _indexByDate(events);
+  }
+
+  /// Build a date key → event list index in a single O(N) pass.
+  static Map<int, List<EventModel>> _indexByDate(List<EventModel> events) {
+    final index = <int, List<EventModel>>{};
+    for (final e in events) {
+      final key = e.date.year * 10000 + e.date.month * 100 + e.date.day;
+      index.putIfAbsent(key, () => []).add(e);
+    }
+    return index;
+  }
+
+  /// O(1) event lookup for a given date.
+  List<EventModel> _eventsForDay(DateTime date) {
+    final key = date.year * 10000 + date.month * 100 + date.day;
+    return _eventsByDate[key] ?? const [];
+  }
 
   /// Initialize by loading persisted reviews.
   Future<void> init() async {
@@ -327,7 +354,7 @@ class DailyReviewService {
 
   /// Compute a summary for a specific date.
   DaySummary summarize(DateTime date) {
-    final dayEvents = events.where((e) => FormattingUtils.sameDay(e.date, date)).toList();
+    final dayEvents = _eventsForDay(date);
 
     int completed = 0;
     int totalChecklist = 0;
@@ -347,9 +374,10 @@ class DailyReviewService {
 
       // Checklist stats
       if (event.checklist != null && event.checklist!.items.isNotEmpty) {
-        totalChecklist += event.checklist!.items.length;
-        completedChecklist +=
-            event.checklist!.items.where((i) => i.isChecked).length;
+        for (final item in event.checklist!.items) {
+          totalChecklist++;
+          if (item.isChecked) completedChecklist++;
+        }
       }
 
       // Duration
@@ -423,15 +451,13 @@ class DailyReviewService {
   /// Get events for tomorrow (for the "focus for tomorrow" section).
   List<EventModel> tomorrowEvents(DateTime today) {
     final tomorrow = today.add(const Duration(days: 1));
-    return events
-        .where((e) => FormattingUtils.sameDay(e.date, tomorrow))
-        .toList()
+    return _eventsForDay(tomorrow).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   /// Get today's top accomplishments (high priority completed events).
   List<EventModel> topAccomplishments(DateTime date) {
-    final dayEvents = events.where((e) => FormattingUtils.sameDay(e.date, date)).toList();
+    final dayEvents = _eventsForDay(date);
     return dayEvents
         .where((e) {
           final endTime = e.endDate ?? e.date;
