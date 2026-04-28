@@ -71,21 +71,30 @@ class MatrixCalculatorService {
   }
 
   /// Multiply A × B.
+  ///
+  /// Uses transposed-B access pattern for cache-friendly inner loop
+  /// and pre-allocated result matrix to avoid closure overhead.
   static List<List<double>>? multiply(
       List<List<double>> a, List<List<double>> b) {
     if (a[0].length != b.length) return null;
     final rows = a.length;
     final cols = b[0].length;
     final n = a[0].length;
-    return List.generate(rows, (i) {
-      return List.generate(cols, (j) {
-        double sum = 0;
+    // Transpose B so inner loop accesses contiguous memory
+    final bT = List.generate(cols, (j) => List.generate(n, (k) => b[k][j]));
+    final result = List.generate(rows, (_) => List<double>.filled(cols, 0.0));
+    for (int i = 0; i < rows; i++) {
+      final rowA = a[i];
+      for (int j = 0; j < cols; j++) {
+        final colB = bT[j];
+        double sum = 0.0;
         for (int k = 0; k < n; k++) {
-          sum += a[i][k] * b[k][j];
+          sum += rowA[k] * colB[k];
         }
-        return sum;
-      });
-    });
+        result[i][j] = sum;
+      }
+    }
+    return result;
   }
 
   /// Scalar multiply.
@@ -103,30 +112,47 @@ class MatrixCalculatorService {
     return List.generate(cols, (j) => List.generate(rows, (i) => m[i][j]));
   }
 
-  /// Determinant (recursive cofactor expansion, up to 10×10).
+  /// Determinant via LU decomposition with partial pivoting — O(n³).
+  ///
+  /// Replaces the previous O(n!) cofactor expansion. Supports up to 10×10.
   static double? determinant(List<List<double>> m) {
     if (m.length != m[0].length) return null;
     final n = m.length;
     if (n > 10) return null;
     if (n == 1) return m[0][0];
     if (n == 2) return m[0][0] * m[1][1] - m[0][1] * m[1][0];
-    double det = 0;
-    for (int j = 0; j < n; j++) {
-      final minor = _minor(m, 0, j);
-      det += (j.isEven ? 1 : -1) * m[0][j] * determinant(minor)!;
+    final lu = List.generate(n, (i) => List<double>.from(m[i]));
+    int swaps = 0;
+    for (int col = 0; col < n; col++) {
+      int pivot = col;
+      double best = lu[col][col].abs();
+      for (int row = col + 1; row < n; row++) {
+        final v = lu[row][col].abs();
+        if (v > best) {
+          best = v;
+          pivot = row;
+        }
+      }
+      if (best < 1e-12) return 0.0;
+      if (pivot != col) {
+        final tmp = lu[col];
+        lu[col] = lu[pivot];
+        lu[pivot] = tmp;
+        swaps++;
+      }
+      final pivotVal = lu[col][col];
+      for (int row = col + 1; row < n; row++) {
+        final factor = lu[row][col] / pivotVal;
+        for (int j = col + 1; j < n; j++) {
+          lu[row][j] -= factor * lu[col][j];
+        }
+      }
+    }
+    double det = swaps.isOdd ? -1.0 : 1.0;
+    for (int i = 0; i < n; i++) {
+      det *= lu[i][i];
     }
     return det;
-  }
-
-  static List<List<double>> _minor(List<List<double>> m, int row, int col) {
-    return [
-      for (int i = 0; i < m.length; i++)
-        if (i != row)
-          [
-            for (int j = 0; j < m[0].length; j++)
-              if (j != col) m[i][j],
-          ],
-    ];
   }
 
   /// Inverse via Gauss-Jordan elimination.
