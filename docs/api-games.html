@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games &amp; Recreation API — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-wellness.html" class="sidebar-link">Wellness Services</a>
+      <a href="api-games.html" class="sidebar-link active">Games &amp; Recreation</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">On This Page</div>
+      <a href="#classic-games" class="sidebar-link">🎮 Classic Games</a>
+      <a href="#puzzle-games" class="sidebar-link">🧩 Puzzle &amp; Strategy</a>
+      <a href="#creative-tools" class="sidebar-link">🎨 Creative Tools</a>
+      <a href="#simulations" class="sidebar-link">🔬 Simulations</a>
+      <a href="#party-fun" class="sidebar-link">🎲 Party &amp; Fun</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Games &amp; Recreation</div>
+    <h1>Games &amp; Recreation API Reference</h1>
+    <p class="subtitle">
+      14 game engines, creative tools, and simulation services — all pure Dart with no external dependencies,
+      fully testable, and designed for Flutter widget integration via reactive state.
+    </p>
+
+    <div class="callout callout-info">
+      <strong>Architecture Pattern</strong>
+      Every game/recreation service follows the same pattern: pure business logic in
+      <code>lib/core/services/</code>, UI state bridged through providers in <code>lib/state/providers/</code>,
+      and views in <code>lib/views/</code>. Services are framework-agnostic — they manage grids, scores, and
+      rules without any Flutter imports (except <code>PixelArtService</code> and <code>SketchPadService</code>
+      which use <code>dart:ui</code> for color/offset types).
+    </div>
+
+    <!-- ─── Classic Games ────────────────────────────────── -->
+    <h2 id="classic-games">🎮 Classic Games</h2>
+
+    <h3 id="snake-game-service">SnakeGameService</h3>
+    <p><code>lib/core/services/snake_game_service.dart</code></p>
+    <p>
+      Classic Snake on a 20×20 toroidal grid. The snake grows when it eats food,
+      and the game ends on self-collision.
+    </p>
+
+    <h4>Key Types</h4>
+    <table>
+      <tr><th>Type</th><th>Description</th></tr>
+      <tr><td><code>GridPoint(int x, int y)</code></td><td>Immutable coordinate on the grid with value-equality</td></tr>
+      <tr><td><code>SnakeDirection</code></td><td>Enum: <code>up</code>, <code>down</code>, <code>left</code>, <code>right</code></td></tr>
+    </table>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>snake</code></td><td><code>List&lt;GridPoint&gt;</code></td><td>Snake body segments (head-first)</td></tr>
+      <tr><td><code>food</code></td><td><code>GridPoint</code></td><td>Current food position</td></tr>
+      <tr><td><code>direction</code></td><td><code>SnakeDirection</code></td><td>Current movement direction</td></tr>
+      <tr><td><code>score</code></td><td><code>int</code></td><td>Current score</td></tr>
+      <tr><td><code>isGameOver</code></td><td><code>bool</code></td><td>Whether the game has ended</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame()</code></td><td><code>void</code></td><td>Reset grid, place snake at center, spawn food</td></tr>
+      <tr><td><code>tick()</code></td><td><code>void</code></td><td>Advance one frame — move head, check food/collision, grow or trim tail</td></tr>
+      <tr><td><code>changeDirection(dir)</code></td><td><code>void</code></td><td>Set direction (ignores 180° reversals)</td></tr>
+    </table>
+
+    <h4>Usage</h4>
+    <div class="code-block">
+<span class="keyword">final</span> game = <span class="type">SnakeGameService</span>();
+game.<span class="fn">newGame</span>();
+
+<span class="comment">// Game loop (driven by Timer or Ticker)</span>
+game.<span class="fn">changeDirection</span>(<span class="type">SnakeDirection</span>.up);
+game.<span class="fn">tick</span>();
+<span class="keyword">if</span> (game.isGameOver) print(<span class="string">'Score: ${game.score}'</span>);
+    </div>
+
+    <hr>
+
+    <h3 id="tetris-game-service">TetrisGameService</h3>
+    <p><code>lib/core/services/tetris_game_service.dart</code></p>
+    <p>
+      Full Tetris implementation with all 7 standard tetrominoes (I, O, T, S, Z, J, L),
+      wall-kick rotation, line clearing with scoring, and next-piece preview.
+    </p>
+
+    <h4>Key Types</h4>
+    <table>
+      <tr><th>Type</th><th>Description</th></tr>
+      <tr><td><code>TetrominoType</code></td><td>Enum of the 7 standard piece types</td></tr>
+      <tr><td><code>TetrisPoint(int x, int y)</code></td><td>Board coordinate with value-equality and <code>+</code> operator</td></tr>
+      <tr><td><code>Tetromino</code></td><td>A piece with <code>type</code>, <code>rotation</code> (0–3), <code>position</code>, and computed <code>cells</code></td></tr>
+    </table>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>board</code></td><td><code>List&lt;List&lt;int&gt;&gt;</code></td><td>20×10 grid (0 = empty, 1–7 = piece colors)</td></tr>
+      <tr><td><code>current</code></td><td><code>Tetromino?</code></td><td>Currently falling piece</td></tr>
+      <tr><td><code>nextType</code></td><td><code>TetrominoType?</code></td><td>Preview of the next piece</td></tr>
+      <tr><td><code>score</code></td><td><code>int</code></td><td>Total score (1/3/5/8 points for 1/2/3/4 lines)</td></tr>
+      <tr><td><code>linesCleared</code></td><td><code>int</code></td><td>Total lines cleared</td></tr>
+      <tr><td><code>level</code></td><td><code>int</code></td><td>Current level (increases every 10 lines)</td></tr>
+      <tr><td><code>gameOver</code></td><td><code>bool</code></td><td>True when a new piece can't spawn</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame()</code></td><td><code>void</code></td><td>Clear board and start fresh</td></tr>
+      <tr><td><code>tick()</code></td><td><code>void</code></td><td>Drop piece one row; lock if landed, clear lines, spawn next</td></tr>
+      <tr><td><code>moveLeft()</code> / <code>moveRight()</code></td><td><code>void</code></td><td>Horizontal movement with collision check</td></tr>
+      <tr><td><code>rotate()</code></td><td><code>void</code></td><td>Clockwise rotation with wall-kick</td></tr>
+      <tr><td><code>hardDrop()</code></td><td><code>void</code></td><td>Instant drop to lowest valid position</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="game-2048-service">Game2048Service</h3>
+    <p><code>lib/core/services/game_2048_service.dart</code></p>
+    <p>
+      The classic 2048 sliding-tile puzzle on a 4×4 grid. Tiles merge when equal values collide.
+      Spawns a 2 (90%) or 4 (10%) after each move. Win condition: reach the 2048 tile.
+    </p>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>grid</code></td><td><code>List&lt;List&lt;int&gt;&gt;</code></td><td>4×4 tile grid (0 = empty)</td></tr>
+      <tr><td><code>score</code></td><td><code>int</code></td><td>Current score (sum of all merges)</td></tr>
+      <tr><td><code>bestScore</code></td><td><code>int</code></td><td>Session high score</td></tr>
+      <tr><td><code>won</code></td><td><code>bool</code></td><td>True when 2048 tile reached</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame()</code></td><td><code>void</code></td><td>Reset grid, spawn 2 initial tiles</td></tr>
+      <tr><td><code>swipe(SwipeDirection)</code></td><td><code>bool</code></td><td>Slide + merge in direction; returns true if board changed</td></tr>
+      <tr><td><code>acknowledgeWin()</code></td><td><code>void</code></td><td>Allow continued play past 2048</td></tr>
+      <tr><td><code>isGameOver</code></td><td><code>bool</code> (getter)</td><td>True when no valid moves remain</td></tr>
+    </table>
+
+    <div class="callout callout-success">
+      <strong>Merge Algorithm</strong>
+      Each swipe decomposes into per-row left-merges via <code>_mergeRow()</code>: remove zeros, scan left-to-right
+      for adjacent equal values, merge once (no chain-merging within a single swipe), then pad with zeros.
+      The grid is transposed/reversed as needed to reduce all 4 directions to left-merge.
+    </div>
+
+    <!-- ─── Puzzle & Strategy ────────────────────────────── -->
+    <h2 id="puzzle-games">🧩 Puzzle &amp; Strategy</h2>
+
+    <h3 id="sudoku-service">SudokuService</h3>
+    <p><code>lib/core/services/sudoku_service.dart</code></p>
+    <p>
+      Generates valid 9×9 Sudoku puzzles at 4 difficulty levels by first solving a blank grid
+      via randomized backtracking, then removing cells to reach the target "givens" count.
+    </p>
+
+    <h4>Difficulty Levels</h4>
+    <table>
+      <tr><th>Level</th><th>Givens</th></tr>
+      <tr><td>Easy</td><td>36</td></tr>
+      <tr><td>Medium</td><td>30</td></tr>
+      <tr><td>Hard</td><td>25</td></tr>
+      <tr><td>Expert</td><td>20</td></tr>
+    </table>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>puzzle</code></td><td><code>List&lt;List&lt;int&gt;&gt;</code></td><td>Original puzzle (0 = empty)</td></tr>
+      <tr><td><code>solution</code></td><td><code>List&lt;List&lt;int&gt;&gt;</code></td><td>Full solution for validation</td></tr>
+      <tr><td><code>playerGrid</code></td><td><code>List&lt;List&lt;int&gt;&gt;</code></td><td>Player's working grid</td></tr>
+      <tr><td><code>given</code></td><td><code>List&lt;List&lt;bool&gt;&gt;</code></td><td>Mask of non-editable cells</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>generate(difficulty)</code></td><td><code>void</code></td><td>Generate a new puzzle at the given difficulty</td></tr>
+      <tr><td><code>setCell(row, col, value)</code></td><td><code>bool</code></td><td>Set a cell (returns false if cell is a given)</td></tr>
+      <tr><td><code>validate()</code></td><td><code>bool</code></td><td>Check if current grid matches solution</td></tr>
+      <tr><td><code>getHint()</code></td><td><code>(int, int, int)?</code></td><td>Returns (row, col, value) for one empty cell</td></tr>
+      <tr><td><code>hasConflict(row, col)</code></td><td><code>bool</code></td><td>Check if a cell conflicts with row/col/box peers</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="minesweeper-service">MinesweeperService</h3>
+    <p><code>lib/core/services/minesweeper_service.dart</code></p>
+    <p>
+      Full Minesweeper with 3 preset difficulties, first-click safety (mines are placed after
+      the first reveal to guarantee a safe start), flood-fill auto-reveal for zero-adjacent cells,
+      and flag/chord support.
+    </p>
+
+    <h4>Difficulty Presets</h4>
+    <table>
+      <tr><th>Level</th><th>Grid</th><th>Mines</th></tr>
+      <tr><td>Beginner</td><td>9 × 9</td><td>10</td></tr>
+      <tr><td>Intermediate</td><td>16 × 16</td><td>40</td></tr>
+      <tr><td>Expert</td><td>16 × 30</td><td>99</td></tr>
+    </table>
+
+    <h4>Cell Model</h4>
+    <div class="code-block">
+<span class="keyword">class</span> <span class="type">MinesweeperCell</span> {
+  <span class="type">bool</span> hasMine;
+  <span class="type">bool</span> isRevealed;
+  <span class="type">bool</span> isFlagged;
+  <span class="type">int</span> adjacentMines;
+}
+    </div>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame(difficulty)</code></td><td><code>void</code></td><td>Initialize grid for the selected difficulty</td></tr>
+      <tr><td><code>reveal(row, col)</code></td><td><code>void</code></td><td>Reveal a cell (flood-fills zeros); triggers mine placement on first click</td></tr>
+      <tr><td><code>toggleFlag(row, col)</code></td><td><code>void</code></td><td>Toggle flag marker on an unrevealed cell</td></tr>
+      <tr><td><code>isWon</code></td><td><code>bool</code></td><td>True when all non-mine cells are revealed</td></tr>
+      <tr><td><code>isLost</code></td><td><code>bool</code></td><td>True when a mine was revealed</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="tic-tac-toe-service">TicTacToeService</h3>
+    <p><code>lib/core/services/tic_tac_toe_service.dart</code></p>
+    <p>
+      Tic Tac Toe with two modes: local two-player and vs. AI. The AI uses minimax
+      search to play optimally (unbeatable on a 3×3 board).
+    </p>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>board</code></td><td><code>List&lt;String&gt;</code></td><td>9-element flat board (<code>''</code>, <code>'X'</code>, or <code>'O'</code>)</td></tr>
+      <tr><td><code>currentPlayer</code></td><td><code>String</code></td><td><code>'X'</code> or <code>'O'</code></td></tr>
+      <tr><td><code>vsAi</code></td><td><code>bool</code></td><td>Whether playing against AI</td></tr>
+      <tr><td><code>gameOver</code></td><td><code>bool</code></td><td>Whether the game has ended</td></tr>
+      <tr><td><code>winner</code></td><td><code>String?</code></td><td><code>'X'</code>, <code>'O'</code>, or null (draw)</td></tr>
+      <tr><td><code>isDraw</code></td><td><code>bool</code></td><td>Game over with no winner</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>makeMove(index)</code></td><td><code>bool</code></td><td>Place current player's mark at index 0–8; triggers AI response if enabled</td></tr>
+      <tr><td><code>setVsAi(bool)</code></td><td><code>void</code></td><td>Toggle AI mode (resets the board)</td></tr>
+      <tr><td><code>reset()</code></td><td><code>void</code></td><td>Clear board and start fresh</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="memory-game-service">MemoryGameService</h3>
+    <p><code>lib/core/services/memory_game_service.dart</code></p>
+    <p>
+      Emoji-based memory card matching game with 4 difficulty levels (6–15 pairs).
+      Tracks moves, elapsed time, and calculates a star rating based on performance.
+    </p>
+
+    <h4>Difficulty Levels</h4>
+    <table>
+      <tr><th>Level</th><th>Pairs</th></tr>
+      <tr><td>Easy</td><td>6</td></tr>
+      <tr><td>Medium</td><td>8</td></tr>
+      <tr><td>Hard</td><td>10</td></tr>
+      <tr><td>Expert</td><td>15</td></tr>
+    </table>
+
+    <h4>Card Model</h4>
+    <div class="code-block">
+<span class="keyword">class</span> <span class="type">MemoryCard</span> {
+  <span class="keyword">final</span> <span class="type">int</span> id;
+  <span class="keyword">final</span> <span class="type">String</span> emoji;
+  <span class="type">bool</span> isFaceUp;
+  <span class="type">bool</span> isMatched;
+}
+    </div>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame(difficulty)</code></td><td><code>void</code></td><td>Shuffle and deal cards for the selected difficulty</td></tr>
+      <tr><td><code>flipCard(index)</code></td><td><code>FlipResult</code></td><td>Flip a card; returns match/mismatch/waiting status</td></tr>
+      <tr><td><code>isComplete</code></td><td><code>bool</code></td><td>All pairs matched</td></tr>
+      <tr><td><code>stats</code></td><td><code>GameStats</code></td><td>Moves, time, star rating (1–3 stars)</td></tr>
+    </table>
+
+    <!-- ─── Creative Tools ────────────────────────────────── -->
+    <h2 id="creative-tools">🎨 Creative Tools</h2>
+
+    <h3 id="pixel-art-service">PixelArtCanvas</h3>
+    <p><code>lib/core/services/pixel_art_service.dart</code></p>
+    <p>
+      Grid-based pixel art editor with configurable canvas size (default 16×16), full undo/redo
+      history, fill tool, and PNG export via <code>dart:ui</code>.
+    </p>
+
+    <h4>Constructor</h4>
+    <div class="code-block">
+<span class="type">PixelArtCanvas</span>({<span class="type">int</span> width = 16, <span class="type">int</span> height = 16})
+    </div>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>setPixel(x, y, color)</code></td><td><code>void</code></td><td>Set a single pixel (saves undo state)</td></tr>
+      <tr><td><code>getPixel(x, y)</code></td><td><code>Color</code></td><td>Read a pixel's color</td></tr>
+      <tr><td><code>fill(x, y, color)</code></td><td><code>void</code></td><td>Flood-fill from point with color</td></tr>
+      <tr><td><code>clear()</code></td><td><code>void</code></td><td>Reset all pixels to transparent</td></tr>
+      <tr><td><code>undo()</code> / <code>redo()</code></td><td><code>void</code></td><td>Navigate undo/redo stack</td></tr>
+      <tr><td><code>toPng(pixelSize)</code></td><td><code>Future&lt;Uint8List&gt;</code></td><td>Export canvas as PNG bytes at given pixel scale</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="sketch-pad-service">SketchPadService</h3>
+    <p><code>lib/core/services/sketch_pad_service.dart</code></p>
+    <p>
+      Freehand drawing canvas that records strokes as sequences of <code>Offset</code> points
+      with configurable color and stroke width. Full undo/redo support.
+    </p>
+
+    <h4>Stroke Model</h4>
+    <div class="code-block">
+<span class="keyword">class</span> <span class="type">SketchStroke</span> {
+  <span class="keyword">final</span> <span class="type">List</span>&lt;<span class="type">Offset</span>&gt; points;
+  <span class="keyword">final</span> <span class="type">Color</span> color;
+  <span class="keyword">final</span> <span class="type">double</span> width;
+}
+    </div>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>startStroke(point, color, width)</code></td><td><code>void</code></td><td>Begin a new stroke</td></tr>
+      <tr><td><code>addPoint(point)</code></td><td><code>void</code></td><td>Extend the current stroke</td></tr>
+      <tr><td><code>endStroke()</code></td><td><code>void</code></td><td>Finalize the current stroke</td></tr>
+      <tr><td><code>undo()</code> / <code>redo()</code></td><td><code>void</code></td><td>Navigate stroke history</td></tr>
+      <tr><td><code>clear()</code></td><td><code>void</code></td><td>Remove all strokes</td></tr>
+    </table>
+
+    <!-- ─── Simulations ────────────────────────────────── -->
+    <h2 id="simulations">🔬 Simulations &amp; Visualizations</h2>
+
+    <h3 id="game-of-life-service">GameOfLifeService</h3>
+    <p><code>lib/core/services/game_of_life_service.dart</code></p>
+    <p>
+      Conway's Game of Life on a toroidal grid (edges wrap). Supports arbitrary grid sizes,
+      preset patterns (glider, blinker, pulsar, Gosper glider gun), randomization, and
+      single-step or continuous simulation.
+    </p>
+
+    <h4>Rules (B3/S23)</h4>
+    <ul>
+      <li>A dead cell with exactly 3 live neighbors becomes alive (birth)</li>
+      <li>A live cell with 2 or 3 live neighbors survives</li>
+      <li>All other live cells die (underpopulation or overpopulation)</li>
+    </ul>
+
+    <h4>Properties</h4>
+    <table>
+      <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+      <tr><td><code>grid</code></td><td><code>List&lt;List&lt;bool&gt;&gt;</code></td><td>Current cell states (defensive copy)</td></tr>
+      <tr><td><code>rows</code> / <code>cols</code></td><td><code>int</code></td><td>Grid dimensions</td></tr>
+      <tr><td><code>generation</code></td><td><code>int</code></td><td>Steps elapsed since last reset</td></tr>
+      <tr><td><code>liveCellCount</code></td><td><code>int</code></td><td>Number of currently alive cells</td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>step()</code></td><td><code>bool</code></td><td>Advance one generation; returns true if any cell changed</td></tr>
+      <tr><td><code>toggleCell(row, col)</code></td><td><code>void</code></td><td>Toggle a cell's state</td></tr>
+      <tr><td><code>randomize({density})</code></td><td><code>void</code></td><td>Fill grid randomly (default 30% alive)</td></tr>
+      <tr><td><code>loadPreset(name)</code></td><td><code>void</code></td><td>Load a named pattern (glider, pulsar, etc.)</td></tr>
+      <tr><td><code>resize(rows, cols)</code></td><td><code>void</code></td><td>Change grid dimensions (clears state)</td></tr>
+      <tr><td><code>clear()</code></td><td><code>void</code></td><td>Kill all cells, reset generation counter</td></tr>
+    </table>
+
+    <div class="callout callout-info">
+      <strong>Toroidal Topology</strong>
+      Neighbor counting wraps around grid edges using modular arithmetic, so patterns like gliders
+      can traverse the entire grid without hitting walls.
+    </div>
+
+    <hr>
+
+    <h3 id="sort-visualizer-service">SortVisualizerService</h3>
+    <p><code>lib/core/services/sort_visualizer_service.dart</code></p>
+    <p>
+      Step-by-step visualization of 5 sorting algorithms. Generates an array of <code>SortStep</code>
+      snapshots that record comparisons, swaps, and sorted regions — designed for animated playback.
+    </p>
+
+    <h4>Supported Algorithms</h4>
+    <table>
+      <tr><th>Algorithm</th><th>Time</th><th>Space</th></tr>
+      <tr><td>Bubble Sort</td><td>O(n²)</td><td>O(1)</td></tr>
+      <tr><td>Selection Sort</td><td>O(n²)</td><td>O(1)</td></tr>
+      <tr><td>Insertion Sort</td><td>O(n²)</td><td>O(1)</td></tr>
+      <tr><td>Merge Sort</td><td>O(n log n)</td><td>O(n)</td></tr>
+      <tr><td>Quick Sort</td><td>O(n log n)*</td><td>O(log n)</td></tr>
+    </table>
+
+    <h4>Step Model</h4>
+    <div class="code-block">
+<span class="keyword">class</span> <span class="type">SortStep</span> {
+  <span class="keyword">final</span> <span class="type">List</span>&lt;<span class="type">int</span>&gt; array;          <span class="comment">// snapshot of array at this step</span>
+  <span class="keyword">final</span> <span class="type">int</span>? comparing1, comparing2; <span class="comment">// indices being compared</span>
+  <span class="keyword">final</span> <span class="type">Set</span>&lt;<span class="type">int</span>&gt; sorted;         <span class="comment">// indices known to be in final position</span>
+  <span class="keyword">final</span> <span class="type">String</span> description;       <span class="comment">// human-readable step explanation</span>
+}
+    </div>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>generate(algorithm, size)</code></td><td><code>List&lt;SortStep&gt;</code></td><td>Generate all steps for the algorithm on a random array of given size</td></tr>
+      <tr><td><code>generateFromArray(algorithm, array)</code></td><td><code>List&lt;SortStep&gt;</code></td><td>Generate steps for a specific input array</td></tr>
+    </table>
+
+    <!-- ─── Party & Fun ────────────────────────────────── -->
+    <h2 id="party-fun">🎲 Party &amp; Fun</h2>
+
+    <h3 id="hangman-service">HangmanService</h3>
+    <p><code>lib/core/services/hangman_service.dart</code></p>
+    <p>
+      Classic Hangman word guessing game with a built-in word bank of 25+ words, each with a
+      hint. 6 incorrect guesses allowed before game over.
+    </p>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>newGame()</code></td><td><code>void</code></td><td>Pick a random word and reset state</td></tr>
+      <tr><td><code>guessLetter(letter)</code></td><td><code>bool</code></td><td>Guess a letter; returns true if it appears in the word</td></tr>
+      <tr><td><code>displayWord</code></td><td><code>String</code></td><td>Current word with unguessed letters as underscores</td></tr>
+      <tr><td><code>hint</code></td><td><code>String</code></td><td>Hint for the current word</td></tr>
+      <tr><td><code>isWon</code> / <code>isLost</code></td><td><code>bool</code></td><td>Win/loss state</td></tr>
+      <tr><td><code>wrongGuesses</code></td><td><code>int</code></td><td>Number of incorrect guesses (max 6)</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="simon-says-service">SimonSaysService</h3>
+    <p><code>lib/core/services/simon_says_service.dart</code></p>
+    <p>
+      Memory game where the computer plays an ever-growing sequence of colored buttons that
+      the player must reproduce. Each successful round adds one flash. 4 buttons (green, red,
+      yellow, blue).
+    </p>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>startNewGame()</code></td><td><code>void</code></td><td>Reset and begin with a 1-element sequence</td></tr>
+      <tr><td><code>playerInput(buttonIndex)</code></td><td><code>InputResult</code></td><td>Submit a button press; returns correct/wrong/round-complete</td></tr>
+      <tr><td><code>sequence</code></td><td><code>List&lt;int&gt;</code></td><td>Current computer sequence (for playback)</td></tr>
+      <tr><td><code>round</code></td><td><code>int</code></td><td>Current round number</td></tr>
+      <tr><td><code>highScore</code></td><td><code>int</code></td><td>Best score this session</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="rps-service">RpsService</h3>
+    <p><code>lib/core/services/rps_service.dart</code></p>
+    <p>
+      Rock Paper Scissors with full history tracking, win/loss/draw stats, streak tracking,
+      and a CPU opponent that plays randomly.
+    </p>
+
+    <h4>Types</h4>
+    <table>
+      <tr><th>Type</th><th>Values</th></tr>
+      <tr><td><code>RpsMove</code></td><td><code>rock</code>, <code>paper</code>, <code>scissors</code></td></tr>
+      <tr><td><code>RpsOutcome</code></td><td><code>win</code>, <code>lose</code>, <code>draw</code></td></tr>
+    </table>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>play(RpsMove)</code></td><td><code>RpsRound</code></td><td>Play a round and get result (player move, CPU move, outcome)</td></tr>
+      <tr><td><code>stats</code></td><td><code>RpsStats</code></td><td>Cumulative stats: total rounds, wins, losses, draws, streaks, win rate</td></tr>
+      <tr><td><code>history</code></td><td><code>List&lt;RpsRound&gt;</code></td><td>Full round history (most recent first)</td></tr>
+      <tr><td><code>reset()</code></td><td><code>void</code></td><td>Clear all history and stats</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="spin-wheel-service">SpinWheelService</h3>
+    <p><code>lib/core/services/spin_wheel_service.dart</code></p>
+    <p>
+      Customizable spin wheel / random picker with preset configurations, history tracking,
+      and option management. Great for decision-making or party games.
+    </p>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addOption(text)</code></td><td><code>void</code></td><td>Add an option to the wheel</td></tr>
+      <tr><td><code>removeOption(text)</code></td><td><code>void</code></td><td>Remove an option</td></tr>
+      <tr><td><code>loadPreset(preset)</code></td><td><code>void</code></td><td>Load a preset wheel configuration</td></tr>
+      <tr><td><code>spin()</code></td><td><code>SpinResult</code></td><td>Spin and return a random result</td></tr>
+      <tr><td><code>history</code></td><td><code>List&lt;SpinResult&gt;</code></td><td>Previous spin results</td></tr>
+    </table>
+
+    <hr>
+
+    <h3 id="reaction-time-service">ReactionTimeService</h3>
+    <p><code>lib/core/services/reaction_time_service.dart</code></p>
+    <p>
+      Reaction time testing with history (up to 100 results), average/best/worst stats,
+      and session tracking. The UI handles the visual stimulus; this service manages scoring.
+    </p>
+
+    <h4>Methods</h4>
+    <table>
+      <tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+      <tr><td><code>addResult(result)</code></td><td><code>void</code></td><td>Record a reaction time measurement</td></tr>
+      <tr><td><code>averageMs</code></td><td><code>double?</code></td><td>Average reaction time across all results</td></tr>
+      <tr><td><code>bestMs</code></td><td><code>int?</code></td><td>Fastest reaction time</td></tr>
+      <tr><td><code>worstMs</code></td><td><code>int?</code></td><td>Slowest reaction time</td></tr>
+      <tr><td><code>clearHistory()</code></td><td><code>void</code></td><td>Reset all recorded results</td></tr>
+    </table>
+
+    <hr>
+
+    <div class="callout callout-success">
+      <strong>Testing</strong>
+      All game services are covered by tests in <code>test/</code>. Because services are pure Dart
+      with no Flutter widget dependencies, they can be tested with <code>flutter test</code> using
+      standard <code>expect()</code> assertions — no widget pump or mock framework needed.
+    </div>
+
+    <hr>
+    <p style="color: var(--text-muted); font-size: 14px;">
+      Last updated: April 2026 · <a href="index.html">Back to documentation home</a>
+    </p>
+  </main>
+</div>
+</body>
+</html>
