@@ -307,10 +307,13 @@ class NetWorthTrackerService {
     final history = <MonthlyNetWorth>[];
 
     for (int i = months - 1; i >= 0; i--) {
-      final year = now.month - i <= 0 ? now.year - 1 : now.year;
-      final month = ((now.month - i - 1) % 12) + 1;
-      final endOfMonth = DateTime(
-          month == 12 ? year + 1 : year, month == 12 ? 1 : month + 1, 0);
+      // Use absolute month offset to correctly handle multi-year lookbacks.
+      // The previous calculation only subtracted 1 from the year, which was
+      // wrong when months > 12 (e.g. milestones uses months: 60).
+      final totalMonths = now.year * 12 + (now.month - 1) - i;
+      final year = totalMonths ~/ 12;
+      final month = (totalMonths % 12) + 1;
+      final endOfMonth = DateTime(year, month + 1, 0);
 
       double monthAssets = 0;
       double monthLiabilities = 0;
