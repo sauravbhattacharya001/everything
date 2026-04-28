@@ -1,0 +1,121 @@
+name: Widget / UI Issue
+description: Report a visual glitch, layout problem, or accessibility issue with an existing widget
+title: "[UI]: "
+labels: ["ui", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for visual bugs, layout issues, theme inconsistencies, or
+        accessibility problems with existing widgets and screens. For entirely new features,
+        use the Feature Request template instead.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Issue Category
+      description: What kind of UI issue is this?
+      options:
+        - Layout / overflow
+        - Theme / color inconsistency
+        - Animation glitch
+        - Responsive design (screen size)
+        - Accessibility (screen reader, contrast, touch targets)
+        - Text rendering / localization
+        - Navigation / routing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the visual or interaction problem.
+      placeholder: "e.g. Card widget overflows on narrow screens below 360px width"
+    validations:
+      required: true
+
+  - type: input
+    id: widget-screen
+    attributes:
+      label: Affected Widget / Screen
+      description: Which widget or screen has the problem?
+      placeholder: "e.g. SettingsPage, CustomSearchBar, the onboarding carousel"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we see the issue?
+      placeholder: |
+        1. Open the app
+        2. Navigate to '...'
+        3. Resize window to 320px / rotate to landscape / enable dark mode
+        4. See the visual issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recordings
+      description: Visual evidence is especially valuable for UI issues. Include before/after if suggesting a fix.
+      placeholder: Drag-and-drop screenshots or recordings here.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform(s) Affected
+      description: Where does this visual issue appear?
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Theme Mode
+      description: Does this happen in a specific theme?
+      options:
+        - Light mode only
+        - Dark mode only
+        - Both themes
+        - System/dynamic theme
+
+  - type: input
+    id: screen-size
+    attributes:
+      label: Screen Size / Orientation
+      description: If relevant, specify the viewport dimensions or orientation.
+      placeholder: "e.g. 360x640 portrait, or landscape tablet"
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter Version
+      description: Output of `flutter --version`
+      placeholder: "e.g. Flutter 3.19.0"
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested Fix
+      description: If you have an idea for how to fix this, describe it here.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Relevant accessibility settings, locale, font scaling, etc.

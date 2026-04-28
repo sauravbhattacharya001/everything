@@ -1,0 +1,123 @@
+name: Platform Regression
+description: Report behavior that works on one platform but is broken on another
+title: "[Regression]: "
+labels: ["bug", "platform-regression", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when something works on one platform (Android, iOS, Web, desktop)
+        but is broken or behaves differently on another. Cross-platform regressions are
+        high-priority since they often indicate platform-specific code paths or plugin issues.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Regression Description
+      description: What works on one platform but fails on another?
+      placeholder: "e.g. Date picker renders correctly on Android but shows a blank overlay on iOS"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: working-platform
+    attributes:
+      label: Working Platform(s)
+      description: Where does this feature work correctly?
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: broken-platform
+    attributes:
+      label: Broken Platform(s)
+      description: Where is this feature broken or behaving incorrectly?
+      multiple: true
+      options:
+        - Android
+        - iOS
+        - Web
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the issue on the broken platform(s).
+      placeholder: |
+        1. Open the app on [broken platform]
+        2. Navigate to '...'
+        3. Observe the difference from [working platform]
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen (matching the working platform)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior on Broken Platform
+      description: What happens instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recordings
+      description: Side-by-side comparisons are especially helpful for regressions.
+      placeholder: Attach screenshots showing the difference between platforms.
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter Version
+      description: Output of `flutter --version`
+      placeholder: "e.g. Flutter 3.19.0"
+
+  - type: input
+    id: devices
+    attributes:
+      label: Devices Tested
+      description: List the devices/emulators you tested on both platforms.
+      placeholder: "e.g. Pixel 7 (Android 14) vs iPhone 15 Simulator (iOS 17.2)"
+
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Flutter Channel
+      description: Which Flutter channel are you using?
+      options:
+        - stable
+        - beta
+        - master
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround (if any)
+      description: Have you found a temporary workaround?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context — plugin versions, relevant pubspec dependencies, recent Flutter upgrades, etc.
