@@ -197,6 +197,7 @@ import '../../views/home/goal_autopilot_screen.dart';
 import '../../views/home/streak_guardian_screen.dart';
 import '../../views/home/accountability_screen.dart';
 import '../../views/home/context_switcher_screen.dart';
+import '../../views/home/willpower_budget_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1446,6 +1447,12 @@ class FeatureRegistry {
       icon: Icons.psychology,
       category: FeatureCategory.productivity,
       builder: (_) => const ContextSwitcherScreen(),
+    ),
+    FeatureEntry(
+      label: 'Willpower Budget',
+      icon: Icons.battery_charging_full,
+      category: FeatureCategory.productivity,
+      builder: (_) => const WillpowerBudgetScreen(),
     ),
   ];
 
