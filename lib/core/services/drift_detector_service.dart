@@ -477,10 +477,15 @@ class DriftDetectorService {
   // -------------------------------------------------------------------------
 
   /// Add a data point for a metric.
+  ///
+  /// Uses binary search to insert at the correct sorted position
+  /// instead of appending and re-sorting the entire list (O(log n)
+  /// search + O(n) shift vs O(n log n) sort).
   void addDataPoint(String metricId, DateTime date, double value) {
-    _data.putIfAbsent(metricId, () => []);
-    _data[metricId]!.add(MetricDataPoint(date: date, value: value));
-    _data[metricId]!.sort((a, b) => a.date.compareTo(b.date));
+    final list = _data.putIfAbsent(metricId, () => []);
+    final point = MetricDataPoint(date: date, value: value);
+    final idx = _lowerBound(list, date);
+    list.insert(idx, point);
   }
 
   /// Bulk import data points.
@@ -511,13 +516,21 @@ class DriftDetectorService {
   }
 
   /// Get data for a metric within a date range.
+  ///
+  /// Uses binary search on the sorted data to find the start index,
+  /// then scans forward — O(log n + k) where k is the result count,
+  /// instead of the previous O(n) full scan.
   List<MetricDataPoint> getDataInRange(
       String metricId, DateTime start, DateTime end) {
     final points = _data[metricId] ?? [];
-    return points
-        .where((p) =>
-            !p.date.isBefore(start) && !p.date.isAfter(end))
-        .toList();
+    if (points.isEmpty) return [];
+    final lo = _lowerBound(points, start);
+    final result = <MetricDataPoint>[];
+    for (int i = lo; i < points.length; i++) {
+      if (points[i].date.isAfter(end)) break;
+      result.add(points[i]);
+    }
+    return result;
   }
 
   // -------------------------------------------------------------------------
@@ -583,15 +596,24 @@ class DriftDetectorService {
   // -------------------------------------------------------------------------
 
   /// Compute rolling average for data in a window.
+  ///
+  /// Uses binary search to find the first element >= windowStart,
+  /// then sums forward until past windowEnd — O(log n + k) where
+  /// k is the window size, instead of the previous O(n) full scan.
+  /// Also accumulates sum in a single pass without allocating a
+  /// filtered sub-list.
   double _windowAverage(List<MetricDataPoint> allPoints, DateTime windowStart,
       DateTime windowEnd) {
-    final inWindow = allPoints
-        .where((p) =>
-            !p.date.isBefore(windowStart) && !p.date.isAfter(windowEnd))
-        .toList();
-    if (inWindow.isEmpty) return double.nan;
-    return inWindow.map((p) => p.value).reduce((a, b) => a + b) /
-        inWindow.length;
+    if (allPoints.isEmpty) return double.nan;
+    final lo = _lowerBound(allPoints, windowStart);
+    double sum = 0;
+    int count = 0;
+    for (int i = lo; i < allPoints.length; i++) {
+      if (allPoints[i].date.isAfter(windowEnd)) break;
+      sum += allPoints[i].value;
+      count++;
+    }
+    return count == 0 ? double.nan : sum / count;
   }
 
   /// Classify drift severity based on weekly velocity and metric definition.
@@ -713,6 +735,10 @@ class DriftDetectorService {
   // -------------------------------------------------------------------------
 
   /// Compute Pearson correlation between two metrics' daily values.
+  ///
+  /// Uses integer date keys (YYYYMMDD) for same-day alignment instead
+  /// of formatted strings — avoids per-point string allocations and
+  /// is consistent with HeatmapService / CorrelationAnalyzerService.
   DriftCorrelation? computeDriftCorrelation(
       String metricA, String metricB, {DateTime? asOf}) {
     final now = asOf ?? DateTime.now();
@@ -720,20 +746,18 @@ class DriftDetectorService {
     final pointsA = getDataInRange(metricA, start, now);
     final pointsB = getDataInRange(metricB, start, now);
 
-    // Align by date (same-day matching)
-    final mapA = <String, double>{};
+    // Align by date (same-day matching) using integer keys
+    final mapA = <int, double>{};
     for (final p in pointsA) {
-      final key =
-          '${p.date.year}-${p.date.month}-${p.date.day}';
-      mapA[key] = p.value;
+      mapA[_dateKeyInt(p.date)] = p.value;
     }
 
     final List<double> valsA = [], valsB = [];
     for (final p in pointsB) {
-      final key =
-          '${p.date.year}-${p.date.month}-${p.date.day}';
-      if (mapA.containsKey(key)) {
-        valsA.add(mapA[key]!);
+      final key = _dateKeyInt(p.date);
+      final valA = mapA[key];
+      if (valA != null) {
+        valsA.add(valA);
         valsB.add(p.value);
       }
     }
@@ -1160,4 +1184,30 @@ class DriftDetectorService {
 
   /// Get alert history.
   List<DriftAlert> get alertHistory => List.unmodifiable(_alertHistory);
+
+  // -------------------------------------------------------------------------
+  // Binary search helpers
+  // -------------------------------------------------------------------------
+
+  /// Integer date key (YYYYMMDD) — avoids string allocation for hashing.
+  static int _dateKeyInt(DateTime dt) =>
+      dt.year * 10000 + dt.month * 100 + dt.day;
+
+  /// Returns the index of the first element whose date is >= [target].
+  ///
+  /// Runs in O(log n) on the already-sorted data list, replacing the
+  /// previous O(n) linear scans in [getDataInRange], [_windowAverage],
+  /// and the O(n log n) re-sort in [addDataPoint].
+  static int _lowerBound(List<MetricDataPoint> points, DateTime target) {
+    int lo = 0, hi = points.length;
+    while (lo < hi) {
+      final mid = (lo + hi) >>> 1;
+      if (points[mid].date.isBefore(target)) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
+  }
 }
