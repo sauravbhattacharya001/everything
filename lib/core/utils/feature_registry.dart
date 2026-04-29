@@ -199,6 +199,7 @@ import '../../views/home/streak_guardian_screen.dart';
 import '../../views/home/accountability_screen.dart';
 import '../../views/home/context_switcher_screen.dart';
 import '../../views/home/willpower_budget_screen.dart';
+import '../../views/home/attention_debt_screen.dart';
 
 /// A single navigable feature in the app.
 class FeatureEntry {
@@ -1460,6 +1461,12 @@ class FeatureRegistry {
       icon: Icons.self_improvement,
       category: FeatureCategory.productivity,
       builder: (_) => const RitualEngineScreen(),
+    ),
+    FeatureEntry(
+      label: 'Attention Debt Tracker',
+      icon: Icons.account_balance,
+      category: FeatureCategory.productivity,
+      builder: (_) => const AttentionDebtScreen(),
     ),
   ];
 
