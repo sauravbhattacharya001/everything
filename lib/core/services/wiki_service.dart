@@ -20,6 +20,14 @@ class WikiSummary {
 
 /// Service for managing personal wiki pages.
 class WikiService {
+  /// Maximum number of wiki pages allowed.
+  ///
+  /// Prevents memory exhaustion from maliciously large imports.
+  static const int maxPages = 10000;
+
+  /// Maximum allowed JSON import size in bytes (10 MB).
+  static const int maxImportBytes = 10 * 1024 * 1024;
+
   List<WikiPageEntry> _pages = [];
 
   List<WikiPageEntry> get pages => List.unmodifiable(_pages);
@@ -96,8 +104,26 @@ class WikiService {
   String toJson() =>
       jsonEncode(_pages.map((p) => p.toMap()).toList());
 
+  /// Loads wiki pages from a JSON string.
+  ///
+  /// Enforces size limits on both the raw JSON input and the decoded
+  /// page count to prevent memory exhaustion from untrusted data
+  /// (e.g., a corrupted backup or maliciously large import).
   void loadFromJson(String json) {
+    if (json.length > maxImportBytes) {
+      final sizeMB = (json.length / (1024 * 1024)).toStringAsFixed(1);
+      throw StateError(
+        'Wiki import is $sizeMB MB which exceeds the '
+        '${maxImportBytes ~/ (1024 * 1024)} MB limit.',
+      );
+    }
     final list = jsonDecode(json) as List<dynamic>;
+    if (list.length > maxPages) {
+      throw StateError(
+        'Import contains ${list.length} pages which exceeds the '
+        'maximum of $maxPages.',
+      );
+    }
     _pages = list
         .map((e) => WikiPageEntry.fromMap(e as Map<String, dynamic>))
         .toList();

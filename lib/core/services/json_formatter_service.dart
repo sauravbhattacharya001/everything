@@ -65,12 +65,33 @@ class JsonPathNode {
 
 /// Service for JSON formatting, validation, and analysis.
 class JsonFormatterService {
+  /// Maximum input length (1 MB) to prevent memory exhaustion from
+  /// pasting enormous payloads.
+  static const int maxInputLength = 1024 * 1024;
+
+  /// Maximum recursion depth for tree analysis.
+  ///
+  /// Dart's default stack is ~1 MB; deeply nested JSON (e.g., 10 000
+  /// nested arrays pasted from clipboard) causes a [StackOverflowError]
+  /// crash. Capping at 500 levels is generous for any real document
+  /// while keeping recursion well within safe stack limits.
+  static const int maxRecursionDepth = 500;
+
   /// Validate, format, and analyze a JSON string.
   static JsonFormatResult process(String input, {int indent = 2}) {
     if (input.trim().isEmpty) {
       return const JsonFormatResult(
         isValid: false,
         errorMessage: 'Input is empty',
+      );
+    }
+
+    if (input.length > maxInputLength) {
+      final sizeMB = (input.length / (1024 * 1024)).toStringAsFixed(1);
+      return JsonFormatResult(
+        isValid: false,
+        errorMessage: 'Input is $sizeMB MB which exceeds the '
+            '${maxInputLength ~/ (1024 * 1024)} MB limit.',
       );
     }
 
@@ -117,6 +138,15 @@ class JsonFormatterService {
     void walk(dynamic v, int depth) {
       if (depth > maxDepth) maxDepth = depth;
 
+      // Guard against stack overflow from deeply nested JSON.
+      // Beyond maxRecursionDepth we still count the node but do not
+      // recurse into children — this keeps stats accurate for the
+      // traversed portion without risking a crash.
+      if (depth > maxRecursionDepth) {
+        totalValues++;
+        return;
+      }
+
       if (v == null) {
         nullCount++;
         totalValues++;
@@ -158,6 +188,17 @@ class JsonFormatterService {
   }
 
   static JsonPathNode _buildTree(dynamic value, String key, int depth) {
+    // Stop recursion at maxRecursionDepth to prevent stack overflow.
+    // Show a placeholder node so the user knows data was truncated.
+    if (depth > maxRecursionDepth) {
+      return JsonPathNode(
+        key: key,
+        type: 'truncated',
+        valuePreview: '(depth limit reached)',
+        depth: depth,
+      );
+    }
+
     if (value is Map) {
       return JsonPathNode(
         key: key,
