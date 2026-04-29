@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance &amp; Budgeting Services — Everything App Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-wellness.html" class="sidebar-link">Wellness Services</a>
+      <a href="api-finance.html" class="sidebar-link active">Finance &amp; Budgeting</a>
+      <a href="api-games.html" class="sidebar-link">Games &amp; Recreation</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">On This Page</div>
+      <a href="#overview" class="sidebar-link">Overview</a>
+      <a href="#expense-tracker" class="sidebar-link">ExpenseTrackerService</a>
+      <a href="#budget-planner" class="sidebar-link">BudgetPlannerService</a>
+      <a href="#savings-goal" class="sidebar-link">SavingsGoalService</a>
+      <a href="#debt-payoff" class="sidebar-link">DebtPayoffService</a>
+      <a href="#net-worth-tracker" class="sidebar-link">NetWorthTrackerService</a>
+      <a href="#fire-calculator" class="sidebar-link">FireCalculatorService</a>
+      <a href="#expense-forecast" class="sidebar-link">ExpenseForecastService</a>
+      <a href="#subscription-tracker" class="sidebar-link">SubscriptionTrackerService</a>
+      <a href="#bill-reminder" class="sidebar-link">BillReminderService</a>
+      <a href="#compound-interest" class="sidebar-link">CompoundInterestService</a>
+      <a href="#loan-calculator" class="sidebar-link">LoanCalculatorService</a>
+      <a href="#mortgage-calculator" class="sidebar-link">MortgageCalculatorService</a>
+      <a href="#tax-calculator" class="sidebar-link">TaxCalculatorService</a>
+      <a href="#salary-calculator" class="sidebar-link">SalaryCalculatorService</a>
+      <a href="#invoice" class="sidebar-link">InvoiceService</a>
+      <a href="#currency-converter" class="sidebar-link">CurrencyConverterService</a>
+      <a href="#tip-calculator" class="sidebar-link">TipCalculatorService</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    <h1 id="overview">💰 Finance &amp; Budgeting Services</h1>
+    <p class="subtitle">18 services covering expense tracking, budgeting, debt management, investments, forecasting, and financial calculators — all with offline-first local persistence.</p>
+
+    <div class="callout callout-info">
+      <strong>Architecture pattern:</strong> All finance services use <code>ServicePersistence</code> (or extend <code>CrudService</code>) for JSON-serialized local storage. Data never leaves the device unless explicitly exported.
+    </div>
+
+    <table>
+      <thead><tr><th>Service</th><th>Purpose</th><th>Persistence</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#expense-tracker">ExpenseTrackerService</a></td><td>Track income &amp; expenses with categories, payment methods, analytics</td><td>ServicePersistence</td></tr>
+        <tr><td><a href="#budget-planner">BudgetPlannerService</a></td><td>Monthly budgets with category allocation and variance tracking</td><td>ServicePersistence</td></tr>
+        <tr><td><a href="#savings-goal">SavingsGoalService</a></td><td>Named savings goals with contributions and progress tracking</td><td>ServicePersistence</td></tr>
+        <tr><td><a href="#debt-payoff">DebtPayoffService</a></td><td>Debt snowball/avalanche payoff planning</td><td>CrudService</td></tr>
+        <tr><td><a href="#net-worth-tracker">NetWorthTrackerService</a></td><td>Asset &amp; liability tracking with monthly snapshots</td><td>ServicePersistence</td></tr>
+        <tr><td><a href="#fire-calculator">FireCalculatorService</a></td><td>Financial independence / retire early projections</td><td>Stateless</td></tr>
+        <tr><td><a href="#expense-forecast">ExpenseForecastService</a></td><td>Spending anomaly detection and budget alerts</td><td>Stateless (reads expenses)</td></tr>
+        <tr><td><a href="#subscription-tracker">SubscriptionTrackerService</a></td><td>Recurring subscription management with renewal calendar</td><td>In-memory list</td></tr>
+        <tr><td><a href="#bill-reminder">BillReminderService</a></td><td>Bill tracking with due dates, autopay, and paid status</td><td>CrudService</td></tr>
+        <tr><td><a href="#compound-interest">CompoundInterestService</a></td><td>Compound interest projections and Rule of 72</td><td>Stateless</td></tr>
+        <tr><td><a href="#loan-calculator">LoanCalculatorService</a></td><td>Amortization schedules with extra payment analysis</td><td>Stateless</td></tr>
+        <tr><td><a href="#mortgage-calculator">MortgageCalculatorService</a></td><td>Mortgage-specific calculations (extends loan logic)</td><td>Stateless</td></tr>
+        <tr><td><a href="#tax-calculator">TaxCalculatorService</a></td><td>US federal income tax with brackets and deductions</td><td>Stateless</td></tr>
+        <tr><td><a href="#salary-calculator">SalaryCalculatorService</a></td><td>Gross-to-net salary breakdown with tax withholding</td><td>Stateless</td></tr>
+        <tr><td><a href="#invoice">InvoiceService</a></td><td>Invoice generation with line items, tax, and discount</td><td>Stateless</td></tr>
+        <tr><td><a href="#currency-converter">CurrencyConverterService</a></td><td>Multi-currency conversion with 30+ currencies</td><td>Stateless</td></tr>
+        <tr><td><a href="#tip-calculator">TipCalculatorService</a></td><td>Tip and bill splitting</td><td>Stateless</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ExpenseTrackerService -->
+    <h2 id="expense-tracker">ExpenseTrackerService</h2>
+    <p>The central expense tracking engine. Records income and expense transactions with categories, payment methods, tags, and notes. Provides daily summaries, category breakdowns, budget alerts, and streak tracking.</p>
+
+    <h3>Key Types</h3>
+    <pre><code>enum ExpenseCategory { food, transport, housing, utilities, entertainment,
+    shopping, health, education, travel, income, other }
+
+enum PaymentMethod { cash, credit, debit, bankTransfer, digital, other }
+
+class BudgetConfig {
+  final double monthlyBudget;          // Default: 3000.0
+  final Map&lt;ExpenseCategory, double&gt; categoryLimits;
+  final double alertThreshold;          // 0.0–1.0, default 0.8
+  final String currencySymbol;
+}
+
+class DailyExpenseSummary {
+  final DateTime date;
+  final double totalSpent;
+  final double totalIncome;
+  final int transactionCount;
+  final Map&lt;ExpenseCategory, double&gt; byCategory;
+  final Map&lt;PaymentMethod, double&gt; byPaymentMethod;
+  double get netFlow;                   // income - spending
+}</code></pre>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>addExpense(ExpenseEntry)</code></td><td><code>void</code></td><td>Record a new transaction (income or expense)</td></tr>
+        <tr><td><code>removeExpense(String id)</code></td><td><code>bool</code></td><td>Delete a transaction by ID</td></tr>
+        <tr><td><code>updateExpense(ExpenseEntry)</code></td><td><code>void</code></td><td>Replace an existing transaction</td></tr>
+        <tr><td><code>getExpensesByDateRange(start, end)</code></td><td><code>List&lt;ExpenseEntry&gt;</code></td><td>Filter entries within a date window</td></tr>
+        <tr><td><code>getDailySummary(DateTime)</code></td><td><code>DailyExpenseSummary</code></td><td>Aggregated daily spending breakdown</td></tr>
+        <tr><td><code>getMonthlySummary(year, month)</code></td><td><code>MonthlySummary</code></td><td>Month totals with category and payment method splits</td></tr>
+        <tr><td><code>updateBudget(BudgetConfig)</code></td><td><code>void</code></td><td>Set monthly budget and category limits</td></tr>
+        <tr><td><code>getBudgetStatus()</code></td><td><code>BudgetStatus</code></td><td>Current spend vs budget with per-category progress</td></tr>
+      </tbody>
+    </table>
+
+    <!-- BudgetPlannerService -->
+    <h2 id="budget-planner">BudgetPlannerService</h2>
+    <p>Monthly budget allocation with category-level caps. Compares planned budgets against actual spending from <code>ExpenseTrackerService</code> to surface variances and savings rates.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>setBudget(MonthlyBudget)</code></td><td><code>MonthlyBudget</code></td><td>Create or update a month's budget</td></tr>
+        <tr><td><code>getOrCreateBudget(year, month)</code></td><td><code>MonthlyBudget</code></td><td>Retrieve existing or initialize from last month's template</td></tr>
+        <tr><td><code>deleteBudget(year, month)</code></td><td><code>bool</code></td><td>Remove a monthly budget</td></tr>
+        <tr><td><code>createEvenSplit(year, month, total)</code></td><td><code>MonthlyBudget</code></td><td>Auto-allocate total evenly across all categories</td></tr>
+        <tr><td><code>getBudgetComparison(budget, expenses)</code></td><td><code>BudgetComparison</code></td><td>Planned vs actual with per-category variance</td></tr>
+        <tr><td><code>getSavingsRate(expenses, year, month)</code></td><td><code>double</code></td><td>Savings rate = (income − spending) / income</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SavingsGoalService -->
+    <h2 id="savings-goal">SavingsGoalService</h2>
+    <p>Named savings goals (vacation, emergency fund, etc.) with individual contribution tracking, progress percentages, and monthly savings insights.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>addGoal({name, target, deadline?})</code></td><td><code>SavingsGoal</code></td><td>Create a new goal. Validates name and target &gt; 0</td></tr>
+        <tr><td><code>addContribution(goalId, amount, note?)</code></td><td><code>Contribution</code></td><td>Record money saved toward a goal</td></tr>
+        <tr><td><code>removeGoal(String id)</code></td><td><code>bool</code></td><td>Delete a goal and all its contributions</td></tr>
+        <tr><td><code>removeContribution(goalId, contribId)</code></td><td><code>bool</code></td><td>Remove a single contribution</td></tr>
+        <tr><td><code>monthlySavings(year, month)</code></td><td><code>double</code></td><td>Total contributions for a given month</td></tr>
+        <tr><td><code>getInsights()</code></td><td><code>SavingsInsights</code></td><td>Aggregate stats: total saved, goal count, completion %</td></tr>
+        <tr><td><code>exportJson()</code></td><td><code>String</code></td><td>Full JSON export for backup</td></tr>
+      </tbody>
+    </table>
+
+    <!-- DebtPayoffService -->
+    <h2 id="debt-payoff">DebtPayoffService</h2>
+    <p>Debt management with payoff strategy simulation. Extends <code>CrudService&lt;DebtEntry&gt;</code> for CRUD operations and adds snowball/avalanche payoff planning.</p>
+
+    <h3>Payoff Strategies</h3>
+    <pre><code>enum PayoffStrategy {
+  snowball,    // Smallest balance first (behavioral motivation)
+  avalanche,   // Highest interest rate first (mathematically optimal)
+}</code></pre>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>addDebt({name, balance, rate, minPayment})</code></td><td><code>DebtEntry</code></td><td>Add a debt. Validates rate ≥ 0 and minPayment &gt; 0</td></tr>
+        <tr><td><code>removeDebt(String id)</code></td><td><code>void</code></td><td>Remove a debt by ID</td></tr>
+        <tr><td><code>computePlan(strategy, {extraPayment})</code></td><td><code>PayoffPlan</code></td><td>Simulate month-by-month payoff with total interest and payoff date</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <strong>PayoffPlan</strong> contains <code>months</code> (List of monthly snapshots), <code>totalInterest</code>, <code>totalPaid</code>, and <code>payoffDate</code>. Each monthly snapshot shows per-debt remaining balances and payments applied.
+    </div>
+
+    <!-- NetWorthTrackerService -->
+    <h2 id="net-worth-tracker">NetWorthTrackerService</h2>
+    <p>Track assets and liabilities across accounts with monthly net worth snapshots, milestones, and category breakdowns.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>addAccount({name, type, balance})</code></td><td><code>NetWorthAccount</code></td><td>Add an asset or liability account</td></tr>
+        <tr><td><code>archiveAccount(String id)</code></td><td><code>bool</code></td><td>Soft-delete an account (preserved in history)</td></tr>
+        <tr><td><code>restoreAccount(String id)</code></td><td><code>bool</code></td><td>Unarchive a previously archived account</td></tr>
+        <tr><td><code>updateBalance(id, newBalance)</code></td><td><code>void</code></td><td>Update an account's current balance</td></tr>
+        <tr><td><code>takeSnapshot()</code></td><td><code>MonthlyNetWorth</code></td><td>Record current total for historical tracking</td></tr>
+        <tr><td><code>getReport()</code></td><td><code>NetWorthReport</code></td><td>Full report with category breakdown and milestones</td></tr>
+      </tbody>
+    </table>
+
+    <!-- FireCalculatorService -->
+    <h2 id="fire-calculator">FireCalculatorService</h2>
+    <p>Financial Independence / Retire Early (FIRE) calculator. Projects portfolio growth over time and estimates the year you can retire based on savings rate, investment returns, and withdrawal strategy.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({income, expenses, savings, returnRate, withdrawalRate, currentAge})</code></td><td><code>FireResult</code></td><td>Full FIRE projection with yearly portfolio values</td></tr>
+        <tr><td><code>savingsRateLabel(double rate)</code></td><td><code>String</code></td><td>Human-friendly label ("Excellent", "Good", etc.)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>FireResult</h3>
+    <pre><code>class FireResult {
+  final int yearsToFire;               // Years until financial independence
+  final double fireNumber;             // Target portfolio value
+  final double savingsRate;            // Annual savings as % of income
+  final List&lt;FireProjectionYear&gt; projections;  // Year-by-year portfolio growth
+}</code></pre>
+
+    <h3>Withdrawal Strategies</h3>
+    <pre><code>// Pre-defined withdrawal rates
+WithdrawalStrategy.traditional  // 4% rule (Trinity Study)
+WithdrawalStrategy.conservative // 3.5% (longer retirement horizon)
+WithdrawalStrategy.lean         // 3% (lean FIRE)
+WithdrawalStrategy.fat          // 4.5% (fat FIRE with margin)</code></pre>
+
+    <!-- ExpenseForecastService -->
+    <h2 id="expense-forecast">ExpenseForecastService</h2>
+    <p>Analyzes expense history to detect spending anomalies, identify recurring expenses, forecast upcoming costs, and generate budget alerts.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>generateReport(expenses, budgetConfig)</code></td><td><code>ForecastReport</code></td><td>Complete forecast with anomalies, alerts, recurring items, and per-category projections</td></tr>
+      </tbody>
+    </table>
+
+    <h3>ForecastReport Contents</h3>
+    <pre><code>class ForecastReport {
+  final List&lt;CategoryForecast&gt; forecasts;       // Per-category projections
+  final List&lt;SpendingAnomaly&gt; anomalies;         // Unusual spending spikes
+  final List&lt;RecurringExpense&gt; recurring;         // Detected recurring charges
+  final List&lt;BudgetAlert&gt; alerts;                // Budget threshold warnings
+  final double projectedMonthlyTotal;
+}</code></pre>
+
+    <!-- SubscriptionTrackerService -->
+    <h2 id="subscription-tracker">SubscriptionTrackerService</h2>
+    <p>Manage recurring subscriptions with billing cycle tracking, renewal calendars, and spending breakdowns by category.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>add(SubscriptionEntry)</code></td><td><code>void</code></td><td>Add a subscription (throws on duplicate ID)</td></tr>
+        <tr><td><code>update(id, SubscriptionEntry)</code></td><td><code>void</code></td><td>Update subscription details</td></tr>
+        <tr><td><code>remove(String id)</code></td><td><code>void</code></td><td>Cancel/remove a subscription</td></tr>
+        <tr><td><code>getSummary()</code></td><td><code>SubscriptionSummary</code></td><td>Total monthly/annual cost, count, category breakdown</td></tr>
+        <tr><td><code>getUpcomingBillings(days)</code></td><td><code>List&lt;BillingAlert&gt;</code></td><td>Subscriptions renewing within N days</td></tr>
+        <tr><td><code>getRenewalCalendar(month)</code></td><td><code>List&lt;RenewalCalendarEntry&gt;</code></td><td>Day-by-day renewal schedule for a month</td></tr>
+      </tbody>
+    </table>
+
+    <!-- BillReminderService -->
+    <h2 id="bill-reminder">BillReminderService</h2>
+    <p>Track bills with due dates, autopay status, and payment confirmation. Extends <code>CrudService&lt;BillEntry&gt;</code>.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>addBill(BillEntry)</code></td><td><code>void</code></td><td>Add a new bill</td></tr>
+        <tr><td><code>markPaid(String id)</code></td><td><code>void</code></td><td>Mark a bill as paid for the current cycle</td></tr>
+        <tr><td><code>markUnpaid(String id)</code></td><td><code>void</code></td><td>Revert a bill to unpaid</td></tr>
+        <tr><td><code>getSummary()</code></td><td><code>BillSummary</code></td><td>Upcoming, overdue, and total monthly bill obligations</td></tr>
+      </tbody>
+    </table>
+
+    <!-- CompoundInterestService -->
+    <h2 id="compound-interest">CompoundInterestService</h2>
+    <p>Compound interest projections with configurable compounding frequencies. Stateless — all methods are <code>const</code>-constructable and pure.</p>
+
+    <h3>Compounding Frequencies</h3>
+    <pre><code>CompoundFrequency.annually     // 1×/year
+CompoundFrequency.semiAnnually // 2×/year
+CompoundFrequency.quarterly    // 4×/year
+CompoundFrequency.monthly      // 12×/year
+CompoundFrequency.daily        // 365×/year</code></pre>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>finalBalance({principal, rate, years, frequency, monthlyContrib})</code></td><td><code>double</code></td><td>Final balance after compounding</td></tr>
+        <tr><td><code>yearsToReach({principal, target, rate, frequency, monthlyContrib})</code></td><td><code>int</code></td><td>Years needed to reach a target balance</td></tr>
+        <tr><td><code>ruleOf72(double annualRate)</code></td><td><code>double</code></td><td>Approximate doubling time (72 / rate)</td></tr>
+        <tr><td><code>getProjection({...})</code></td><td><code>List&lt;ProjectionPoint&gt;</code></td><td>Year-by-year projection with principal vs interest split</td></tr>
+      </tbody>
+    </table>
+
+    <!-- LoanCalculatorService -->
+    <h2 id="loan-calculator">LoanCalculatorService</h2>
+    <p>Loan amortization calculator with full payment schedules and extra-payment analysis. Shows interest savings from additional payments.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({principal, annualRate, months})</code></td><td><code>LoanResult</code></td><td>Monthly payment, total interest, amortization schedule</td></tr>
+        <tr><td><code>withExtraPayment({..., extraMonthly})</code></td><td><code>ExtraPaymentResult</code></td><td>Compares standard vs accelerated payoff — months saved, interest saved</td></tr>
+      </tbody>
+    </table>
+
+    <h3>LoanResult</h3>
+    <pre><code>class LoanResult {
+  final double monthlyPayment;
+  final double totalInterest;
+  final double totalPaid;
+  final List&lt;AmortizationEntry&gt; schedule;  // Month-by-month principal/interest split
+}</code></pre>
+
+    <!-- MortgageCalculatorService -->
+    <h2 id="mortgage-calculator">MortgageCalculatorService</h2>
+    <p>Mortgage-specific calculator with property tax, PMI, HOA, and insurance factored into the monthly payment. Includes home affordability estimation.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({price, downPayment, rate, years, tax?, insurance?, pmi?, hoa?})</code></td><td><code>MortgageResult</code></td><td>Full monthly breakdown with PITI + HOA</td></tr>
+        <tr><td><code>affordability({income, debts, rate, years})</code></td><td><code>double</code></td><td>Maximum affordable home price (28/36 rule)</td></tr>
+      </tbody>
+    </table>
+
+    <!-- TaxCalculatorService -->
+    <h2 id="tax-calculator">TaxCalculatorService</h2>
+    <p>US federal income tax calculator with 2024 tax brackets, standard/itemized deductions, and filing status support.</p>
+
+    <h3>Filing Statuses</h3>
+    <pre><code>FilingStatus.single
+FilingStatus.marriedJoint
+FilingStatus.marriedSeparate
+FilingStatus.headOfHousehold</code></pre>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({income, filingStatus, deductions?})</code></td><td><code>TaxResult</code></td><td>Tax owed, effective rate, marginal rate, bracket breakdown</td></tr>
+      </tbody>
+    </table>
+
+    <h3>TaxResult</h3>
+    <pre><code>class TaxResult {
+  final double taxableIncome;
+  final double totalTax;
+  final double effectiveRate;           // totalTax / grossIncome
+  final double marginalRate;            // Top bracket rate
+  final List&lt;BracketBreakdown&gt; brackets; // Tax owed per bracket
+}</code></pre>
+
+    <!-- SalaryCalculatorService -->
+    <h2 id="salary-calculator">SalaryCalculatorService</h2>
+    <p>Gross-to-net salary calculator with federal tax withholding, FICA (Social Security + Medicare), and state tax estimation.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({grossAnnual, filingStatus, stateRate?, preTaxDeductions?})</code></td><td><code>SalaryResult</code></td><td>Net pay breakdown: federal, state, FICA, take-home per pay period</td></tr>
+      </tbody>
+    </table>
+
+    <h3>SalaryResult</h3>
+    <pre><code>class SalaryResult {
+  final double grossAnnual;
+  final double federalTax;
+  final double stateTax;
+  final double socialSecurity;
+  final double medicare;
+  final double netAnnual;
+  final double netMonthly;
+  final double netBiweekly;
+}</code></pre>
+
+    <!-- InvoiceService -->
+    <h2 id="invoice">InvoiceService</h2>
+    <p>Invoice calculation engine with line items, quantity pricing, tax rates, and discount application.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({lineItems, taxRate?, discountPercent?})</code></td><td><code>InvoiceResult</code></td><td>Subtotal, discount amount, tax amount, and grand total</td></tr>
+      </tbody>
+    </table>
+
+    <!-- CurrencyConverterService -->
+    <h2 id="currency-converter">CurrencyConverterService</h2>
+    <p>Offline currency converter with 30+ built-in exchange rates (pegged to USD). Rates are approximate — intended for estimation, not trading.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>convert(amount, from, to)</code></td><td><code>double</code></td><td>Convert between any two supported currencies</td></tr>
+        <tr><td><code>getSupportedCurrencies()</code></td><td><code>List&lt;CurrencyInfo&gt;</code></td><td>All available currencies with name, symbol, and rate</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <strong>Supported currencies include:</strong> USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, BRL, MXN, KRW, SGD, HKD, SEK, NOK, DKK, NZD, ZAR, THB, and more.
+    </div>
+
+    <!-- TipCalculatorService -->
+    <h2 id="tip-calculator">TipCalculatorService</h2>
+    <p>Simple tip calculator with bill splitting. Calculates tip amount, total per person, and supports custom tip percentages.</p>
+
+    <h3>Core Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>calculate({billAmount, tipPercent, splitCount})</code></td><td><code>TipResult</code></td><td>Tip amount, total, per-person share</td></tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Service Relationships</h2>
+    <p>The finance services form a connected ecosystem:</p>
+    <pre><code>ExpenseTrackerService ──→ BudgetPlannerService  (actual vs planned)
+         │                        │
+         ├──→ ExpenseForecastService  (anomaly detection, projections)
+         │
+         └──→ SavingsGoalService  (track money set aside)
+                    │
+                    └──→ FireCalculatorService  (retirement projections)
+                              │
+CompoundInterestService ──────┘  (investment growth math)
+
+DebtPayoffService ←──→ LoanCalculatorService  (shared amortization logic)
+         │
+MortgageCalculatorService  (extends loan concepts)
+
+SubscriptionTrackerService ──→ BillReminderService  (recurring obligations)
+
+TaxCalculatorService ──→ SalaryCalculatorService  (tax brackets shared)
+
+InvoiceService, CurrencyConverterService, TipCalculatorService  (standalone utilities)</code></pre>
+
+    <hr>
+    <p class="text-muted" style="text-align: center; padding: 20px 0;">
+      Last updated: April 2026 · <a href="https://github.com/sauravbhattacharya001/everything">GitHub</a>
+    </p>
+  </main>
+</div>
+</body>
+</html>
