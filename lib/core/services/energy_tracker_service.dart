@@ -199,30 +199,45 @@ class EnergyTrackerService {
 
   /// Compute the impact of each factor on energy level relative to
   /// entries without that factor.
+  ///
+  /// Uses a single pass over entries to accumulate per-factor sums and
+  /// counts, then derives averages — O(N × avg_factors_per_entry + F)
+  /// instead of the previous O(F × N) approach that scanned all entries
+  /// once per EnergyFactor enum value.
   List<FactorImpact> factorAnalysis(List<EnergyEntry> entries) {
     if (entries.isEmpty) return [];
 
-    final overallSum = entries.fold<int>(0, (sum, e) => sum + e.level.value);
-    final overallAvg = overallSum / entries.length;
+    // Single pass: accumulate per-factor sums/counts and total sum.
+    final factorSums = <EnergyFactor, int>{};
+    final factorCounts = <EnergyFactor, int>{};
+    int totalSum = 0;
+
+    for (final entry in entries) {
+      final value = entry.level.value;
+      totalSum += value;
+      for (final factor in entry.factors) {
+        factorSums[factor] = (factorSums[factor] ?? 0) + value;
+        factorCounts[factor] = (factorCounts[factor] ?? 0) + 1;
+      }
+    }
+
+    final n = entries.length;
     final impacts = <FactorImpact>[];
 
     for (final factor in EnergyFactor.values) {
-      final withFactor = entries.where((e) => e.factors.contains(factor)).toList();
-      final withoutFactor = entries.where((e) => !e.factors.contains(factor)).toList();
+      final count = factorCounts[factor] ?? 0;
+      if (count == 0 || count == n) continue; // need both with and without
 
-      if (withFactor.isEmpty || withoutFactor.isEmpty) continue;
-
-      final avgWith =
-          withFactor.fold<int>(0, (s, e) => s + e.level.value) / withFactor.length;
-      final avgWithout =
-          withoutFactor.fold<int>(0, (s, e) => s + e.level.value) / withoutFactor.length;
+      final sum = factorSums[factor]!;
+      final avgWith = sum / count;
+      final avgWithout = (totalSum - sum) / (n - count);
 
       impacts.add(FactorImpact(
         factor: factor,
         avgWithFactor: avgWith,
         avgWithout: avgWithout,
         delta: avgWith - avgWithout,
-        occurrences: withFactor.length,
+        occurrences: count,
       ));
     }
 
@@ -441,15 +456,32 @@ class EnergyTrackerService {
   }
 
   /// Generate actionable recommendations based on energy patterns.
-  List<EnergyRecommendation> recommendations(List<EnergyEntry> entries) {
+  ///
+  /// When called from [generateReport], pass pre-computed analytics via
+  /// optional parameters to avoid redundant O(N) iterations (previously
+  /// this method recomputed factorAnalysis 2×, timeSlotAverages 3×, and
+  /// dailySummaries 1× — all of which generateReport already computed).
+  List<EnergyRecommendation> recommendations(
+    List<EnergyEntry> entries, {
+    List<FactorImpact>? precomputedFactors,
+    List<TimeSlotAverage>? precomputedSlotAvgs,
+    List<DailyEnergySummary>? precomputedSummaries,
+  }) {
     if (entries.isEmpty) return [];
 
     final recs = <EnergyRecommendation>[];
-    final boosters = energyBoosters(entries);
-    final drainers = energyDrainers(entries);
-    final peak = peakTimeSlot(entries);
-    final trough = troughTimeSlot(entries);
-    final slotAvgs = timeSlotAverages(entries);
+    final factors = precomputedFactors ?? factorAnalysis(entries);
+    final boosters = factors.where((f) => f.delta > 0).toList()
+      ..sort((a, b) => b.delta.compareTo(a.delta));
+    final drainers = factors.where((f) => f.delta < 0).toList()
+      ..sort((a, b) => a.delta.compareTo(b.delta));
+    final slotAvgs = precomputedSlotAvgs ?? timeSlotAverages(entries);
+    final peak = slotAvgs.isEmpty
+        ? null
+        : (List<TimeSlotAverage>.from(slotAvgs)..sort((a, b) => b.average.compareTo(a.average))).first.slot;
+    final trough = slotAvgs.isEmpty
+        ? null
+        : (List<TimeSlotAverage>.from(slotAvgs)..sort((a, b) => a.average.compareTo(b.average))).first.slot;
 
     // Peak time recommendation
     if (peak != null) {
@@ -537,7 +569,7 @@ class EnergyTrackerService {
     }
 
     // Logging consistency
-    final summaries = dailySummaries(entries);
+    final summaries = precomputedSummaries ?? dailySummaries(entries);
     final daysWithFewEntries = summaries.where((s) => s.entryCount < 2).length;
     if (summaries.isNotEmpty && daysWithFewEntries > summaries.length * 0.5) {
       recs.add(const EnergyRecommendation(
@@ -592,6 +624,11 @@ class EnergyTrackerService {
   }
 
   /// Generate a comprehensive energy report.
+  ///
+  /// Computes each expensive analysis exactly once and threads results
+  /// to downstream methods.  Previously, dailySummaries was computed 3×,
+  /// factorAnalysis 3×, and timeSlotAverages 4× due to independent calls
+  /// in recommendations(), trend(), peakTimeSlot(), and troughTimeSlot().
   EnergyReport generateReport(
     List<EnergyEntry> entries, {
     List<SleepEntry>? sleepEntries,
@@ -600,6 +637,42 @@ class EnergyTrackerService {
     final streakData = streaks(entries);
     final slotAvgs = timeSlotAverages(entries);
     final factors = factorAnalysis(entries);
+
+    // Derive peak/trough from pre-computed slot averages (O(1) extra)
+    TimeSlot? peak;
+    TimeSlot? trough;
+    if (slotAvgs.isNotEmpty) {
+      var maxAvg = -1.0;
+      var minAvg = 6.0;
+      for (final sa in slotAvgs) {
+        if (sa.average > maxAvg) { maxAvg = sa.average; peak = sa.slot; }
+        if (sa.average < minAvg) { minAvg = sa.average; trough = sa.slot; }
+      }
+    }
+
+    // Compute trend from pre-computed summaries (avoids second dailySummaries call)
+    EnergyTrend? trendResult;
+    if (summaries.length >= 3) {
+      final n = summaries.length;
+      final xMean = (n - 1) / 2.0;
+      final yMean = summaries.fold<double>(0, (s, d) => s + d.average) / n;
+      var numerator = 0.0;
+      var denominator = 0.0;
+      for (var i = 0; i < n; i++) {
+        numerator += (i - xMean) * (summaries[i].average - yMean);
+        denominator += (i - xMean) * (i - xMean);
+      }
+      if (denominator != 0) {
+        final slope = numerator / denominator;
+        trendResult = EnergyTrend(
+          slope: slope,
+          direction: slope > 0.05 ? 'improving' : slope < -0.05 ? 'declining' : 'stable',
+          startAvg: summaries.first.average,
+          endAvg: summaries.last.average,
+          days: n,
+        );
+      }
+    }
 
     return EnergyReport(
       overallAverage: overallAverage(entries),
@@ -610,10 +683,15 @@ class EnergyTrackerService {
       dailySummaries: summaries,
       currentStreak: streakData['current'],
       longestStreak: streakData['longest'],
-      trend: trend(entries),
-      recommendations: recommendations(entries),
-      peakSlot: peakTimeSlot(entries),
-      troughSlot: troughTimeSlot(entries),
+      trend: trendResult,
+      recommendations: recommendations(
+        entries,
+        precomputedFactors: factors,
+        precomputedSlotAvgs: slotAvgs,
+        precomputedSummaries: summaries,
+      ),
+      peakSlot: peak,
+      troughSlot: trough,
     );
   }
 
