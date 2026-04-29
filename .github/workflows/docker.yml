@@ -15,6 +15,9 @@ on:
 permissions:
   contents: read
   packages: write
+  security-events: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: docker-${{ github.ref }}
@@ -59,6 +62,7 @@ jobs:
             type=semver,pattern={{major}}
 
       - name: Build and push Docker image
+        id: build-push
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -78,3 +82,37 @@ jobs:
           curl -f http://localhost:8080/ || (echo "Container health check failed" && exit 1)
           docker stop everything-verify
           echo "✅ Docker image builds and serves correctly"
+
+      - name: Scan image for vulnerabilities
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        if: github.event_name != 'pull_request' && always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: docker-security
+
+      - name: Generate SBOM
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          artifact-name: sbom-everything.spdx.json
+          output-file: sbom-everything.spdx.json
+
+      - name: Attest SBOM to image
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-sbom@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-push.outputs.digest }}
+          sbom-path: sbom-everything.spdx.json
+        continue-on-error: true
