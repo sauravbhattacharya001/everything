@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 /// Direction the snake is moving.

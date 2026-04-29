@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../utils/date_utils.dart';
+
 /// A breathing pattern defines the phases and timing of a breathing exercise.
 enum BreathingPattern {
   boxBreathing,
@@ -253,11 +255,11 @@ class BreathingExerciseService {
     // Current streak: consecutive days with a session, walking back from today
     final daySet = <String>{};
     for (final e in entries) {
-      daySet.add(_dateKey(e.timestamp));
+      daySet.add(AppDateUtils.dateKey(e.timestamp));
     }
     int streak = 0;
     var day = DateTime(today.year, today.month, today.day);
-    while (daySet.contains(_dateKey(day))) {
+    while (daySet.contains(AppDateUtils.dateKey(day))) {
       streak++;
       day = day.subtract(const Duration(days: 1));
     }
@@ -270,7 +272,4 @@ class BreathingExerciseService {
       currentStreak: streak,
     );
   }
-
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

@@ -13,8 +13,6 @@
 ///     morning" or "Fridays are light".
 ///   - **Prediction**: A forecasted event based on detected patterns.
 
-import 'dart:math' as math;
-
 import '../../models/event_model.dart';
 import '../utils/stats_utils.dart';
 

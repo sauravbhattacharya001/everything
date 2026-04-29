@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 import '../../models/capture_item.dart';
+import '../utils/id_utils.dart';
 
 /// Statistics for the capture inbox.
 class InboxStats {
@@ -83,7 +83,6 @@ class WeeklyInboxReport {
 /// ```
 class QuickCaptureService {
   final List<CaptureItem> _items = [];
-  final Random _random = Random();
 
   // ── Capture ─────────────────────────────────────────────────────
 
@@ -586,9 +585,5 @@ class QuickCaptureService {
 
   // ── Internal ────────────────────────────────────────────────────
 
-  String _generateId() {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final rand = _random.nextInt(99999).toString().padLeft(5, '0');
-    return 'cap_${now}_$rand';
-  }
+  String _generateId() => IdUtils.generateId('cap_');
 }

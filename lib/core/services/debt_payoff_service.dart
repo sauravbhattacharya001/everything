@@ -1,5 +1,7 @@
 import 'dart:math';
+
 import '../../models/debt_entry.dart';
+import '../utils/id_utils.dart';
 import 'crud_service.dart';
 
 /// Payoff strategy type.
@@ -285,6 +287,5 @@ class DebtPayoffService extends CrudService<DebtEntry> {
 
   // ── Private ───────────────────────────────────────────────────
 
-  String _generateId() =>
-      '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(99999)}';
+  String _generateId() => IdUtils.generateId();
 }

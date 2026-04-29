@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../utils/date_utils.dart';
+
 /// Category for daily challenges.
 enum ChallengeCategory {
   fitness(icon: '💪', label: 'Fitness', colorValue: 0xFFE53935),
@@ -157,7 +159,7 @@ class DailyChallengeService {
   void completeChallenge({String? notes}) {
     final today = _todayKey();
     // Remove any existing record for today
-    _history.removeWhere((r) => _dateKey(r.date) == today);
+    _history.removeWhere((r) => AppDateUtils.dateKey(r.date) == today);
     _history.add(ChallengeRecord(
       challenge: getTodayChallenge(),
       date: DateTime.now(),
@@ -169,7 +171,7 @@ class DailyChallengeService {
   /// Skip today's challenge.
   void skipChallenge() {
     final today = _todayKey();
-    _history.removeWhere((r) => _dateKey(r.date) == today);
+    _history.removeWhere((r) => AppDateUtils.dateKey(r.date) == today);
     _history.add(ChallengeRecord(
       challenge: getTodayChallenge(),
       date: DateTime.now(),
@@ -180,13 +182,13 @@ class DailyChallengeService {
   /// Check if today's challenge is already completed.
   bool get isTodayCompleted {
     final today = _todayKey();
-    return _history.any((r) => _dateKey(r.date) == today && r.completed);
+    return _history.any((r) => AppDateUtils.dateKey(r.date) == today && r.completed);
   }
 
   /// Check if today's challenge is skipped.
   bool get isTodaySkipped {
     final today = _todayKey();
-    return _history.any((r) => _dateKey(r.date) == today && !r.completed);
+    return _history.any((r) => AppDateUtils.dateKey(r.date) == today && !r.completed);
   }
 
   /// Get current streak of consecutive completed days.
@@ -204,8 +206,8 @@ class DailyChallengeService {
     }
 
     while (true) {
-      final key = _dateKey(checkDate);
-      if (completed.any((r) => _dateKey(r.date) == key)) {
+      final key = AppDateUtils.dateKey(checkDate);
+      if (completed.any((r) => AppDateUtils.dateKey(r.date) == key)) {
         streak++;
         checkDate = checkDate.subtract(const Duration(days: 1));
       } else {
@@ -221,7 +223,7 @@ class DailyChallengeService {
     final completed = _history.where((r) => r.completed).toList();
     if (completed.isEmpty) return 0;
 
-    final dates = completed.map((r) => _dateKey(r.date)).toSet().toList()..sort();
+    final dates = completed.map((r) => AppDateUtils.dateKey(r.date)).toSet().toList()..sort();
     int longest = 1;
     int current = 1;
 
@@ -262,9 +264,7 @@ class DailyChallengeService {
     return list;
   }
 
-  String _todayKey() => _dateKey(DateTime.now());
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _todayKey() => AppDateUtils.dateKey(DateTime.now());
   DateTime _parseKey(String key) {
     final parts = key.split('-');
     return DateTime(

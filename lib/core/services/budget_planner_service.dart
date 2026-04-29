@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import '../../models/budget_entry.dart';
 import '../../models/expense_entry.dart';
+import '../utils/id_utils.dart';
 
 /// Service for managing monthly budgets with category allocations,
 /// spending comparison, templates, and insights.
@@ -371,10 +372,7 @@ class BudgetPlannerService {
 
   // ── Private ───────────────────────────────────────────────────────
 
-  String _generateId() {
-    final r = Random();
-    return '${DateTime.now().millisecondsSinceEpoch}_${r.nextInt(99999).toString().padLeft(5, '0')}';
-  }
+  String _generateId() => IdUtils.generateId();
 }
 
 /// Budget vs actual comparison for a single category.

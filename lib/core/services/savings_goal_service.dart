@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 import '../../models/savings_goal.dart';
+import '../utils/id_utils.dart';
 
 /// Service for managing savings goals with contributions, projections,
 /// and progress tracking.
@@ -290,10 +290,7 @@ class SavingsGoalService {
 
   // ── Private ───────────────────────────────────────────────────────
 
-  String _generateId() {
-    final r = Random();
-    return '${DateTime.now().millisecondsSinceEpoch}_${r.nextInt(99999).toString().padLeft(5, '0')}';
-  }
+  String _generateId() => IdUtils.generateId();
 }
 
 /// Monthly savings data point.

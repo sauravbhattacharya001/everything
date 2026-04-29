@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import '../../models/net_worth_account.dart';
+import '../utils/id_utils.dart';
 
 /// Monthly net worth snapshot for historical tracking.
 class MonthlyNetWorth {
@@ -578,9 +579,5 @@ class NetWorthTrackerService {
 
   // ── Helpers ───────────────────────────────────────────────────────
 
-  String _generateId() {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final rand = Random().nextInt(99999);
-    return 'nw_${now}_$rand';
-  }
+  String _generateId() => IdUtils.generateId('nw_');
 }
