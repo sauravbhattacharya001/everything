@@ -57,6 +57,7 @@ import '../../views/home/quick_capture_screen.dart';
 import '../../views/home/quote_collection_screen.dart';
 import '../../views/home/reading_list_screen.dart';
 import '../../views/home/recipe_book_screen.dart';
+import '../../views/home/ritual_engine_screen.dart';
 import '../../views/home/routine_builder_screen.dart';
 import '../../views/home/savings_goal_screen.dart';
 import '../../views/home/screen_time_tracker_screen.dart';
@@ -1453,6 +1454,12 @@ class FeatureRegistry {
       icon: Icons.battery_charging_full,
       category: FeatureCategory.productivity,
       builder: (_) => const WillpowerBudgetScreen(),
+    ),
+    FeatureEntry(
+      label: 'Ritual Engine',
+      icon: Icons.self_improvement,
+      category: FeatureCategory.productivity,
+      builder: (_) => const RitualEngineScreen(),
     ),
   ];
 
