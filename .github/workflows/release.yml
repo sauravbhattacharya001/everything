@@ -1,0 +1,176 @@
+# Release Automation
+#
+# One-click release workflow: bumps pubspec.yaml version, generates CHANGELOG
+# entry from commit history, commits, tags, and pushes — which triggers the
+# existing publish.yml multi-platform build pipeline.
+#
+# Usage: Actions → Release → Run workflow → pick bump type
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: 'Pre-release suffix (e.g. beta.1, rc.1). Leave empty for stable.'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Bump, Tag & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Calculate new version
+        id: version
+        run: |
+          # Extract current version from pubspec.yaml
+          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "Current version: $CURRENT"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          if [ -n "${{ inputs.prerelease }}" ]; then
+            NEW="${NEW}-${{ inputs.prerelease }}"
+          fi
+
+          # Build number = total commit count
+          BUILD=$(git rev-list --count HEAD)
+          PUBSPEC_VERSION="${NEW}+${BUILD}"
+
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "pubspec=$PUBSPEC_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NEW" >> "$GITHUB_OUTPUT"
+          echo "New version: $NEW (pubspec: $PUBSPEC_VERSION)"
+
+      - name: Bump pubspec.yaml
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.pubspec }}/" pubspec.yaml
+          echo "Updated pubspec.yaml:"
+          grep '^version:' pubspec.yaml
+
+      - name: Generate changelog entry
+        id: changelog
+        run: |
+          # Find previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | head -1)
+          DATE=$(date +%Y-%m-%d)
+          VERSION="${{ steps.version.outputs.new }}"
+
+          {
+            echo "entry<<EOF"
+            echo "## [$VERSION] - $DATE"
+            echo ""
+          } >> "$GITHUB_OUTPUT"
+
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..HEAD"
+          fi
+
+          # Categorize commits
+          FEATS=$(git log $RANGE --pretty=format:"- %s" --no-merges --grep="^feat" 2>/dev/null || true)
+          FIXES=$(git log $RANGE --pretty=format:"- %s" --no-merges --grep="^fix" 2>/dev/null || true)
+          PERFS=$(git log $RANGE --pretty=format:"- %s" --no-merges --grep="^perf" 2>/dev/null || true)
+          REFACTORS=$(git log $RANGE --pretty=format:"- %s" --no-merges --grep="^refactor" 2>/dev/null || true)
+          OTHERS=$(git log $RANGE --pretty=format:"- %s" --no-merges --grep="^chore\|^ci\|^docs\|^test\|^build" 2>/dev/null || true)
+
+          {
+            if [ -n "$FEATS" ]; then
+              echo "### ✨ Features"
+              echo "$FEATS"
+              echo ""
+            fi
+            if [ -n "$FIXES" ]; then
+              echo "### 🐛 Bug Fixes"
+              echo "$FIXES"
+              echo ""
+            fi
+            if [ -n "$PERFS" ]; then
+              echo "### ⚡ Performance"
+              echo "$PERFS"
+              echo ""
+            fi
+            if [ -n "$REFACTORS" ]; then
+              echo "### ♻️ Refactoring"
+              echo "$REFACTORS"
+              echo ""
+            fi
+            if [ -n "$OTHERS" ]; then
+              echo "### 🔧 Maintenance"
+              echo "$OTHERS"
+              echo ""
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update CHANGELOG.md
+        run: |
+          ENTRY=$(cat <<'ENTRY_EOF'
+          ${{ steps.changelog.outputs.entry }}
+          ENTRY_EOF
+          )
+
+          if [ -f CHANGELOG.md ]; then
+            # Insert after the header line
+            HEADER=$(head -1 CHANGELOG.md)
+            {
+              echo "$HEADER"
+              echo ""
+              echo "$ENTRY"
+              tail -n +2 CHANGELOG.md
+            } > CHANGELOG.tmp
+            mv CHANGELOG.tmp CHANGELOG.md
+          else
+            {
+              echo "# Changelog"
+              echo ""
+              echo "All notable changes to **Everything** are documented in this file."
+              echo "This project follows [Semantic Versioning](https://semver.org/)."
+              echo ""
+              echo "$ENTRY"
+            } > CHANGELOG.md
+          fi
+
+      - name: Commit and tag
+        run: |
+          git add pubspec.yaml CHANGELOG.md
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.new }}"
+
+      - name: Push
+        run: |
+          git push origin HEAD:master
+          git push origin "${{ steps.version.outputs.tag }}"
+          echo "✅ Pushed ${{ steps.version.outputs.tag }} — publish.yml will build artifacts"
