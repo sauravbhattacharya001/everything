@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Intelligence — Everything App Docs</title>
+  <meta name="description" content="API reference for the Everything App's autonomous intelligence engines — self-monitoring systems for attention debt, momentum, drift detection, behavioral fingerprinting, burnout, willpower, rituals, and regret minimization.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="docs-layout">
+  <nav class="sidebar">
+    <a href="index.html" class="sidebar-brand">📱 Everything App</a>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <a href="getting-started.html" class="sidebar-link">Installation &amp; Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Architecture</div>
+      <a href="architecture.html" class="sidebar-link">Overview</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">API Reference</div>
+      <a href="api-models.html" class="sidebar-link">Models</a>
+      <a href="api-services.html" class="sidebar-link">Services</a>
+      <a href="api-wellness.html" class="sidebar-link">Wellness</a>
+      <a href="api-finance.html" class="sidebar-link">Finance</a>
+      <a href="api-autonomous.html" class="sidebar-link active">Autonomous Intelligence</a>
+      <a href="api-games.html" class="sidebar-link">Games &amp; Recreation</a>
+      <a href="api-state.html" class="sidebar-link">State Management</a>
+      <a href="api-data.html" class="sidebar-link">Data Layer</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">On This Page</div>
+      <a href="#overview" class="sidebar-link">Overview</a>
+      <a href="#attention-debt" class="sidebar-link">🧠 Attention Debt</a>
+      <a href="#momentum-engine" class="sidebar-link">🚀 Momentum Engine</a>
+      <a href="#drift-detector" class="sidebar-link">🐸 Drift Detector</a>
+      <a href="#behavioral-fingerprint" class="sidebar-link">🔬 Behavioral Fingerprint</a>
+      <a href="#burnout-detector" class="sidebar-link">🔥 Burnout Detector</a>
+      <a href="#willpower-budget" class="sidebar-link">⚡ Willpower Budget</a>
+      <a href="#ritual-engine" class="sidebar-link">🌅 Ritual Engine</a>
+      <a href="#regret-minimization" class="sidebar-link">🔮 Regret Minimization</a>
+      <a href="#streak-guardian" class="sidebar-link">🛡️ Streak Guardian</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Guides</div>
+      <a href="security.html" class="sidebar-link">Security</a>
+      <a href="testing.html" class="sidebar-link">Testing</a>
+      <a href="contributing.html" class="sidebar-link">Contributing</a>
+    </div>
+  </nav>
+  <main class="content">
+    <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Autonomous Intelligence</div>
+    <h1>Autonomous Intelligence Engines</h1>
+    <p class="subtitle">Self-monitoring systems that proactively detect risks, generate insights, and plan corrective actions — no user intervention required.</p>
+
+    <div class="callout callout-info">
+      <strong>Design Philosophy</strong><br>
+      These engines implement <em>autonomous monitoring</em> — they continuously analyze behavioral data,
+      classify states into lifecycle phases, detect anomalies via statistical methods (linear regression,
+      compound interest models, Mahalanobis distance), and generate actionable recommendations.
+      Each engine operates independently but shares cross-cutting signals when metrics overlap.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="overview">Overview</h2>
+    <p>The autonomous intelligence layer contains 9 engines that model different aspects of cognitive and behavioral health. Unlike standard CRUD services, these engines maintain rolling statistical windows, classify lifecycle phases, predict future states, and generate proactive interventions.</p>
+
+    <table>
+      <tr><th>Engine</th><th>Monitors</th><th>Key Metric</th><th>Intervention Style</th></tr>
+      <tr><td><a href="#attention-debt">Attention Debt</a></td><td>Deferred decisions &amp; unresolved items</td><td>Debt Score (0–100)</td><td>Sprint planning + amortization</td></tr>
+      <tr><td><a href="#momentum-engine">Momentum Engine</a></td><td>Task completion throughput</td><td>Velocity (completions/day)</td><td>Adaptive micro-nudges</td></tr>
+      <tr><td><a href="#drift-detector">Drift Detector</a></td><td>Gradual lifestyle regression</td><td>Drift severity per metric</td><td>Recovery nudges + tipping-point prediction</td></tr>
+      <tr><td><a href="#behavioral-fingerprint">Behavioral Fingerprint</a></td><td>8-dimensional behavioral signature</td><td>Deviation distance from baseline</td><td>Change narratives</td></tr>
+      <tr><td><a href="#burnout-detector">Burnout Detector</a></td><td>Multi-signal burnout risk</td><td>Risk level (low–critical)</td><td>Recovery recommendations</td></tr>
+      <tr><td><a href="#willpower-budget">Willpower Budget</a></td><td>Daily cognitive resource depletion</td><td>Remaining budget (0–100)</td><td>Strategic recovery actions</td></tr>
+      <tr><td><a href="#ritual-engine">Ritual Engine</a></td><td>Daily routine adherence</td><td>Chain Health (0–100)</td><td>Timing micro-adjustments</td></tr>
+      <tr><td><a href="#regret-minimization">Regret Minimization</a></td><td>Decision outcomes over time</td><td>Regret patterns + bias detection</td><td>Personalized decision wisdom</td></tr>
+      <tr><td><a href="#streak-guardian">Streak Guardian</a></td><td>Cross-tracker streak risk</td><td>Streak risk level (safe–broken)</td><td>Proactive rescue strategies</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="attention-debt">🧠 AttentionDebtService</h2>
+    <p><code>lib/core/services/attention_debt_service.dart</code></p>
+    <p>Models cognitive overhead as financial debt — unresolved items accrue <em>cognitive interest</em> over time using compound interest formulas. When total debt exceeds capacity, the system declares <strong>cognitive bankruptcy</strong> and triggers emergency triage.</p>
+
+    <h3>Core Concepts</h3>
+    <ul>
+      <li><strong>Debt Item</strong> — any deferred decision, postponed task, or unresolved mental load</li>
+      <li><strong>Cognitive Interest</strong> — <code>baseCost × (1 + dailyRate)^daysOpen</code> — grows exponentially</li>
+      <li><strong>Postponement Penalty</strong> — each postponement adds 20% multiplier to effective cost</li>
+      <li><strong>Debt Score</strong> — 0–100 scale mapped from total debt vs. 500-unit capacity via sigmoid</li>
+      <li><strong>Bankruptcy Threshold</strong> — score ≥ 80 triggers emergency triage mode</li>
+    </ul>
+
+    <h3>Debt Categories &amp; Interest Rates</h3>
+    <table>
+      <tr><th>Category</th><th>Daily Interest</th><th>Base Cost</th><th>Rationale</th></tr>
+      <tr><td>🙈 Avoided Conversation</td><td>15%</td><td>12</td><td>Avoidance is the most expensive debt</td></tr>
+      <tr><td>⚔️ Unresolved Conflict</td><td>12%</td><td>16</td><td>Conflicts compound emotional overhead fast</td></tr>
+      <tr><td>📨 Pending Response</td><td>10%</td><td>6</td><td>Social obligations create ambient anxiety</td></tr>
+      <tr><td>🤷 Deferred Decision</td><td>8%</td><td>10</td><td>Every open decision consumes working memory</td></tr>
+      <tr><td>📚 Information Backlog</td><td>6%</td><td>7</td><td>Unprocessed info creates guilt loops</td></tr>
+      <tr><td>⏳ Postponed Task</td><td>5%</td><td>8</td><td>Tasks grow harder the longer they wait</td></tr>
+      <tr><td>🎯 Undefined Goal</td><td>4%</td><td>9</td><td>Vague goals drain background attention</td></tr>
+      <tr><td>🏗️ Incomplete Project</td><td>3%</td><td>14</td><td>Slow burn but high base cost</td></tr>
+    </table>
+
+    <h3>Urgency Classification</h3>
+    <p>Based on the ratio of <code>effectiveCost / baseCost</code>:</p>
+    <table>
+      <tr><th>Urgency</th><th>Ratio Threshold</th><th>Meaning</th></tr>
+      <tr><td>🟢 Low</td><td>&lt; 1.5×</td><td>Recently added, manageable</td></tr>
+      <tr><td>🟡 Moderate</td><td>1.5×–3×</td><td>Starting to accumulate interest</td></tr>
+      <tr><td>🟠 High</td><td>3×–6×</td><td>Significant cognitive burden</td></tr>
+      <tr><td>🔴 Critical</td><td>6×–12×</td><td>Actively draining cognitive resources</td></tr>
+      <tr><td>💀 Bankruptcy</td><td>≥ 12×</td><td>Item alone is overwhelming</td></tr>
+    </table>
+
+    <h3>Sprint System</h3>
+    <p>The service autonomously recommends sprint types based on current debt score:</p>
+    <table>
+      <tr><th>Sprint Type</th><th>Duration</th><th>Trigger (Debt Score)</th><th>Purpose</th></tr>
+      <tr><td>Micro Sprint</td><td>15 min</td><td>&lt; 30</td><td>Resolve 1–2 quick items</td></tr>
+      <tr><td>Focus Sprint</td><td>45 min</td><td>30–60</td><td>Tackle 1 medium item deeply</td></tr>
+      <tr><td>Deep Clean</td><td>2 hours</td><td>60–80</td><td>Clear multiple items</td></tr>
+      <tr><td>Emergency Triage</td><td>60 min</td><td>≥ 80</td><td>Bankruptcy mode — triage everything</td></tr>
+    </table>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>addItem(item)</code></td><td><code>void</code></td><td>Add a new debt item</td></tr>
+      <tr><td><code>resolveItem(id)</code></td><td><code>void</code></td><td>Mark item as resolved (sets resolvedAt)</td></tr>
+      <tr><td><code>postponeItem(id)</code></td><td><code>void</code></td><td>Increment postponement counter (+20% penalty)</td></tr>
+      <tr><td><code>totalDebt</code></td><td><code>double</code></td><td>Sum of all open items' effective costs</td></tr>
+      <tr><td><code>debtScore</code></td><td><code>double</code></td><td>0–100 cognitive load score</td></tr>
+      <tr><td><code>topOffenders([n])</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Top N most expensive open items</td></tr>
+      <tr><td><code>itemsApproachingCritical({withinDays})</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Items that will hit critical urgency within N days</td></tr>
+      <tr><td><code>planSprintItems(type)</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Select priority items for a sprint session</td></tr>
+      <tr><td><code>startSprint(type)</code></td><td><code>DebtSprint</code></td><td>Start a new debt reduction sprint</td></tr>
+      <tr><td><code>completeSprint(id, resolvedIds)</code></td><td><code>void</code></td><td>Complete sprint, mark resolved items, record debt reduced</td></tr>
+      <tr><td><code>generateAmortizationPlan({targetDays})</code></td><td><code>List&lt;AmortizationEntry&gt;</code></td><td>Auto-schedule debt resolution over N days</td></tr>
+      <tr><td><code>generateInsight()</code></td><td><code>String</code></td><td>Natural-language analysis of current debt situation</td></tr>
+      <tr><td><code>getPortfolio()</code></td><td><code>DebtPortfolio</code></td><td>Complete portfolio analysis with all metrics</td></tr>
+    </table>
+
+    <h3>Usage Example</h3>
+    <div class="code-block">
+<span class="keyword">final</span> service = <span class="type">AttentionDebtService</span>();
+
+<span class="comment">// Add a debt item</span>
+service.addItem(<span class="type">AttentionDebtItem</span>(
+  id: <span class="string">'debt_1'</span>,
+  title: <span class="string">'Decide on health insurance plan'</span>,
+  category: <span class="type">AttentionDebtCategory</span>.deferredDecision,
+  createdAt: <span class="type">DateTime</span>.now().subtract(<span class="keyword">const</span> <span class="type">Duration</span>(days: 12)),
+  baseCost: 14,
+  tags: [<span class="string">'finance'</span>, <span class="string">'health'</span>],
+));
+
+<span class="comment">// Check debt portfolio</span>
+<span class="keyword">final</span> portfolio = service.getPortfolio();
+print(portfolio.debtScore);        <span class="comment">// 0-100</span>
+print(portfolio.autonomousInsight); <span class="comment">// Natural language analysis</span>
+
+<span class="comment">// Start a sprint to reduce debt</span>
+<span class="keyword">final</span> sprint = service.startSprint(service.recommendedSprintType);
+<span class="comment">// ... user works through items ...</span>
+service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="momentum-engine">🚀 MomentumEngineService</h2>
+    <p><code>lib/core/services/momentum_engine_service.dart</code></p>
+    <p>Tracks task/habit/goal completion <strong>velocity</strong> (completions per day) over rolling windows, classifies momentum into lifecycle phases, detects blockers, and generates adaptive micro-nudges to sustain productive flow.</p>
+
+    <h3>Momentum Phases</h3>
+    <table>
+      <tr><th>Phase</th><th>Description</th><th>Intervention</th></tr>
+      <tr><td>🔥 Igniting</td><td>Just getting started, building initial velocity</td><td>Celebrate small wins, reduce friction</td></tr>
+      <tr><td>🚀 Accelerating</td><td>Velocity increasing between windows</td><td>Maintain current approach, stack momentum</td></tr>
+      <tr><td>✈️ Cruising</td><td>Stable high velocity</td><td>Protect the flow state, avoid disruptions</td></tr>
+      <tr><td>🛶 Coasting</td><td>Velocity stable but declining slightly</td><td>Micro-nudges to prevent stalling</td></tr>
+      <tr><td>⚠️ Stalling</td><td>Clear velocity drop, blockers likely</td><td>Blocker identification + targeted nudges</td></tr>
+      <tr><td>💥 Crashed</td><td>Near-zero velocity, momentum lost</td><td>Recovery protocol — restart with micro-goals</td></tr>
+    </table>
+
+    <h3>Key Concepts</h3>
+    <ul>
+      <li><strong>Velocity</strong> — rolling completion rate over configurable windows (default: 7/14/30 days)</li>
+      <li><strong>Acceleration</strong> — change in velocity between consecutive windows (positive = speeding up)</li>
+      <li><strong>Blocker Detection</strong> — pattern analysis to identify what's causing momentum loss</li>
+      <li><strong>Micro-Nudges</strong> — context-aware, adaptive suggestions calibrated to current phase</li>
+    </ul>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordCompletion(item)</code></td><td><code>void</code></td><td>Log a task/habit/goal completion event</td></tr>
+      <tr><td><code>velocity</code></td><td><code>double</code></td><td>Current rolling completion rate (per day)</td></tr>
+      <tr><td><code>acceleration</code></td><td><code>double</code></td><td>Rate of change in velocity</td></tr>
+      <tr><td><code>phase</code></td><td><code>MomentumPhase</code></td><td>Current lifecycle classification</td></tr>
+      <tr><td><code>detectBlockers()</code></td><td><code>List&lt;Blocker&gt;</code></td><td>Identify patterns causing momentum loss</td></tr>
+      <tr><td><code>generateNudge()</code></td><td><code>String</code></td><td>Context-aware micro-nudge for current phase</td></tr>
+      <tr><td><code>getReport()</code></td><td><code>MomentumReport</code></td><td>Full momentum analysis with trends</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="drift-detector">🐸 DriftDetectorService</h2>
+    <p><code>lib/core/services/drift_detector_service.dart</code></p>
+    <p>The "boiling frog" detector — monitors gradual lifestyle regression across multiple metrics using <strong>linear regression</strong> over rolling windows. Detects slow negative changes that humans don't notice, predicts tipping points, and correlates cross-metric slides.</p>
+
+    <h3>Drift Severity Levels</h3>
+    <table>
+      <tr><th>Level</th><th>Meaning</th><th>Action</th></tr>
+      <tr><td>📈 Improving</td><td>Metric trending positively</td><td>Reinforce current behavior</td></tr>
+      <tr><td>➡️ Stable</td><td>No significant change</td><td>Continue monitoring</td></tr>
+      <tr><td>📉 Drifting</td><td>Slight negative trend detected</td><td>Awareness nudge</td></tr>
+      <tr><td>⚠️ Sliding</td><td>Consistent downward trajectory</td><td>Active intervention recommended</td></tr>
+      <tr><td>🆘 Freefall</td><td>Rapid degradation</td><td>Emergency recovery protocol</td></tr>
+    </table>
+
+    <h3>How It Works</h3>
+    <ol>
+      <li><strong>Data Collection</strong> — aggregates daily metric values from other services (sleep quality, mood, productivity, etc.)</li>
+      <li><strong>Rolling Regression</strong> — fits linear regression over configurable windows to detect slope direction</li>
+      <li><strong>Tipping Point Prediction</strong> — extrapolates when a metric will cross a danger threshold at current rate</li>
+      <li><strong>Cross-Metric Correlation</strong> — detects when multiple metrics drift together (e.g., sleep down → mood down → productivity down)</li>
+      <li><strong>Recovery Nudges</strong> — generates targeted suggestions based on which metrics are sliding and their correlations</li>
+    </ol>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordMetric(name, value, date)</code></td><td><code>void</code></td><td>Log a daily metric data point</td></tr>
+      <tr><td><code>analyzeMetric(name)</code></td><td><code>DriftAnalysis</code></td><td>Regression analysis for a single metric</td></tr>
+      <tr><td><code>analyzeAll()</code></td><td><code>Map&lt;String, DriftAnalysis&gt;</code></td><td>Analyze all tracked metrics</td></tr>
+      <tr><td><code>predictTippingPoint(name)</code></td><td><code>DateTime?</code></td><td>Estimated date metric crosses danger threshold</td></tr>
+      <tr><td><code>findCorrelations()</code></td><td><code>List&lt;MetricCorrelation&gt;</code></td><td>Detect co-drifting metrics</td></tr>
+      <tr><td><code>generateReport()</code></td><td><code>DriftReport</code></td><td>Full drift analysis with recovery suggestions</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="behavioral-fingerprint">🔬 BehavioralFingerprintService</h2>
+    <p><code>lib/core/services/behavioral_fingerprint_service.dart</code></p>
+    <p>Creates a multi-dimensional behavioral signature from daily patterns across <strong>8 measurable axes</strong> and detects when the user deviates significantly from their baseline self using Mahalanobis-inspired distance metrics.</p>
+
+    <h3>Behavioral Dimensions</h3>
+    <table>
+      <tr><th>Dimension</th><th>What It Measures</th></tr>
+      <tr><td>🕐 Activity Timing</td><td>When you tend to be active — early bird vs. night owl patterns</td></tr>
+      <tr><td>⚡ Task Velocity</td><td>How quickly you complete tasks once started</td></tr>
+      <tr><td>📂 Category Preferences</td><td>Which categories of activity dominate your time</td></tr>
+      <tr><td>📊 Consistency</td><td>How regular your daily patterns are day-to-day</td></tr>
+      <tr><td>👥 Social Engagement</td><td>How much you interact with others vs. solo work</td></tr>
+      <tr><td>🔋 Energy Curve</td><td>Your energy distribution across the day</td></tr>
+      <tr><td>✅ Completion Patterns</td><td>How you sequence and complete tasks</td></tr>
+      <tr><td>🧭 Exploration vs. Routine</td><td>How much you try new things vs. repeat familiar patterns</td></tr>
+    </table>
+
+    <h3>Identity Phases</h3>
+    <table>
+      <tr><th>Phase</th><th>Description</th></tr>
+      <tr><td>🟢 Authentic</td><td>Behavior closely matches established baseline — "being yourself"</td></tr>
+      <tr><td>🟡 Shifting</td><td>Moderate deviation — possible context change or adaptation</td></tr>
+      <tr><td>🟠 Exploring</td><td>Significant deviation — actively trying new patterns</td></tr>
+      <tr><td>🔴 Disrupted</td><td>Major deviation — external disruption or crisis</td></tr>
+      <tr><td>🟣 Transformed</td><td>Sustained deviation — your baseline has fundamentally changed</td></tr>
+    </table>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordBehavior(snapshot)</code></td><td><code>void</code></td><td>Log a daily behavioral snapshot across all 8 dimensions</td></tr>
+      <tr><td><code>getFingerprint()</code></td><td><code>BehavioralFingerprint</code></td><td>Current normalized signature vector</td></tr>
+      <tr><td><code>getBaseline()</code></td><td><code>BehavioralFingerprint</code></td><td>Stable reference fingerprint from history</td></tr>
+      <tr><td><code>deviation</code></td><td><code>double</code></td><td>Distance from baseline (Mahalanobis-inspired)</td></tr>
+      <tr><td><code>identityPhase</code></td><td><code>IdentityPhase</code></td><td>Current behavioral classification</td></tr>
+      <tr><td><code>dimensionBreakdown()</code></td><td><code>Map&lt;BehaviorDimension, DeviationDetail&gt;</code></td><td>Per-dimension deviation analysis</td></tr>
+      <tr><td><code>generateNarrative()</code></td><td><code>String</code></td><td>Human-readable explanation of behavioral changes</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="burnout-detector">🔥 BurnoutDetectorService</h2>
+    <p><code>lib/core/services/burnout_detector_service.dart</code></p>
+    <p>Multi-signal burnout risk analysis engine that aggregates stress indicators from across the app, computes resilience scores, detects warning patterns, and generates proactive recovery recommendations before burnout hits.</p>
+
+    <h3>Risk Levels</h3>
+    <table>
+      <tr><th>Level</th><th>Description</th><th>Response</th></tr>
+      <tr><td>🟢 Low</td><td>Healthy balance, resilience strong</td><td>Continue current patterns</td></tr>
+      <tr><td>🟡 Moderate</td><td>Some stress indicators present</td><td>Monitor, schedule recovery</td></tr>
+      <tr><td>🟠 Elevated</td><td>Multiple warning signals active</td><td>Reduce load, increase breaks</td></tr>
+      <tr><td>🔴 High</td><td>Burnout trajectory confirmed</td><td>Immediate load reduction required</td></tr>
+      <tr><td>💀 Critical</td><td>Active burnout state</td><td>Emergency intervention — cancel non-essentials</td></tr>
+    </table>
+
+    <h3>Signal Sources</h3>
+    <ul>
+      <li><strong>Sleep Quality</strong> — declining sleep duration or quality trends</li>
+      <li><strong>Mood Patterns</strong> — persistent low mood or emotional flatness</li>
+      <li><strong>Productivity Changes</strong> — declining output despite same or increased effort</li>
+      <li><strong>Social Withdrawal</strong> — reduced contact tracker activity</li>
+      <li><strong>Habit Disruption</strong> — broken streaks across multiple trackers</li>
+      <li><strong>Energy Levels</strong> — sustained low energy readings</li>
+      <li><strong>Screen Time</strong> — excessive or erratic screen time patterns</li>
+    </ul>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>analyze()</code></td><td><code>BurnoutAnalysis</code></td><td>Full multi-signal burnout assessment</td></tr>
+      <tr><td><code>riskLevel</code></td><td><code>BurnoutRiskLevel</code></td><td>Current classification (low–critical)</td></tr>
+      <tr><td><code>resilienceScore</code></td><td><code>double</code></td><td>0–100 resilience rating</td></tr>
+      <tr><td><code>warningSignals</code></td><td><code>List&lt;BurnoutSignal&gt;</code></td><td>Active warning indicators with severity</td></tr>
+      <tr><td><code>recommendations</code></td><td><code>List&lt;String&gt;</code></td><td>Prioritized recovery recommendations</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="willpower-budget">⚡ WillpowerBudgetService</h2>
+    <p><code>lib/core/services/willpower_budget_service.dart</code></p>
+    <p>Models daily willpower as a finite, depletable resource based on <strong>ego depletion theory</strong>. Starts at 100 each day, drained by cognitive demands (decisions, resistance, focus blocks), and partially restored by strategic recovery actions. Predicts decision fatigue windows and rates how well the user manages cognitive resources.</p>
+
+    <h3>Willpower Zones</h3>
+    <table>
+      <tr><th>Zone</th><th>Budget Range</th><th>Behavior</th></tr>
+      <tr><td>🟢 Full Tank</td><td>80–100</td><td>Peak cognitive capacity — make important decisions now</td></tr>
+      <tr><td>🟡 Comfortable</td><td>60–80</td><td>Good capacity — routine decisions and focused work</td></tr>
+      <tr><td>🟠 Stretching</td><td>40–60</td><td>Declining — avoid major decisions, use routines</td></tr>
+      <tr><td>🔴 Depleted</td><td>20–40</td><td>Decision fatigue active — autopilot mode recommended</td></tr>
+      <tr><td>💀 Empty</td><td>0–20</td><td>Ego depletion — rest immediately, no decisions</td></tr>
+    </table>
+
+    <h3>Demand &amp; Recovery Model</h3>
+    <ul>
+      <li><strong>Demands</strong> — decisions, resisting temptation, sustained focus, context switches, emotional regulation</li>
+      <li><strong>Recovery</strong> — rest breaks, meals, exercise, meditation, nature exposure, sleep</li>
+      <li><strong>Fatigue Forecast</strong> — predicts when budget will cross each zone boundary at current drain rate</li>
+      <li><strong>Strategic Score</strong> — rates how well the user allocates high-demand tasks to high-budget periods</li>
+    </ul>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordDemand(demand)</code></td><td><code>void</code></td><td>Log a willpower-draining event with cost</td></tr>
+      <tr><td><code>recordRecovery(action)</code></td><td><code>void</code></td><td>Log a recovery action with restoration amount</td></tr>
+      <tr><td><code>remainingBudget</code></td><td><code>double</code></td><td>Current willpower remaining (0–100)</td></tr>
+      <tr><td><code>currentZone</code></td><td><code>WillpowerZone</code></td><td>Current zone classification</td></tr>
+      <tr><td><code>forecastFatigue()</code></td><td><code>FatigueForecast</code></td><td>Predict when each zone boundary will be crossed</td></tr>
+      <tr><td><code>strategicScore</code></td><td><code>double</code></td><td>How well cognitive resources are being managed</td></tr>
+      <tr><td><code>getDailyReport()</code></td><td><code>WillpowerReport</code></td><td>Full day analysis with demand/recovery timeline</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="ritual-engine">🌅 RitualEngineService</h2>
+    <p><code>lib/core/services/ritual_engine_service.dart</code></p>
+    <p>Tracks daily routine execution patterns, learns optimal timing windows via historical analysis, detects 6 types of disruptions with severity scoring, and generates context-aware micro-adjustments to improve ritual adherence.</p>
+
+    <h3>Rhythm States</h3>
+    <table>
+      <tr><th>State</th><th>Description</th></tr>
+      <tr><td>🔒 Locked In</td><td>Ritual executed consistently at optimal time — fully habitualized</td></tr>
+      <tr><td>✅ Consistent</td><td>Regular execution with minor timing variance</td></tr>
+      <tr><td>📉 Drifting</td><td>Timing becoming inconsistent — intervention window open</td></tr>
+      <tr><td>⚠️ Disrupted</td><td>Active disruption detected — pattern broken</td></tr>
+      <tr><td>❌ Abandoned</td><td>No execution for extended period</td></tr>
+    </table>
+
+    <h3>Key Concepts</h3>
+    <ul>
+      <li><strong>Timing Score</strong> (0–100) — how close each execution was to the learned optimal window</li>
+      <li><strong>Chain Health</strong> (0–100) — overall daily ritual sequence scoring</li>
+      <li><strong>Disruption Types</strong> — 6 classified disruption patterns (schedule shift, motivation loss, external blocker, fatigue, overload, travel)</li>
+      <li><strong>Micro-Adjustments</strong> — small, actionable timing/sequence changes based on recent data</li>
+    </ul>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>defineRitual(ritual)</code></td><td><code>void</code></td><td>Register a ritual with target time window</td></tr>
+      <tr><td><code>recordExecution(ritualId, timestamp)</code></td><td><code>void</code></td><td>Log a ritual execution event</td></tr>
+      <tr><td><code>getRhythmState(ritualId)</code></td><td><code>RhythmState</code></td><td>Current lifecycle phase for a ritual</td></tr>
+      <tr><td><code>timingScore(ritualId)</code></td><td><code>double</code></td><td>How close recent executions are to optimal</td></tr>
+      <tr><td><code>chainHealth</code></td><td><code>double</code></td><td>Overall daily ritual chain health (0–100)</td></tr>
+      <tr><td><code>detectDisruptions()</code></td><td><code>List&lt;Disruption&gt;</code></td><td>Active disruptions with type and severity</td></tr>
+      <tr><td><code>suggestAdjustments()</code></td><td><code>List&lt;MicroAdjustment&gt;</code></td><td>Context-aware timing/sequence recommendations</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="regret-minimization">🔮 RegretMinimizationService</h2>
+    <p><code>lib/core/services/regret_minimization_service.dart</code></p>
+    <p>Inspired by Bezos's regret minimization framework — records decisions with context and stakes, tracks outcomes over time, detects regret patterns (action vs. inaction), identifies recurring cognitive biases, and distills personalized decision-making wisdom. The ultimate question: <em>"Will 80-year-old me regret NOT doing this?"</em></p>
+
+    <h3>Decision Domains</h3>
+    <p>Decisions are categorized across 8 life domains: <strong>Career</strong>, <strong>Relationships</strong>, <strong>Health</strong>, <strong>Finance</strong>, <strong>Education</strong>, <strong>Lifestyle</strong>, <strong>Creative</strong>, and <strong>Other</strong>. Each domain builds its own regret profile over time.</p>
+
+    <h3>Analysis Pipeline</h3>
+    <ol>
+      <li><strong>Decision Recording</strong> — log decisions with context, stakes, emotional state, and alternatives considered</li>
+      <li><strong>Outcome Tracking</strong> — revisit decisions after configurable time periods to record actual outcomes</li>
+      <li><strong>Regret Classification</strong> — categorize outcomes as <em>regret of action</em> (did it, wish I hadn't) or <em>regret of inaction</em> (didn't do it, wish I had)</li>
+      <li><strong>Bias Detection</strong> — identify recurring cognitive biases from decision patterns (status quo bias, loss aversion, sunk cost, etc.)</li>
+      <li><strong>Wisdom Distillation</strong> — generate personalized decision-making principles from your history</li>
+    </ol>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordDecision(decision)</code></td><td><code>void</code></td><td>Log a new decision with context and stakes</td></tr>
+      <tr><td><code>recordOutcome(decisionId, outcome)</code></td><td><code>void</code></td><td>Record the actual outcome after time passes</td></tr>
+      <tr><td><code>analyzeRegretPatterns()</code></td><td><code>RegretAnalysis</code></td><td>Detect action-vs-inaction regret trends by domain</td></tr>
+      <tr><td><code>detectBiases()</code></td><td><code>List&lt;CognitiveBias&gt;</code></td><td>Identify recurring decision-making biases</td></tr>
+      <tr><td><code>generateWisdom()</code></td><td><code>List&lt;String&gt;</code></td><td>Personalized decision principles distilled from history</td></tr>
+      <tr><td><code>futureRegretTest(scenario)</code></td><td><code>FutureRegretResult</code></td><td>"Will 80-year-old me regret not doing this?"</td></tr>
+      <tr><td><code>getReport()</code></td><td><code>RegretReport</code></td><td>Full decision analysis with bias profile</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="streak-guardian">🛡️ StreakGuardianService</h2>
+    <p><code>lib/core/services/streak_guardian_service.dart</code></p>
+    <p>Cross-tracker streak risk aggregator that monitors streaks from habits, workouts, meditation, water intake, sleep, and event activity. Detects at-risk streaks <em>before</em> they break and generates rescue strategies.</p>
+
+    <h3>Risk Levels</h3>
+    <table>
+      <tr><th>Level</th><th>Description</th><th>Action</th></tr>
+      <tr><td>🟢 Safe</td><td>Streak on track, no concerns</td><td>Continue as normal</td></tr>
+      <tr><td>🟡 Watch</td><td>Slight delay or variance detected</td><td>Gentle reminder</td></tr>
+      <tr><td>🟠 Danger</td><td>Streak at risk — time running out today</td><td>Urgent nudge with specific action</td></tr>
+      <tr><td>🔴 Critical</td><td>Hours remaining before streak breaks</td><td>Emergency rescue strategy</td></tr>
+      <tr><td>💔 Broken</td><td>Streak has ended</td><td>Recovery plan + motivation boost</td></tr>
+    </table>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>registerStreak(tracker)</code></td><td><code>void</code></td><td>Register a streak source for monitoring</td></tr>
+      <tr><td><code>assessRisk(trackerId)</code></td><td><code>StreakRiskAssessment</code></td><td>Evaluate risk for a specific streak</td></tr>
+      <tr><td><code>assessAll()</code></td><td><code>List&lt;StreakRiskAssessment&gt;</code></td><td>Evaluate all monitored streaks</td></tr>
+      <tr><td><code>atRiskStreaks()</code></td><td><code>List&lt;StreakRiskAssessment&gt;</code></td><td>Only streaks in danger/critical state</td></tr>
+      <tr><td><code>generateRescue(trackerId)</code></td><td><code>RescueStrategy</code></td><td>Generate specific rescue action for at-risk streak</td></tr>
+      <tr><td><code>healthScore</code></td><td><code>double</code></td><td>Overall streak portfolio health (0–100)</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="callout callout-info">
+      <strong>Integration Pattern</strong><br>
+      The autonomous engines work best when connected to each other's output signals.
+      For example, the <strong>Drift Detector</strong> can feed into <strong>Burnout Detector</strong>,
+      the <strong>Momentum Engine</strong> can inform <strong>Streak Guardian</strong> risk assessment,
+      and the <strong>Willpower Budget</strong> can influence <strong>Ritual Engine</strong> micro-adjustments.
+      See <a href="architecture.html">Architecture</a> for the cross-service signal flow.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
