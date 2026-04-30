@@ -532,17 +532,24 @@ class ExpenseTrackerService with ServicePersistence {
 
   SpendingTrend getSpendingTrend({int weeks = 4}) {
     final now = DateTime.now();
-    final weeklyTotals = <double>[];
+    // Single-pass: bucket all entries within the window into their
+    // respective week slots, replacing the previous O(weeks × entries)
+    // approach that called getEntriesInRange() per week.
+    final windowStart = now.subtract(Duration(days: weeks * 7));
+    final weeklyTotals = List<double>.filled(weeks, 0.0);
 
-    for (int w = weeks - 1; w >= 0; w--) {
-      final weekStart = now.subtract(Duration(days: (w + 1) * 7));
-      final weekEnd = now.subtract(Duration(days: w * 7));
-      final entries = getEntriesInRange(weekStart, weekEnd);
-      double total = 0;
-      for (final e in entries) {
-        if (!e.category.isIncome) total += e.amount;
+    for (final e in _entries) {
+      if (e.timestamp.isBefore(windowStart) || !e.timestamp.isBefore(now)) {
+        continue;
       }
-      weeklyTotals.add(total);
+      if (e.category.isIncome) continue;
+      // Determine which week bucket this entry belongs to.
+      // daysAgo=0 is today, bucket index = weeks-1 (most recent).
+      final daysAgo = now.difference(e.timestamp).inDays;
+      final weekIdx = weeks - 1 - (daysAgo ~/ 7);
+      if (weekIdx >= 0 && weekIdx < weeks) {
+        weeklyTotals[weekIdx] += e.amount;
+      }
     }
 
     // Simple linear trend
@@ -631,9 +638,17 @@ class ExpenseTrackerService with ServicePersistence {
   // --- Insights ---
 
   List<String> generateInsights(int year, int month) {
-    final insights = <String>[];
     final report = getMonthlyReport(year, month);
     final percentages = getCategoryPercentages(getEntriesForMonth(year, month));
+    return _generateInsightsFromReport(report, percentages);
+  }
+
+  /// Internal insight generation that accepts pre-computed data,
+  /// avoiding redundant getMonthlyReport/getEntriesForMonth calls
+  /// when invoked from [getFullReport].
+  List<String> _generateInsightsFromReport(
+      MonthlyReport report, Map<ExpenseCategory, double> percentages) {
+    final insights = <String>[];
 
     // Top spending category
     if (percentages.isNotEmpty) {
@@ -685,13 +700,33 @@ class ExpenseTrackerService with ServicePersistence {
 
   // --- Full Report ---
 
+  /// Build a comprehensive expense report.
+  ///
+  /// Previously called getMonthlyReport(), generateInsights(), and
+  /// getCategoryPercentages(getEntriesForMonth()) separately — each
+  /// scanning the full entry list redundantly (4× O(n) for the same
+  /// month). Now fetches the monthly report once, derives category
+  /// percentages from it, and passes both into insight generation to
+  /// eliminate all redundant scans.
   ExpenseReport getFullReport(int year, int month) {
     final monthlyReport = getMonthlyReport(year, month);
     final trend = getSpendingTrend();
     final topVendors = getTopVendors();
-    final insights = generateInsights(year, month);
-    final percentages =
-        getCategoryPercentages(getEntriesForMonth(year, month));
+
+    // Derive category percentages from the already-computed report
+    // instead of rescanning entries a third time.
+    final totalExpenses = monthlyReport.totalSpent;
+    final percentages = totalExpenses > 0
+        ? Map.fromEntries(
+            monthlyReport.byCategory.entries
+                .where((e) => !e.key.isIncome)
+                .map((e) => MapEntry(e.key, e.value / totalExpenses * 100)),
+          )
+        : <ExpenseCategory, double>{};
+
+    // Generate insights using the pre-computed report and percentages
+    // instead of recomputing them internally.
+    final insights = _generateInsightsFromReport(monthlyReport, percentages);
 
     return ExpenseReport(
       currentMonth: monthlyReport,
