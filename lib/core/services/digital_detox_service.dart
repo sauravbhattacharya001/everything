@@ -2,6 +2,13 @@ import 'dart:math';
 
 // ─── MODELS ────────────────────────────────────────────────────────────────
 
+/// A completed or in-progress digital detox session.
+///
+/// Tracks the user's attempt to stay screen-free for [targetMinutes],
+/// recording [actualMinutes] achieved and any [distractions] encountered.
+/// [adherenceRate] computes how well the user stuck to the target,
+/// clamped to 150% to allow credit for exceeding the goal without
+/// inflating aggregated statistics.
 class DetoxSession {
   final String id;
   final String name;
@@ -27,6 +34,12 @@ class DetoxSession {
       targetMinutes > 0 ? (actualMinutes / targetMinutes).clamp(0.0, 1.5) : 0;
 }
 
+/// A single cell in the weekly screen-time heatmap.
+///
+/// Represents observed screen usage (in [minutes]) for a given
+/// [dayOfWeek] (1=Mon..7=Sun) and [hour] (0-23). Used by the
+/// service to build the 7×24 usage grid that powers insights
+/// and plan generation.
 class UsageSlot {
   final int dayOfWeek; // 1=Mon .. 7=Sun
   final int hour; // 0-23
@@ -35,6 +48,12 @@ class UsageSlot {
   const UsageSlot(this.dayOfWeek, this.hour, this.minutes);
 }
 
+/// An actionable observation derived from the user's detox history
+/// and usage patterns.
+///
+/// Each insight carries an [icon] for display, a short [title],
+/// a descriptive [body], and a [severity] level that the UI can
+/// use to color-code or prioritize the card.
 class DetoxInsight {
   final String icon;
   final String title;
@@ -44,8 +63,15 @@ class DetoxInsight {
   const DetoxInsight(this.icon, this.title, this.body, this.severity);
 }
 
+/// Severity tiers for [DetoxInsight], ranging from [positive]
+/// (encouraging) through [critical] (needs immediate attention).
 enum InsightSeverity { positive, neutral, warning, critical }
 
+/// A single screen-free time block within a [DetoxPlan].
+///
+/// Placed on [dayOfWeek] (1=Mon..7=Sun) starting at [startHour]
+/// for [durationMinutes]. The [label] provides a human-friendly
+/// name (e.g. "Peak Detox", "Mindful Break").
 class DetoxPlanBlock {
   final String label;
   final int dayOfWeek;
@@ -55,6 +81,13 @@ class DetoxPlanBlock {
   const DetoxPlanBlock(this.label, this.dayOfWeek, this.startHour, this.durationMinutes);
 }
 
+/// A generated weekly detox schedule optimized for the user's
+/// usage patterns.
+///
+/// Contains a list of [blocks] spread across the week, a
+/// [weeklyTargetMinutes] budget, the [predictedReduction] as a
+/// percentage of current screen time, and a natural-language
+/// [strategy] description.
 class DetoxPlan {
   final List<DetoxPlanBlock> blocks;
   final int weeklyTargetMinutes;
@@ -64,11 +97,18 @@ class DetoxPlan {
   const DetoxPlan(this.blocks, this.weeklyTargetMinutes, this.predictedReduction, this.strategy);
 }
 
+/// Streak and success-rate statistics for the user's detox sessions.
+///
+/// [current] is the active consecutive-day streak, [longest] the
+/// all-time record, and [successRate] the ratio of sessions where
+/// the user hit ≥ 80% of their target duration.
 class StreakInfo {
   final int current;
   final int longest;
   final int totalSessions;
   final int successfulSessions;
+
+  /// Fraction of sessions completed successfully (0.0–1.0).
   double get successRate =>
       totalSessions > 0 ? successfulSessions / totalSessions : 0;
 
@@ -77,6 +117,16 @@ class StreakInfo {
 
 // ─── SERVICE ───────────────────────────────────────────────────────────────
 
+/// Service that analyzes screen-time usage, runs detox sessions,
+/// and generates personalized insights and reduction plans.
+///
+/// Maintains a 7×24 [usageGrid] (minutes per hour per weekday) and
+/// a history of [sessions]. Provides:
+/// - [getStreakInfo]: consecutive-day streak and success statistics
+/// - [getProactiveInsights]: contextual tips based on patterns
+/// - [getHealthScore]: 0–100 composite digital-wellness score
+/// - [generatePlan]: weekly detox schedule targeting a given
+///   percentage reduction in screen time
 class DigitalDetoxService {
   late final List<DetoxSession> sessions;
   late final List<List<int>> _usageGrid; // [dayOfWeek 0-6][hour 0-23] = minutes
@@ -88,6 +138,10 @@ class DigitalDetoxService {
 
   // ── Usage grid (simulated screen‐time per hour per weekday) ──
 
+  /// Builds a 7×24 usage grid with realistic circadian patterns.
+  ///
+  /// Night hours (0-5) are near-zero, mornings ramp up, lunch and
+  /// evening are peak, and weekends get a 20% boost.
   List<List<int>> _generateUsageGrid() {
     final rng = Random(42);
     return List.generate(7, (d) {
@@ -118,6 +172,8 @@ class DigitalDetoxService {
 
   List<List<int>> get usageGrid => _usageGrid;
 
+  /// Average daily screen time in minutes, computed across all
+  /// seven weekdays of the usage grid.
   int get totalDailyAverage {
     int sum = 0;
     for (final day in _usageGrid) {
@@ -130,6 +186,8 @@ class DigitalDetoxService {
 
   // ── Demo sessions ──
 
+  /// Creates 14 days of realistic demo sessions with varied
+  /// targets, completion rates, and distractions for UI preview.
   List<DetoxSession> _generateDemoSessions() {
     final rng = Random(99);
     final now = DateTime.now();
@@ -172,6 +230,11 @@ class DigitalDetoxService {
 
   // ── Analysis ──
 
+  /// Computes the current and longest consecutive-day streaks,
+  /// total session count, and successful-session count.
+  ///
+  /// A day counts toward the streak if at least one session on
+  /// that day was [DetoxSession.completed] (≥ 80% adherence).
   StreakInfo getStreakInfo() {
     if (sessions.isEmpty) return const StreakInfo(0, 0, 0, 0);
     final sorted = [...sessions]..sort((a, b) => b.startTime.compareTo(a.startTime));
@@ -201,6 +264,8 @@ class DigitalDetoxService {
     return StreakInfo(current, longest, sessions.length, successful);
   }
 
+  /// Returns the hour (0-23) with the highest aggregate usage
+  /// across all weekdays.
   int _peakHour() {
     int maxMin = 0, peakH = 0;
     for (int h = 0; h < 24; h++) {
@@ -216,6 +281,8 @@ class DigitalDetoxService {
     return peakH;
   }
 
+  /// Returns the waking hour (6-22) with the lowest aggregate
+  /// usage — the best candidate for a new detox block.
   int _quietHour() {
     int minMin = 999999, quietH = 6;
     for (int h = 6; h < 23; h++) {
@@ -232,6 +299,7 @@ class DigitalDetoxService {
     return quietH;
   }
 
+  /// Formats an hour index (0-23) as a 12-hour AM/PM label.
   String _hourLabel(int h) {
     if (h == 0) return '12 AM';
     if (h < 12) return '$h AM';
@@ -239,9 +307,12 @@ class DigitalDetoxService {
     return '${h - 12} PM';
   }
 
+  /// Formats a weekday index (0=Mon..6=Sun) as a 3-letter label.
   String _dayLabel(int d) =>
       const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d];
 
+  /// Returns the weekday index (0=Mon..6=Sun) with the highest
+  /// total screen time.
   int _busiestDay() {
     int maxMin = 0, busyD = 0;
     for (int d = 0; d < 7; d++) {
@@ -254,6 +325,9 @@ class DigitalDetoxService {
     return busyD;
   }
 
+  /// Generates a list of contextual [DetoxInsight]s based on
+  /// peak/quiet hours, busiest day, streak status, success rate,
+  /// and most frequent distractions.
   List<DetoxInsight> getProactiveInsights() {
     final insights = <DetoxInsight>[];
     final streak = getStreakInfo();
@@ -339,6 +413,13 @@ class DigitalDetoxService {
     return insights;
   }
 
+  /// Computes a 0–100 composite digital-wellness score.
+  ///
+  /// Weighted components:
+  /// - **Adherence (40%):** session success rate
+  /// - **Streak (30%):** current streak relative to 14 days
+  /// - **Trend (30%):** improvement in success rate from the
+  ///   prior 7-day window to the most recent 7 days
   int getHealthScore() {
     final streak = getStreakInfo();
     // Components: adherence (40%), streak (30%), trend (30%)
@@ -363,6 +444,13 @@ class DigitalDetoxService {
     return (adherenceScore + streakScore + trendScore).round().clamp(0, 100);
   }
 
+  /// Creates a [DetoxPlan] targeting a [targetReductionPercent]
+  /// decrease (clamped to 10–50%) in weekly screen time.
+  ///
+  /// Schedules [DetoxPlanBlock]s during the highest-usage waking
+  /// hours on the busiest weekdays, greedily filling the weekly
+  /// budget. Returns a strategy description scaled to the
+  /// aggressiveness of the reduction target.
   DetoxPlan generatePlan(int targetReductionPercent) {
     final reduction = targetReductionPercent.clamp(10, 50);
     final dailyAvg = totalDailyAverage;
@@ -413,9 +501,12 @@ class DigitalDetoxService {
     return DetoxPlan(blocks, weeklyTarget, predictedReduction, strategy);
   }
 
-  // Day-of-week totals for chart
+  /// Total screen-time minutes per weekday (Mon..Sun) for charts.
   List<int> get dayTotals => List.generate(7, (d) => _usageGrid[d].reduce((a, b) => a + b));
 
+  /// Public alias for [_dayLabel] — returns 3-letter weekday name.
   String dayName(int d) => _dayLabel(d);
+
+  /// Public alias for [_hourLabel] — returns 12-hour AM/PM label.
   String hourName(int h) => _hourLabel(h);
 }
