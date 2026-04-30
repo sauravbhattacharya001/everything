@@ -2,13 +2,17 @@
 # Multi-stage Dockerfile for the Everything App (Flutter Web)
 # =============================================================================
 # Stage 1: Build the Flutter web app
-# Stage 2: Serve with nginx (lightweight, production-ready)
+# Stage 2: Compress assets with Brotli/Gzip for static delivery
+# Stage 3: Serve with nginx (lightweight, production-ready)
 # =============================================================================
 
 # ---------------------------------------------------------------------------
 # Build stage
 # ---------------------------------------------------------------------------
 FROM ghcr.io/cirruslabs/flutter:3.41.6 AS build
+
+ARG WEB_RENDERER=canvaskit
+ARG FLUTTER_BUILD_ARGS=""
 
 WORKDIR /app
 
@@ -22,22 +26,40 @@ RUN flutter pub get
 COPY . .
 
 # Build the Flutter web app with release optimizations
-# Using CanvasKit renderer for full fidelity; switch to --web-renderer html
-# for smaller bundle size if preferred
-RUN flutter build web --release --web-renderer canvaskit
+RUN flutter build web --release --web-renderer ${WEB_RENDERER} ${FLUTTER_BUILD_ARGS}
+
+# ---------------------------------------------------------------------------
+# Compression stage — pre-compress static assets for nginx gzip_static
+# ---------------------------------------------------------------------------
+FROM alpine:3.21 AS compress
+
+RUN apk add --no-cache brotli gzip findutils
+
+COPY --from=build /app/build/web /assets
+
+# Pre-compress JS, CSS, WASM, HTML, JSON, SVG with Brotli (quality 11) & Gzip
+RUN find /assets -type f \( \
+      -name '*.js' -o -name '*.css' -o -name '*.wasm' \
+      -o -name '*.html' -o -name '*.json' -o -name '*.svg' \
+      -o -name '*.txt' -o -name '*.xml' -o -name '*.map' \
+    \) -exec sh -c 'brotli -q 11 -o "$1.br" "$1" && gzip -9 -k "$1"' _ {} \;
 
 # ---------------------------------------------------------------------------
 # Production stage
 # ---------------------------------------------------------------------------
 FROM nginx:1.29-alpine AS production
 
+LABEL org.opencontainers.image.source="https://github.com/sauravbhattacharya001/everything"
+LABEL org.opencontainers.image.description="Everything App — Flutter web productivity suite"
+LABEL org.opencontainers.image.licenses="MIT"
+
 # Remove default nginx content
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy the built web app from the build stage
-COPY --from=build /app/build/web /usr/share/nginx/html
+# Copy pre-compressed assets from the compression stage
+COPY --from=compress /assets /usr/share/nginx/html
 
-# Custom nginx config for Flutter SPA routing
+# Custom nginx config for Flutter SPA routing with Brotli/Gzip static serving
 RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
 server {
     listen 80;
@@ -47,30 +69,39 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Gzip compression for Flutter web assets
+    # ---------- Compression (dynamic fallback for non-precompressed) ----------
     gzip on;
     gzip_types text/plain text/css application/json application/javascript
                text/xml application/xml application/xml+rss text/javascript
-               application/wasm;
+               application/wasm image/svg+xml;
     gzip_min_length 256;
     gzip_vary on;
+    gzip_static on;
 
-    # Long cache for hashed assets (fonts, canvaskit, etc.)
-    location ~* \.(js|css|wasm|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+    # ---------- Long cache for hashed / immutable assets ----------
+    location ~* \.(js|css|wasm|png|jpg|jpeg|gif|ico|svg|woff2?|ttf|otf)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         try_files $uri =404;
     }
 
-    # Flutter SPA: route all non-file requests to index.html
+    # ---------- Short cache for service worker & manifest ----------
+    location ~* (flutter_service_worker\.js|manifest\.json|version\.json)$ {
+        expires 1h;
+        add_header Cache-Control "public, must-revalidate";
+        try_files $uri =404;
+    }
+
+    # ---------- SPA fallback ----------
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # Security headers
+    # ---------- Security headers ----------
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
 }
 EOF
 
@@ -86,7 +117,7 @@ USER nginx
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

@@ -25,6 +25,10 @@ CHANGELOG.md
 # CI/CD
 .github/
 
+# Docker compose (not needed in image)
+docker-compose.yml
+docker-compose*.yml
+
 # Test files
 test/
 integration_test/
