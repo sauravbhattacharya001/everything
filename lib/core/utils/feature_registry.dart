@@ -158,6 +158,7 @@ import '../../views/home/quick_poll_screen.dart';
 import '../../views/home/unit_price_screen.dart';
 import '../../views/home/tax_calculator_screen.dart';
 import '../../views/home/fire_calculator_screen.dart';
+import '../../views/home/runway_engine_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/scientific_calculator_screen.dart';
 import '../../views/home/matrix_calculator_screen.dart';
@@ -788,6 +789,12 @@ class FeatureRegistry {
       icon: Icons.local_fire_department,
       category: FeatureCategory.finance,
       builder: (_) => const FireCalculatorScreen(),
+    ),
+    FeatureEntry(
+      label: 'Personal Runway',
+      icon: Icons.flight_takeoff,
+      category: FeatureCategory.finance,
+      builder: (_) => const RunwayEngineScreen(),
     ),
 
     // ── Lifestyle ──
