@@ -84,6 +84,11 @@ class PlantCareService {
 
   // ─── Plant Management ───
 
+  /// Registers a new plant in the garden.
+  ///
+  /// Creates a [PlantProfile] with an auto-generated id and adds it to the
+  /// collection. If [wateringIntervalDays] is omitted, the default interval
+  /// for the given [type] is used. Returns the newly created profile.
   PlantProfile addPlant({
     required String name,
     required PlantType type,
@@ -107,6 +112,7 @@ class PlantCareService {
     return plant;
   }
 
+  /// Returns the [PlantProfile] with the given [id], or `null` if not found.
   PlantProfile? getPlant(String id) {
     try {
       return _plants.firstWhere((p) => p.id == id);
@@ -115,6 +121,10 @@ class PlantCareService {
     }
   }
 
+  /// Applies partial updates to an existing plant profile.
+  ///
+  /// Only non-null parameters are changed. Returns the updated profile,
+  /// or `null` if no plant with [id] exists.
   PlantProfile? updatePlant(String id, {
     String? name,
     PlantType? type,
@@ -138,6 +148,9 @@ class PlantCareService {
     return _plants[idx];
   }
 
+  /// Permanently removes a plant and all of its care log entries.
+  ///
+  /// Returns `true` if a plant was actually removed.
   bool removePlant(String id) {
     final before = _plants.length;
     _plants.removeWhere((p) => p.id == id);
@@ -147,6 +160,11 @@ class PlantCareService {
 
   // ─── Care Logging ───
 
+  /// Records a care action (watering, fertilizing, pruning, etc.) for a plant.
+  ///
+  /// If [timestamp] is omitted it defaults to now. An optional
+  /// [healthObserved] snapshot can be attached to track the plant's
+  /// condition at the time of care.
   PlantCareEntry logCare({
     required String plantId,
     required PlantCareAction action,
@@ -166,6 +184,9 @@ class PlantCareService {
     return entry;
   }
 
+  /// Returns care entries for [plantId], most-recent first.
+  ///
+  /// When [limit] is provided only the latest *n* entries are returned.
   List<PlantCareEntry> getCareLog(String plantId, {int? limit}) {
     var entries = _careLog.where((e) => e.plantId == plantId).toList()
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -173,6 +194,9 @@ class PlantCareService {
     return entries;
   }
 
+  /// Deletes a single care log entry by its id.
+  ///
+  /// Returns `true` if the entry existed and was removed.
   bool removeCareEntry(String entryId) {
     final len = _careLog.length;
     _careLog.removeWhere((e) => e.id == entryId);
@@ -181,6 +205,8 @@ class PlantCareService {
 
   // ─── Watering Schedule ───
 
+  /// Returns the timestamp of the most recent watering for [plantId],
+  /// or `null` if the plant has never been watered.
   DateTime? getLastWatered(String plantId) {
     final waterings = _careLog
         .where((e) => e.plantId == plantId && e.action == PlantCareAction.watering)
@@ -189,6 +215,11 @@ class PlantCareService {
     return waterings.isNotEmpty ? waterings.first.timestamp : null;
   }
 
+  /// Computes the next expected watering date based on the plant's
+  /// watering interval and its last watering timestamp.
+  ///
+  /// Returns `null` if the plant doesn't exist. If the plant has never
+  /// been watered, returns [DateTime.now] (i.e. already overdue).
   DateTime? getNextWatering(String plantId) {
     final plant = getPlant(plantId);
     if (plant == null) return null;
@@ -197,12 +228,14 @@ class PlantCareService {
     return lastWatered.add(Duration(days: plant.wateringIntervalDays));
   }
 
+  /// Whether the plant's next watering date has already passed.
   bool isOverdue(String plantId, {DateTime? now}) {
     final next = getNextWatering(plantId);
     if (next == null) return false;
     return (now ?? DateTime.now()).isAfter(next);
   }
 
+  /// Number of full days past the next watering date, or 0 if not overdue.
   int overdueDays(String plantId, {DateTime? now}) {
     final next = getNextWatering(plantId);
     if (next == null) return 0;
@@ -210,10 +243,13 @@ class PlantCareService {
     return diff > 0 ? diff : 0;
   }
 
+  /// Returns all active plants whose watering schedule is overdue.
   List<PlantProfile> getOverduePlants({DateTime? now}) {
     return activePlants.where((p) => isOverdue(p.id, now: now)).toList();
   }
 
+  /// Returns active plants whose next watering falls within [withinDays]
+  /// (inclusive), including those already overdue.
   List<PlantProfile> getPlantsNeedingWaterSoon({int withinDays = 2, DateTime? now}) {
     final ref = now ?? DateTime.now();
     return activePlants.where((p) {
@@ -225,6 +261,8 @@ class PlantCareService {
 
   // ─── Health Tracking ───
 
+  /// Returns the most recently observed [PlantHealth] for [plantId],
+  /// or `null` if no health observations have been recorded.
   PlantHealth? getLastHealth(String plantId) {
     final entries = _careLog
         .where((e) => e.plantId == plantId && e.healthObserved != null)
@@ -233,6 +271,8 @@ class PlantCareService {
     return entries.isNotEmpty ? entries.first.healthObserved : null;
   }
 
+  /// Returns the health observation timeline for [plantId], most-recent
+  /// first, optionally capped at [limit] entries.
   List<PlantHealth> getHealthHistory(String plantId, {int? limit}) {
     var entries = _careLog
         .where((e) => e.plantId == plantId && e.healthObserved != null)
@@ -244,6 +284,10 @@ class PlantCareService {
 
   // ─── Streaks ───
 
+  /// Calculates the current consecutive-day care streak for a single plant.
+  ///
+  /// A streak counts backward from today (or [now]) — each day with at
+  /// least one care entry extends the streak by one.
   int getCareStreak(String plantId, {DateTime? now}) {
     final ref = now ?? DateTime.now();
     final entries = _careLog
@@ -271,6 +315,9 @@ class PlantCareService {
     return streak;
   }
 
+  /// Calculates the consecutive-day care streak across the entire garden.
+  ///
+  /// Any care action on any plant counts toward the streak.
   int getGardenCareStreak({DateTime? now}) {
     final ref = now ?? DateTime.now();
     if (_careLog.isEmpty) return 0;
@@ -296,6 +343,10 @@ class PlantCareService {
 
   // ─── Per-Plant Summary ───
 
+  /// Builds a comprehensive [PlantCareSummary] for one plant, aggregating
+  /// watering schedule, health status, care action counts, and streak data.
+  ///
+  /// Throws [ArgumentError] if [plantId] doesn't exist.
   PlantCareSummary getPlantSummary(String plantId, {DateTime? now}) {
     final plant = getPlant(plantId);
     if (plant == null) throw ArgumentError('Plant not found: $plantId');
@@ -319,6 +370,9 @@ class PlantCareService {
 
   // ─── Garden Summary ───
 
+  /// Produces a fleet-level [GardenSummary] covering all active plants:
+  /// overdue counts, health distribution, type/sunlight/location breakdowns,
+  /// and an overall health score (0–100).
   GardenSummary getGardenSummary({DateTime? now}) {
     final active = activePlants;
     final overdue = getOverduePlants(now: now);
@@ -378,6 +432,10 @@ class PlantCareService {
 
   // ─── Recommendations ───
 
+  /// Generates actionable care tips based on current garden state.
+  ///
+  /// Covers overdue waterings, upcoming watering needs, struggling plants,
+  /// and nudges for empty care logs.
   List<String> getRecommendations({DateTime? now}) {
     final tips = <String>[];
     final overdue = getOverduePlants(now: now);
@@ -403,12 +461,16 @@ class PlantCareService {
 
   // ─── Serialization ───
 
+  /// Serializes all plants, care entries, and the id counter to a JSON map.
   Map<String, dynamic> toJson() => {
         'plants': _plants.map((p) => p.toJson()).toList(),
         'careLog': _careLog.map((e) => e.toJson()).toList(),
         'nextId': _nextId,
       };
 
+  /// Replaces the current state with data deserialized from [json].
+  ///
+  /// Clears existing plants and care log before importing.
   void loadFromJson(Map<String, dynamic> json) {
     _plants.clear();
     _careLog.clear();

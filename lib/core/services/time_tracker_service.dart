@@ -4,6 +4,8 @@ import '../../models/time_entry.dart';
 class TimeTrackerService {
   const TimeTrackerService();
 
+  /// Builds a [TimeAuditDailySummary] for the given [date], aggregating
+  /// completed entries by category, total time, and longest session.
   TimeAuditDailySummary getDailySummary(List<TimeEntry> entries, DateTime date) {
     final dayEntries = entries.where((e) =>
       e.startTime.year == date.year &&
@@ -40,6 +42,7 @@ class TimeTrackerService {
     );
   }
 
+  /// Returns all entries that started on [date], sorted most-recent first.
   List<TimeEntry> getEntriesForDate(List<TimeEntry> entries, DateTime date) {
     return entries.where((e) =>
       e.startTime.year == date.year &&
@@ -48,6 +51,8 @@ class TimeTrackerService {
     ).toList()..sort((a, b) => b.startTime.compareTo(a.startTime));
   }
 
+  /// Computes a 0–100 productivity score for [date] based on total
+  /// tracked hours (40%), category variety (30%), and session count (30%).
   int productivityScore(List<TimeEntry> entries, DateTime date) {
     final summary = getDailySummary(entries, date);
     if (summary.entryCount == 0) return 0;
@@ -60,6 +65,7 @@ class TimeTrackerService {
     return hourScore + varietyScore + sessionScore;
   }
 
+  /// Formats a [Duration] as a human-readable string (e.g. "2h 15m").
   String formatDuration(Duration d) {
     final hours = d.inHours;
     final minutes = d.inMinutes % 60;
@@ -80,6 +86,8 @@ class TimeTrackerService {
     TimeCategory.other: 0xFF9E9E9E,
   };
 
+  /// Compares this week's tracking to last week and returns trend insights
+  /// for total time, session count, and average time per day.
   List<WeeklyInsight> getWeeklyInsights(List<TimeEntry> entries) {
     final now = DateTime.now();
     final thisWeekStart = now.subtract(Duration(days: now.weekday - 1));

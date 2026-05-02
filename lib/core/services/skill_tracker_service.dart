@@ -113,6 +113,10 @@ class SkillTrackerService {
   List<SkillEntry> get archivedSkills =>
       _skills.where((s) => s.isArchived).toList();
 
+  /// Registers a new skill in the tracker.
+  ///
+  /// Throws [ArgumentError] if a skill with the same [SkillEntry.id]
+  /// already exists.
   void addSkill(SkillEntry skill) {
     if (_skills.any((s) => s.id == skill.id)) {
       throw ArgumentError('Skill with id ${skill.id} already exists');
@@ -120,6 +124,7 @@ class SkillTrackerService {
     _skills.add(skill);
   }
 
+  /// Returns the [SkillEntry] with the given [id], or `null` if not found.
   SkillEntry? getSkill(String id) {
     try {
       return _skills.firstWhere((s) => s.id == id);
@@ -128,28 +133,42 @@ class SkillTrackerService {
     }
   }
 
+  /// Replaces the skill matching [updated.id] with the new entry.
+  ///
+  /// Throws [ArgumentError] if no skill with that id exists.
   void updateSkill(SkillEntry updated) {
     final idx = _skills.indexWhere((s) => s.id == updated.id);
     if (idx < 0) throw ArgumentError('Skill ${updated.id} not found');
     _skills[idx] = updated;
   }
 
+  /// Permanently removes the skill with the given [id] (no-op if absent).
   void removeSkill(String id) {
     _skills.removeWhere((s) => s.id == id);
   }
 
+  /// Marks a skill as archived so it no longer appears in active lists.
+  ///
+  /// Throws [ArgumentError] if [id] is not found.
   void archiveSkill(String id) {
     final skill = getSkill(id);
     if (skill == null) throw ArgumentError('Skill $id not found');
     updateSkill(skill.copyWith(isArchived: true));
   }
 
+  /// Restores an archived skill back to active status.
+  ///
+  /// Throws [ArgumentError] if [id] is not found.
   void unarchiveSkill(String id) {
     final skill = getSkill(id);
     if (skill == null) throw ArgumentError('Skill $id not found');
     updateSkill(skill.copyWith(isArchived: false));
   }
 
+  /// Appends a [PracticeSession] to the skill's session log and updates
+  /// the [SkillEntry.lastPracticedAt] timestamp.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   void logPractice(String skillId, PracticeSession session) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -164,6 +183,10 @@ class SkillTrackerService {
     ));
   }
 
+  /// Removes a specific practice session from a skill's log.
+  ///
+  /// Also recalculates [SkillEntry.lastPracticedAt]. Throws [ArgumentError]
+  /// if [skillId] is not found.
   void removePractice(String skillId, String sessionId) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -177,6 +200,9 @@ class SkillTrackerService {
     ));
   }
 
+  /// Adds a [SkillMilestone] to the skill's milestone list.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   void addMilestone(String skillId, SkillMilestone milestone) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -184,6 +210,9 @@ class SkillTrackerService {
     updateSkill(skill.copyWith(milestones: milestones));
   }
 
+  /// Marks a milestone as completed at the given [at] timestamp.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   void completeMilestone(String skillId, String milestoneId, DateTime at) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -194,6 +223,9 @@ class SkillTrackerService {
     updateSkill(skill.copyWith(milestones: milestones));
   }
 
+  /// Reverts a completed milestone back to incomplete.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   void uncompleteMilestone(String skillId, String milestoneId) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -209,21 +241,31 @@ class SkillTrackerService {
     updateSkill(skill.copyWith(milestones: milestones));
   }
 
+  /// Updates a skill's current proficiency level.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   void updateLevel(String skillId, ProficiencyLevel newLevel) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
     updateSkill(skill.copyWith(currentLevel: newLevel));
   }
 
+  /// Returns active skills belonging to the given [category].
   List<SkillEntry> filterByCategory(SkillCategory category) =>
       activeSkills.where((s) => s.category == category).toList();
 
+  /// Returns active skills at the specified proficiency [level].
   List<SkillEntry> filterByLevel(ProficiencyLevel level) =>
       activeSkills.where((s) => s.currentLevel == level).toList();
 
+  /// Returns active skills tagged with [tag].
   List<SkillEntry> filterByTag(String tag) =>
       activeSkills.where((s) => s.tags.contains(tag)).toList();
 
+  /// Full-text search across skill names, categories, tags, and notes.
+  ///
+  /// Matches are case-insensitive. Returns all skills (including archived)
+  /// that contain [query] in any searchable field.
   List<SkillEntry> search(String query) {
     final q = query.toLowerCase();
     return _skills.where((s) {
@@ -234,6 +276,7 @@ class SkillTrackerService {
     }).toList();
   }
 
+  /// Returns active skills that haven't been practised in the last [days].
   List<SkillEntry> neglectedSkills(DateTime now, {int days = 7}) {
     return activeSkills.where((s) {
       final d = s.daysSinceLastPractice(now);
@@ -241,6 +284,9 @@ class SkillTrackerService {
     }).toList();
   }
 
+  /// Returns active skills sorted by total practice time.
+  ///
+  /// Set [descending] to `false` for least-practised first.
   List<SkillEntry> sortByTotalTime({bool descending = true}) {
     final sorted = List<SkillEntry>.from(activeSkills);
     sorted.sort((a, b) => descending
@@ -249,6 +295,7 @@ class SkillTrackerService {
     return sorted;
   }
 
+  /// Total minutes practised for [skillId] during the ISO week containing [date].
   int weeklyMinutes(String skillId, DateTime date) {
     final skill = getSkill(skillId);
     if (skill == null) return 0;
@@ -260,12 +307,19 @@ class SkillTrackerService {
         .fold(0, (sum, s) => sum + s.durationMinutes);
   }
 
+  /// Fraction of the weekly goal achieved for [skillId] in the week of [date].
+  ///
+  /// Returns 0 if the skill has no weekly goal or doesn't exist.
   double weeklyGoalProgress(String skillId, DateTime date) {
     final skill = getSkill(skillId);
     if (skill == null || skill.weeklyGoalMinutes <= 0) return 0;
     return weeklyMinutes(skillId, date) / skill.weeklyGoalMinutes;
   }
 
+  /// Computes the global practice streak across all active skills.
+  ///
+  /// A streak day requires at least one practice session on that calendar
+  /// day. Returns both the current and longest-ever streaks.
   PracticeStreak calculateStreak(DateTime now) {
     final allDates = <DateTime>{};
     for (final skill in activeSkills) {
@@ -309,6 +363,7 @@ class SkillTrackerService {
     );
   }
 
+  /// Computes the practice streak for a single skill.
   PracticeStreak calculateSkillStreak(String skillId, DateTime now) {
     final skill = getSkill(skillId);
     if (skill == null || skill.sessions.isEmpty) {
@@ -350,6 +405,8 @@ class SkillTrackerService {
     );
   }
 
+  /// Aggregates practice data for the week containing [date] across all
+  /// active skills, including per-skill breakdowns and goal progress.
   SkillWeeklySummary getWeeklySummary(DateTime date) {
     final weekStart = date.subtract(Duration(days: date.weekday % 7));
     final start = DateTime(weekStart.year, weekStart.month, weekStart.day);
@@ -381,6 +438,9 @@ class SkillTrackerService {
     );
   }
 
+  /// Returns the most-practised session topics ranked by total minutes.
+  ///
+  /// Caps the result at [limit] entries (default 10).
   Map<String, int> topTopics({int limit = 10}) {
     final counts = <String, int>{};
     for (final skill in _skills) {
@@ -418,6 +478,10 @@ class SkillTrackerService {
     return 'F';
   }
 
+  /// Generates a detailed [SkillReport] for [skillId] including grade,
+  /// milestone progress, weekly goal status, and contextual insights.
+  ///
+  /// Throws [ArgumentError] if [skillId] is not found.
   SkillReport generateSkillReport(String skillId, DateTime now) {
     final skill = getSkill(skillId);
     if (skill == null) throw ArgumentError('Skill $skillId not found');
@@ -467,6 +531,8 @@ class SkillTrackerService {
     );
   }
 
+  /// Produces a [LearningPortfolioReport] summarising all skills, hours
+  /// invested, category/level distributions, and learning recommendations.
   LearningPortfolioReport generatePortfolioReport(DateTime now) {
     final reports = activeSkills.map((s) => generateSkillReport(s.id, now)).toList();
     final byCategory = <SkillCategory, int>{};
@@ -510,6 +576,8 @@ class SkillTrackerService {
     );
   }
 
+  /// Renders a human-readable text summary of the entire learning
+  /// portfolio including streaks, per-skill grades, and recommendations.
   String generateTextSummary(DateTime now) {
     final report = generatePortfolioReport(now);
     final buf = StringBuffer();
@@ -535,6 +603,7 @@ class SkillTrackerService {
     return buf.toString();
   }
 
+  /// Serializes all skills to a JSON string.
   String toJson() => jsonEncode(_skills.map((s) => s.toJson()).toList());
 
   /// Maximum entries allowed via [loadFromJson].

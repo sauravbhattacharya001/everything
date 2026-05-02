@@ -17,6 +17,7 @@ class PixelArtCanvas {
     );
   }
 
+  /// Returns the color at grid position ([x], [y]).
   Color getPixel(int x, int y) => _pixels[y][x];
 
   bool get canUndo => _undoStack.isNotEmpty;
@@ -29,6 +30,10 @@ class PixelArtCanvas {
     if (_undoStack.length > 50) _undoStack.removeAt(0);
   }
 
+  /// Sets a single pixel to [color], saving an undo snapshot first.
+  ///
+  /// Out-of-bounds coordinates are silently ignored; setting to the
+  /// same color is a no-op (no undo entry created).
   void setPixel(int x, int y, Color color) {
     if (x < 0 || x >= width || y < 0 || y >= height) return;
     if (_pixels[y][x] == color) return;
@@ -55,18 +60,21 @@ class PixelArtCanvas {
     _floodFill(x, y - 1, target, replacement);
   }
 
+  /// Restores the canvas to the previous state. No-op if undo stack is empty.
   void undo() {
     if (_undoStack.isEmpty) return;
     _redoStack.add(_pixels.map((row) => List<Color>.from(row)).toList());
     _pixels = _undoStack.removeLast();
   }
 
+  /// Re-applies the last undone state. No-op if redo stack is empty.
   void redo() {
     if (_redoStack.isEmpty) return;
     _undoStack.add(_pixels.map((row) => List<Color>.from(row)).toList());
     _pixels = _redoStack.removeLast();
   }
 
+  /// Resets all pixels to [Colors.transparent], saving an undo snapshot.
   void clear() {
     _saveState();
     for (int y = 0; y < height; y++) {

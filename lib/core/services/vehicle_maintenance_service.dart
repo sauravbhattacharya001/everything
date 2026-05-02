@@ -68,6 +68,10 @@ class VehicleMaintenanceService {
 
   // ── Vehicle CRUD ──
 
+  /// Adds a vehicle to the fleet.
+  ///
+  /// Throws [ArgumentError] if [Vehicle.id] or [Vehicle.name] is empty,
+  /// and [StateError] if a vehicle with the same id already exists.
   void addVehicle(Vehicle vehicle) {
     if (vehicle.id.isEmpty) throw ArgumentError('Vehicle id cannot be empty');
     if (vehicle.name.isEmpty) throw ArgumentError('Vehicle name cannot be empty');
@@ -77,16 +81,19 @@ class VehicleMaintenanceService {
     _vehicles.add(vehicle);
   }
 
+  /// Replaces the vehicle matching [vehicle.id] with updated data.
   void updateVehicle(Vehicle vehicle) {
     final idx = _vehicles.indexWhere((v) => v.id == vehicle.id);
     if (idx >= 0) _vehicles[idx] = vehicle;
   }
 
+  /// Removes a vehicle and all of its associated maintenance records.
   void removeVehicle(String id) {
     _vehicles.removeWhere((v) => v.id == id);
     _records.removeWhere((r) => r.vehicleId == id);
   }
 
+  /// Returns the [Vehicle] with the given [id], or `null` if not found.
   Vehicle? getVehicle(String id) {
     try {
       return _vehicles.firstWhere((v) => v.id == id);
@@ -95,6 +102,7 @@ class VehicleMaintenanceService {
     }
   }
 
+  /// Updates the current odometer reading for a vehicle.
   void updateMileage(String vehicleId, int mileage) {
     final idx = _vehicles.indexWhere((v) => v.id == vehicleId);
     if (idx >= 0) {
@@ -104,16 +112,21 @@ class VehicleMaintenanceService {
 
   // ── Maintenance Records ──
 
+  /// Adds a maintenance record.
+  ///
+  /// Throws [ArgumentError] if [MaintenanceRecord.id] is empty or cost is negative.
   void addRecord(MaintenanceRecord record) {
     if (record.id.isEmpty) throw ArgumentError('Record id cannot be empty');
     if (record.cost < 0) throw ArgumentError('Cost cannot be negative');
     _records.add(record);
   }
 
+  /// Deletes a maintenance record by its id.
   void removeRecord(String id) {
     _records.removeWhere((r) => r.id == id);
   }
 
+  /// Returns all records for [vehicleId], sorted most-recent first.
   List<MaintenanceRecord> getRecordsForVehicle(String vehicleId) {
     return _records
         .where((r) => r.vehicleId == vehicleId)
@@ -121,6 +134,7 @@ class VehicleMaintenanceService {
       ..sort((a, b) => b.date.compareTo(a.date));
   }
 
+  /// Returns all records of the given [category], sorted most-recent first.
   List<MaintenanceRecord> getRecordsByCategory(MaintenanceCategory category) {
     return _records
         .where((r) => r.category == category)
@@ -128,6 +142,8 @@ class VehicleMaintenanceService {
       ..sort((a, b) => b.date.compareTo(a.date));
   }
 
+  /// Returns the most recent service of a given [category] for a vehicle,
+  /// or `null` if no matching record exists.
   MaintenanceRecord? getLastService(
       String vehicleId, MaintenanceCategory category) {
     final vehicleRecords = _records
@@ -140,6 +156,11 @@ class VehicleMaintenanceService {
 
   // ── Alerts ──
 
+  /// Evaluates all vehicles against category-specific maintenance intervals
+  /// and returns alerts for services that are overdue or due within 10%.
+  ///
+  /// Alerts are sorted with overdue items first, then by miles since
+  /// last service descending.
   List<MaintenanceAlert> getAlerts({DateTime? now}) {
     now ??= DateTime.now();
     final alerts = <MaintenanceAlert>[];
@@ -195,12 +216,14 @@ class VehicleMaintenanceService {
 
   // ── Cost Analysis ──
 
+  /// Total maintenance spend, optionally scoped to a single [vehicleId].
   double getTotalCost({String? vehicleId}) {
     final recs =
         vehicleId != null ? getRecordsForVehicle(vehicleId) : _records;
     return recs.fold(0.0, (sum, r) => sum + r.cost);
   }
 
+  /// Average cost per service record, optionally scoped to [vehicleId].
   double getAverageCostPerService({String? vehicleId}) {
     final recs =
         vehicleId != null ? getRecordsForVehicle(vehicleId) : _records;
@@ -208,6 +231,8 @@ class VehicleMaintenanceService {
     return getTotalCost(vehicleId: vehicleId) / recs.length;
   }
 
+  /// Total maintenance cost for a specific calendar [year],
+  /// optionally scoped to [vehicleId].
   double getCostForYear(int year, {String? vehicleId}) {
     return _records
         .where((r) =>
@@ -216,6 +241,8 @@ class VehicleMaintenanceService {
         .fold(0.0, (sum, r) => sum + r.cost);
   }
 
+  /// Breaks down costs by [MaintenanceCategory], each entry showing
+  /// count, total cost, and percentage of overall spend.
   List<MaintenanceCostBreakdown> getCostByCategory({String? vehicleId}) {
     final recs =
         vehicleId != null ? getRecordsForVehicle(vehicleId) : _records;
@@ -243,6 +270,8 @@ class VehicleMaintenanceService {
 
   // ── Summary ──
 
+  /// Produces a fleet-wide [MaintenanceSummary] with vehicle/record counts,
+  /// cost totals, and maintenance alerts.
   MaintenanceSummary getSummary({DateTime? now}) {
     final alerts = getAlerts(now: now);
     final costBreakdown = getCostByCategory();
@@ -262,6 +291,7 @@ class VehicleMaintenanceService {
 
   // ── Serialization ──
 
+  /// Serializes all vehicles and records to a JSON string.
   String exportToJson() {
     return jsonEncode({
       'vehicles': _vehicles.map((v) => v.toJson()).toList(),

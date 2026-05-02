@@ -4,11 +4,15 @@ class ReactionTimeService {
 
   List<ReactionTimeResult> get history => List.unmodifiable(_history);
 
+  /// Adds a [ReactionTimeResult] to the front of the history.
+  ///
+  /// The history is capped at 100 entries; the oldest is discarded when full.
   void addResult(ReactionTimeResult result) {
     _history.insert(0, result);
     if (_history.length > 100) _history.removeLast();
   }
 
+  /// Removes all recorded results.
   void clearHistory() => _history.clear();
 
   double? get averageMs {
@@ -34,6 +38,8 @@ class ReactionTimeService {
     return sum ~/ recent.length;
   }
 
+  /// Returns a human-readable performance label for the given reaction
+  /// time in milliseconds (e.g. "Lightning! ⚡" for < 200 ms).
   String ratingFor(int ms) {
     if (ms < 200) return 'Lightning! ⚡';
     if (ms < 250) return 'Excellent';
