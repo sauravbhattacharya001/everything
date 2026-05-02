@@ -9,3 +9,6 @@ contact_links:
   - name: Flutter Framework Issue
     url: https://github.com/flutter/flutter/issues
     about: If your issue is with Flutter itself (not this app), report it upstream
+  - name: Flutter Accessibility Guide
+    url: https://docs.flutter.dev/ui/accessibility-and-internationalization/accessibility
+    about: Flutter's official accessibility documentation and best practices

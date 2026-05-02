@@ -1,0 +1,103 @@
+name: Data & Storage Issue
+description: Report problems with local data, database corruption, sync failures, or data loss
+title: "[Data]: "
+labels: ["data", "storage", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for issues related to local storage (sqflite), data persistence, import/export, backup/restore, or data integrity.
+
+  - type: dropdown
+    id: data-category
+    attributes:
+      label: Issue Category
+      description: What area of data handling is affected?
+      options:
+        - Data loss (entries disappeared)
+        - Database corruption / migration failure
+        - Import/export failure
+        - Backup or restore problem
+        - Data not persisting across app restarts
+        - Incorrect data displayed (stale / wrong values)
+        - Storage quota / performance degradation with large datasets
+        - Cross-device sync issue
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: data-severity
+    attributes:
+      label: Data Impact Severity
+      description: How much data was affected?
+      options:
+        - "Critical — all data lost or inaccessible"
+        - "High — significant data loss or corruption"
+        - "Medium — some entries missing or incorrect"
+        - "Low — minor display issue, data is intact"
+    validations:
+      required: true
+
+  - type: input
+    id: affected-service
+    attributes:
+      label: Affected Service(s)
+      description: Which service or data store is involved?
+      placeholder: "e.g., BudgetPlannerService, HealthTrackerService, sqflite database"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this data issue?
+      placeholder: |
+        1. Add 50+ entries in Budget Planner
+        2. Force-close the app
+        3. Reopen — only 20 entries remain
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What should have happened with the data?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: recoverable
+    attributes:
+      label: Is the data recoverable?
+      options:
+        - "Yes — data reappears after restart / clearing cache"
+        - "Partially — some data recovered"
+        - "No — data is permanently lost"
+        - "Unknown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: approximate-data-size
+    attributes:
+      label: Approximate Data Size
+      description: How much data is stored in the app when the issue occurs?
+      placeholder: "e.g., ~500 tasks, ~200 budget entries, ~1 year of health data"
+
+  - type: input
+    id: device
+    attributes:
+      label: Device, OS & Flutter Version
+      placeholder: "e.g., Samsung Galaxy S24 — Android 14, Flutter 3.22.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Paste any error messages or stack traces from `flutter run` or device logs.
+      render: shell

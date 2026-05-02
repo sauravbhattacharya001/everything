@@ -1,0 +1,90 @@
+name: Accessibility Issue
+description: Report accessibility problems (screen reader, contrast, text scaling, keyboard navigation)
+title: "[A11y]: "
+labels: ["accessibility", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping make Everything accessible to all users. Please describe the accessibility barrier you encountered.
+
+  - type: dropdown
+    id: a11y-category
+    attributes:
+      label: Accessibility Category
+      description: What type of accessibility issue is this?
+      options:
+        - Screen reader incompatibility (TalkBack / VoiceOver)
+        - Insufficient color contrast
+        - Text scaling / dynamic type not respected
+        - Touch target too small (< 48x48 dp)
+        - Missing semantic labels
+        - Keyboard / switch navigation broken
+        - Animation causes motion sickness
+        - Focus order incorrect
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: assistive-tech
+    attributes:
+      label: Assistive Technology
+      description: Which assistive technology are you using?
+      options:
+        - TalkBack (Android)
+        - VoiceOver (iOS)
+        - Switch Access (Android)
+        - Voice Control (iOS)
+        - Keyboard navigation
+        - Large text / Display size
+        - High contrast mode
+        - Reduce motion
+        - None / Visual inspection
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: screen-or-service
+    attributes:
+      label: Affected Screen or Service
+      description: Which screen, widget, or service is affected?
+      placeholder: "e.g., Daily Review screen, BudgetPlannerService widget"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe what happens and what you expected to happen.
+      placeholder: |
+        What happened:
+        - TalkBack reads "button" with no label on the action icon
+
+        What should happen:
+        - TalkBack should read "Add new task" for the floating action button
+    validations:
+      required: true
+
+  - type: textarea
+    id: wcag-reference
+    attributes:
+      label: WCAG Guideline (if known)
+      description: Optional — reference the relevant WCAG 2.1 success criterion.
+      placeholder: "e.g., WCAG 2.1 SC 1.4.3 — Contrast (Minimum), Level AA"
+
+  - type: input
+    id: device
+    attributes:
+      label: Device & OS Version
+      placeholder: "e.g., Pixel 7 — Android 14, iPhone 15 — iOS 17.4"
+    validations:
+      required: true
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter Version
+      placeholder: "e.g., 3.22.0"
