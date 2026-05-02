@@ -354,13 +354,17 @@ class NetWorthTrackerService {
       (label: 'Millionaire', amount: 1000000.0),
     ];
 
+    // Compute history once — shared across all milestone checks.
+    // Previously called inside the .map() loop, causing 9× redundant
+    // O(months × accounts) recalculations (see issue #137).
+    final history = monthlyHistory(months: 60);
+
     return targets.map((t) {
       final reached = netWorth >= t.amount;
       DateTime? reachedDate;
 
       if (reached) {
         // Estimate when milestone was reached from history
-        final history = monthlyHistory(months: 60);
         for (final month in history) {
           if (month.netWorth >= t.amount) {
             reachedDate = month.date;
@@ -386,14 +390,17 @@ class NetWorthTrackerService {
 
   /// Progress toward the next milestone (0.0 to 1.0).
   double get milestoneProgress {
-    final next = nextMilestone;
-    if (next == null) return 1.0;
+    // Compute milestones once; nextMilestone + direct access were
+    // redundantly recomputing the full list (issue #137 follow-up).
+    final all = milestones;
+    final next = all.where((m) => !m.reached).toList();
+    if (next.isEmpty) return 1.0;
 
-    final prevTarget = milestones
+    final prevTarget = all
         .where((m) => m.reached)
         .fold(0.0, (_, m) => m.target);
 
-    final range = next.target - prevTarget;
+    final range = next.first.target - prevTarget;
     if (range <= 0) return 0.0;
     return ((netWorth - prevTarget) / range).clamp(0.0, 1.0);
   }
