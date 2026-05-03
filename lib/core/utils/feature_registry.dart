@@ -159,6 +159,7 @@ import '../../views/home/unit_price_screen.dart';
 import '../../views/home/tax_calculator_screen.dart';
 import '../../views/home/fire_calculator_screen.dart';
 import '../../views/home/runway_engine_screen.dart';
+import '../../views/home/social_capital_screen.dart';
 import '../../views/home/percentage_calculator_screen.dart';
 import '../../views/home/scientific_calculator_screen.dart';
 import '../../views/home/matrix_calculator_screen.dart';
@@ -798,6 +799,12 @@ class FeatureRegistry {
     ),
 
     // ── Lifestyle ──
+    FeatureEntry(
+      label: 'Social Capital',
+      icon: Icons.hub,
+      category: FeatureCategory.lifestyle,
+      builder: (_) => const SocialCapitalScreen(),
+    ),
     FeatureEntry(
       label: 'Travel Log',
       icon: Icons.flight,
