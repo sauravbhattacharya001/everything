@@ -4,6 +4,7 @@ import '../../views/home/pattern_detector_screen.dart';
 import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
+import '../../views/home/focus_entropy_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
 import '../../views/home/fuel_gauge_screen.dart';
 import '../../views/home/bucket_list_screen.dart';
@@ -1482,6 +1483,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.productivity,
       builder: (_) => const AttentionDebtScreen(),
+    ),
+    FeatureEntry(
+      label: 'Focus Entropy',
+      icon: Icons.center_focus_strong,
+      category: FeatureCategory.productivity,
+      builder: (_) => const FocusEntropyScreen(),
     ),
     FeatureEntry(
       label: 'Habit Correlations',
