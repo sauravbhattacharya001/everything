@@ -195,6 +195,7 @@ import '../../views/home/lights_out_screen.dart';
 import '../../views/home/decision_matrix_screen.dart';
 import '../../views/home/life_coach_screen.dart';
 import '../../views/home/time_audit_screen.dart';
+import '../../views/home/habit_correlation_screen.dart';
 import '../../views/home/habit_insights_screen.dart';
 import '../../views/home/goal_autopilot_screen.dart';
 import '../../views/home/streak_guardian_screen.dart';
@@ -1481,6 +1482,12 @@ class FeatureRegistry {
       icon: Icons.account_balance,
       category: FeatureCategory.productivity,
       builder: (_) => const AttentionDebtScreen(),
+    ),
+    FeatureEntry(
+      label: 'Habit Correlations',
+      icon: Icons.hub,
+      category: FeatureCategory.productivity,
+      builder: (_) => const HabitCorrelationScreen(),
     ),
   ];
 
