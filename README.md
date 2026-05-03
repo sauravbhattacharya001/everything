@@ -2,7 +2,7 @@
 
 # 📱 Everything App
 
-### A unified productivity hub — events, calendars, analytics, and 200+ tools in one Flutter app
+### A unified productivity hub — events, calendars, analytics, and 220+ tools in one Flutter app
 
 [![CI](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml)
@@ -23,7 +23,7 @@
 
 ## 🎯 What You Get
 
-**Everything App** is a Flutter-based productivity suite that grows with you. At its core: event management with priority tracking, Firebase auth, Microsoft Graph calendar sync, and an analytics dashboard. Around that core: **200+ built-in tools** spanning health, finance, lifestyle, games, intelligence, and developer utilities — all in **172K+ lines of Dart** with **4,000+ unit tests** across 124 test files.
+**Everything App** is a Flutter-based productivity suite that grows with you. At its core: event management with priority tracking, Firebase auth, Microsoft Graph calendar sync, and an analytics dashboard. Around that core: **220+ built-in tools** spanning health, finance, lifestyle, games, intelligence, and developer utilities — all in **190K+ lines of Dart** with **4,600+ unit tests** across 133 test files.
 
 ### Core Features
 
@@ -35,11 +35,28 @@
 | 🔍 **Search & Filter** | Full-text search, priority filter chips, multi-criteria sorting |
 | 📆 **Microsoft Graph Sync** | Fetch Outlook/M365 calendar events with paginated API requests |
 
-### 200+ Built-in Tools
+### 220+ Built-in Tools
 
-The app includes a full feature catalog organized into 10 categories — planning, productivity, health & wellness, finance, lifestyle, organization, tracking, games & puzzles, developer utilities, and autonomous intelligence. Every feature has its own screen, service, and local persistence.
+The app includes a full feature catalog organized into 11 categories — planning, productivity, health & wellness, finance, lifestyle, organization, tracking, games & puzzles, developer utilities, autonomous intelligence, and infrastructure services. Every feature has its own screen, service, and local persistence.
 
 👉 **[See the full Feature Catalog →](FEATURES.md)**
+
+### Autonomous Intelligence (30+ engines)
+
+What sets Everything apart is its **autonomous intelligence layer** — services that don't just store data, they actively monitor patterns, detect risks, and surface insights:
+
+| Engine | What it watches |
+|--------|----------------|
+| 🧠 **Context Switcher** | Detects life context (work/personal/fitness) and suggests relevant tools |
+| 🔥 **Burnout Detector** | Multi-signal burnout risk detection with proactive wellness suggestions |
+| 📊 **Habit Correlation** | Discovers hidden connections between habits, mood, sleep, and energy |
+| 🎯 **Momentum Engine** | Tracks completion velocity across all features to detect slowdowns |
+| ⚡ **Attention Debt** | Models deferred decisions as cognitive debt that accrues interest |
+| 🔮 **Drift Detector** | Early warning for gradual lifestyle regressions humans miss |
+| 💪 **Willpower Budget** | Models daily willpower as a depletable resource with spending forecasts |
+| 🌀 **Serendipity Engine** | Surfaces unexpected connections between disparate life areas |
+| 🎭 **Behavioral Fingerprint** | Builds behavioral signatures to detect anomalies and identity shifts |
+| ⚖️ **Balance Radar** | Multi-dimensional life balance assessment across 8 dimensions |
 
 ### Security Built In
 
@@ -101,23 +118,23 @@ docker run -p 8080:80 everything-app
 
 | Metric | Count |
 |--------|-------|
-| **Features** | 200+ self-contained tools |
-| **Services** | 204 business-logic modules |
-| **Screens** | 201 dedicated UI views |
+| **Features** | 220+ self-contained tools |
+| **Services** | 227 business-logic modules |
+| **Screens** | 210 dedicated UI views |
 | **Models** | 81 data classes |
-| **Tests** | 4,000+ unit tests (124 files) |
-| **Source Lines** | 172,000+ lines of Dart |
-| **Source Files** | 522 |
+| **Tests** | 4,600+ unit tests (133 files) |
+| **Source Lines** | 190,000+ lines of Dart |
+| **Source Files** | 546 in lib |
 
 ## 📁 Architecture
 
 ```
-lib/                             # 522 files · 172K+ lines
+lib/                             # 546 files · 190K+ lines
 ├── main.dart                    # Entry point, Firebase init, routes
 ├── core/
 │   ├── constants/               # API URLs, security allowlists
 │   ├── data/                    # Sample data generators
-│   ├── services/                # 204 business-logic modules
+│   ├── services/                # 227 business-logic modules
 │   └── utils/                   # Feature registry, date/format helpers
 ├── data/
 │   ├── local_storage.dart       # SharedPreferences wrapper
@@ -127,7 +144,7 @@ lib/                             # 522 files · 172K+ lines
 │   ├── blocs/                   # Cubit-based event state (BLoC)
 │   └── providers/               # Provider with O(1) index lookup
 └── views/
-    ├── home/                    # 201 feature screens
+    ├── home/                    # 210 feature screens
     ├── login/                   # Auth screens
     └── widgets/                 # Reusable UI components
 ```
@@ -141,7 +158,7 @@ lib/                             # 522 files · 172K+ lines
 | **Fail-Safe Persistence** | UI updates first, disk writes fire-and-forget with error logging — always responsive |
 | **Security by Default** | All HTTP goes through `HttpUtils` with scheme/host validation; pagination links checked against trusted-host allowlist |
 | **One Feature, One Service** | Every feature is a self-contained service — no god objects. Adding a feature requires only a `FeatureEntry` registration |
-| **Autonomous Intelligence** | Agentic services (Context Switcher, Streak Guardian, Experiment Engine, Burnout Detector) monitor data and act proactively |
+| **Autonomous Intelligence** | 30+ agentic services monitor data and act proactively — burnout detection, drift warnings, habit correlations, and more |
 
 ## 📚 API Reference
 
@@ -207,7 +224,7 @@ flutter test --coverage                   # With coverage report
 flutter test test/models/event_model_test.dart  # Single file
 ```
 
-**Test coverage includes:** models (serialization, equality), providers (CRUD, index consistency), BLoC (state transitions), HTTP utils (URL validation, SSRF blocking), and security (scheme enforcement, trusted hosts).
+**Test coverage includes:** models (serialization, equality), providers (CRUD, index consistency), BLoC (state transitions), HTTP utils (URL validation, SSRF blocking), security (scheme enforcement, trusted hosts), and all 30+ autonomous intelligence engines.
 
 ## 🔧 Troubleshooting
 

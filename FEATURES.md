@@ -1,6 +1,6 @@
 # 📱 Feature Catalog
 
-Everything App includes **200+ features** organized into 10 categories. Each feature has a dedicated screen, service, and local persistence — **204 services, 201 screens, 81 data models, 4,000+ tests**.
+Everything App includes **220+ features** organized into 11 categories. Each feature has a dedicated screen, service, and local persistence — **227 services, 210 screens, 81 data models, 4,600+ tests**.
 
 > **For developers:** Features are registered in [`lib/core/utils/feature_registry.dart`](lib/core/utils/feature_registry.dart). Adding a new feature requires only a single `FeatureEntry` — the navigation drawer picks it up automatically.
 
@@ -23,7 +23,7 @@ Everything App includes **200+ features** organized into 10 categories. Each fea
 | **Life Dashboard** | At-a-glance view combining key metrics across all trackers |
 | **Agenda Digest** | Smart digest of upcoming events and deadlines |
 
-## ⚡ Productivity (28 features)
+## ⚡ Productivity (29 features)
 
 | Feature | Description |
 |---------|-------------|
@@ -55,6 +55,7 @@ Everything App includes **200+ features** organized into 10 categories. Each fea
 | **Daily Standup** | Structured standup notes (yesterday/today/blockers) |
 | **Speed Reader** | Speed reading trainer with adjustable WPM |
 | **Typing Speed** | Typing speed test with WPM and accuracy tracking |
+| **Chore Tracker** | Track household chores with assignments, schedules, and completion history |
 
 ## ❤️ Health & Wellness (27 features)
 
@@ -221,7 +222,7 @@ Everything App includes **200+ features** organized into 10 categories. Each fea
 | **Gradient Generator** | Create CSS/Flutter gradient definitions visually |
 | **Aspect Ratio** | Calculate and convert aspect ratios |
 
-## 🧠 Autonomous Intelligence (16 features)
+## 🧠 Autonomous Intelligence (30 features)
 
 | Feature | Description |
 |---------|-------------|
@@ -241,6 +242,20 @@ Everything App includes **200+ features** organized into 10 categories. Each fea
 | **Accountability** | Accountability partner features with check-ins and goal tracking |
 | **Achievement** | Gamified achievement system with unlockable badges across all features |
 | **FIRE Calculator** | Financial Independence / Retire Early calculator with projections |
+| **Attention Debt** | Autonomous cognitive overhead monitor — tracks deferred decisions and accumulated mental load as debt that accrues cognitive interest |
+| **Balance Radar Engine** | Multi-dimensional life balance assessment across 8 life dimensions with variance analysis and rebalancing recommendations |
+| **Behavioral Fingerprint** | Autonomous behavioral signature analysis — detects anomalies and identity shifts from behavioral patterns |
+| **Decision Fatigue** | Autonomous decision quality monitor — tracks decision-making patterns throughout the day and detects cognitive depletion |
+| **Drift Detector** | Personal lifestyle regression early warning system — monitors gradual negative changes humans miss |
+| **Friction Journal** | Autonomous micro-frustration tracker — categorizes and patterns recurring friction points with elimination strategies |
+| **Habit Correlation Engine** | Cross-tracker correlation discovery — finds hidden connections between habits, mood, sleep, energy, and other metrics |
+| **Momentum Engine** | Autonomous completion velocity tracker — monitors output rates across features to detect slowdowns |
+| **Regret Minimization** | Autonomous decision outcome tracker — applies regret minimization framework to life decisions |
+| **Ritual Engine** | Adaptive daily ritual optimizer — learns optimal timing windows, detects disruptions, generates micro-adjustments |
+| **Runway Engine** | Personal financial resilience calculator — autonomous financial runway estimation and scenario planning |
+| **Serendipity Engine** | Autonomous detection of unexpected connections between disparate life areas — surfaces "lucky" insights |
+| **Social Capital Engine** | Autonomous relationship network health analyzer — tracks social investment and connection quality |
+| **Willpower Budget** | Autonomous cognitive resource manager — models daily willpower as depletable resource with spending forecasts |
 
 ## 🔧 Infrastructure Services
 
@@ -284,11 +299,11 @@ These services support the app's core architecture rather than user-facing featu
 ## Architecture Overview
 
 ```
-lib/                             # 522 files · 172K+ lines
+lib/                             # 546 files · 190K+ lines
 ├── core/
 │   ├── constants/       # App-wide constants
 │   ├── data/            # Sample data generators
-│   ├── services/        # 204 business-logic modules
+│   ├── services/        # 227 business-logic modules
 │   └── utils/           # Feature registry, date/formatting helpers
 ├── data/
 │   ├── local_storage.dart      # SharedPreferences wrapper
@@ -298,7 +313,7 @@ lib/                             # 522 files · 172K+ lines
 │   ├── blocs/           # BLoC pattern for events
 │   └── providers/       # ChangeNotifier providers
 └── views/
-    ├── home/            # 201 feature screens
+    ├── home/            # 210 feature screens
     ├── login/           # Authentication screens
     └── widgets/         # Shared UI components
 ```
