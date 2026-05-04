@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Autonomous Intelligence — Everything App Docs</title>
-  <meta name="description" content="API reference for the Everything App's autonomous intelligence engines — self-monitoring systems for attention debt, momentum, drift detection, behavioral fingerprinting, burnout, willpower, rituals, and regret minimization.">
+  <meta name="description" content="API reference for the Everything App's 15 autonomous intelligence engines — self-monitoring systems for attention debt, momentum, drift detection, behavioral fingerprinting, burnout, willpower, rituals, regret minimization, decision fatigue, stress cascades, focus entropy, chronotype optimization, social capital, and friction journaling.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -42,6 +42,12 @@
       <a href="#ritual-engine" class="sidebar-link">🌅 Ritual Engine</a>
       <a href="#regret-minimization" class="sidebar-link">🔮 Regret Minimization</a>
       <a href="#streak-guardian" class="sidebar-link">🛡️ Streak Guardian</a>
+      <a href="#decision-fatigue" class="sidebar-link">🧮 Decision Fatigue</a>
+      <a href="#stress-cascade" class="sidebar-link">🌊 Stress Cascade</a>
+      <a href="#focus-entropy" class="sidebar-link">🎯 Focus Entropy</a>
+      <a href="#chronotype-optimizer" class="sidebar-link">🦁 Chronotype Optimizer</a>
+      <a href="#social-capital" class="sidebar-link">🤝 Social Capital</a>
+      <a href="#friction-journal" class="sidebar-link">🔧 Friction Journal</a>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Guides</div>
@@ -65,7 +71,7 @@
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="overview">Overview</h2>
-    <p>The autonomous intelligence layer contains 9 engines that model different aspects of cognitive and behavioral health. Unlike standard CRUD services, these engines maintain rolling statistical windows, classify lifecycle phases, predict future states, and generate proactive interventions.</p>
+    <p>The autonomous intelligence layer contains 15 engines that model different aspects of cognitive and behavioral health. Unlike standard CRUD services, these engines maintain rolling statistical windows, classify lifecycle phases, predict future states, and generate proactive interventions.</p>
 
     <table>
       <tr><th>Engine</th><th>Monitors</th><th>Key Metric</th><th>Intervention Style</th></tr>
@@ -78,6 +84,12 @@
       <tr><td><a href="#ritual-engine">Ritual Engine</a></td><td>Daily routine adherence</td><td>Chain Health (0–100)</td><td>Timing micro-adjustments</td></tr>
       <tr><td><a href="#regret-minimization">Regret Minimization</a></td><td>Decision outcomes over time</td><td>Regret patterns + bias detection</td><td>Personalized decision wisdom</td></tr>
       <tr><td><a href="#streak-guardian">Streak Guardian</a></td><td>Cross-tracker streak risk</td><td>Streak risk level (safe–broken)</td><td>Proactive rescue strategies</td></tr>
+      <tr><td><a href="#decision-fatigue">Decision Fatigue</a></td><td>Decision quality degradation</td><td>Remaining capacity (0–100)</td><td>Batch/defer recommendations</td></tr>
+      <tr><td><a href="#stress-cascade">Stress Cascade</a></td><td>Inter-domain stress propagation</td><td>Cascade severity per domain</td><td>Buffer management + recovery forecasts</td></tr>
+      <tr><td><a href="#focus-entropy">Focus Entropy</a></td><td>Attention fragmentation</td><td>Shannon entropy (bits)</td><td>Deep-work scheduling + flow coaching</td></tr>
+      <tr><td><a href="#chronotype-optimizer">Chronotype Optimizer</a></td><td>Circadian rhythm alignment</td><td>Alignment score (0–100)</td><td>Time-of-day scheduling optimization</td></tr>
+      <tr><td><a href="#social-capital">Social Capital</a></td><td>Relationship network health</td><td>Network health score (0–100)</td><td>Relationship investment nudges</td></tr>
+      <tr><td><a href="#friction-journal">Friction Journal</a></td><td>Micro-frustration patterns</td><td>Friction score by category</td><td>Elimination strategies</td></tr>
     </table>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -444,12 +456,211 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     </table>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="decision-fatigue">🧮 DecisionFatigueService</h2>
+    <p><code>lib/core/services/decision_fatigue_service.dart</code></p>
+    <p>Tracks decision-making patterns throughout the day, detects cognitive degradation, estimates remaining decision capacity, identifies peak quality windows, and proactively recommends batching or deferring decisions when fatigue is predicted.</p>
+
+    <h3>Core Concepts</h3>
+    <ul>
+      <li><strong>Decision Event</strong> — each choice recorded with weight, category, and outcome</li>
+      <li><strong>Quality Score</strong> — estimated decision quality that drops as capacity depletes</li>
+      <li><strong>Capacity</strong> — daily decision budget (100 units) that depletes with each choice weighted by cognitive cost</li>
+      <li><strong>Peak Window</strong> — historical time slots when decision quality was highest</li>
+      <li><strong>Batch Suggestion</strong> — recommendation to group similar-category decisions together</li>
+    </ul>
+
+    <h3>Decision Weights &amp; Cognitive Cost</h3>
+    <table>
+      <tr><th>Weight</th><th>Symbol</th><th>Cognitive Cost</th><th>Example</th></tr>
+      <tr><td>Trivial</td><td>·</td><td>1.0×</td><td>What to eat for a snack</td></tr>
+      <tr><td>Minor</td><td>○</td><td>2.5×</td><td>Reply to a routine email</td></tr>
+      <tr><td>Moderate</td><td>●</td><td>5.0×</td><td>Accept a meeting invitation</td></tr>
+      <tr><td>Significant</td><td>◆</td><td>10.0×</td><td>Negotiate a contract term</td></tr>
+      <tr><td>Critical</td><td>★</td><td>20.0×</td><td>Accept a job offer</td></tr>
+    </table>
+
+    <h3>Fatigue Levels</h3>
+    <table>
+      <tr><th>Level</th><th>Capacity Remaining</th><th>Recommendation</th></tr>
+      <tr><td>🟢 Fresh</td><td>&gt; 80%</td><td>Tackle important decisions now</td></tr>
+      <tr><td>🔵 Alert</td><td>60–80%</td><td>Still sharp — moderate decisions OK</td></tr>
+      <tr><td>🟡 Mildly Tired</td><td>40–60%</td><td>Batch trivial decisions, defer significant ones</td></tr>
+      <tr><td>🟠 Fatigued</td><td>20–40%</td><td>Only essential decisions — defer everything else</td></tr>
+      <tr><td>🔴 Exhausted</td><td>&lt; 20%</td><td>No major decisions — defer to tomorrow</td></tr>
+    </table>
+
+    <h3>Decision Categories</h3>
+    <p>Decisions are grouped by category for pattern analysis: <strong>Scheduling</strong>, <strong>Financial</strong>, <strong>Social</strong>, <strong>Health</strong>, <strong>Work</strong>, <strong>Creative</strong>, <strong>Personal</strong>. The engine detects which categories cluster together and suggests batching windows.</p>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>recordDecision(event)</code></td><td><code>void</code></td><td>Log a decision with weight, category, and optional outcome</td></tr>
+      <tr><td><code>addPendingDecision(...)</code></td><td><code>void</code></td><td>Register a pending decision that contributes to ambient load</td></tr>
+      <tr><td><code>clearPendingDecisions()</code></td><td><code>void</code></td><td>Clear resolved pending decisions</td></tr>
+      <tr><td><code>export()</code></td><td><code>String</code></td><td>JSON export of all decision history and fatigue state</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="stress-cascade">🌊 StressCascadeEngineService</h2>
+    <p><code>lib/core/services/stress_cascade_engine_service.dart</code></p>
+    <p>Models how stress in one life domain cascades into others, tracks resilience buffers, detects approaching tipping points, and forecasts recovery trajectories. Uses a 6-domain stress propagation model.</p>
+
+    <h3>Stress Domains</h3>
+    <table>
+      <tr><th>Domain</th><th>Emoji</th><th>Examples</th></tr>
+      <tr><td>Work</td><td>💼</td><td>Deadlines, conflicts, workload</td></tr>
+      <tr><td>Health</td><td>🏥</td><td>Illness, injury, sleep deprivation</td></tr>
+      <tr><td>Social</td><td>👥</td><td>Relationship strain, isolation</td></tr>
+      <tr><td>Financial</td><td>💰</td><td>Debt, unexpected expenses</td></tr>
+      <tr><td>Environmental</td><td>🌍</td><td>Noise, commute, living conditions</td></tr>
+      <tr><td>Existential</td><td>🧠</td><td>Purpose, identity, meaning</td></tr>
+    </table>
+
+    <h3>7 Sub-Engines</h3>
+    <ol>
+      <li><strong>Stress Source Tracker</strong> — logs stressors with severity and domain classification</li>
+      <li><strong>Cascade Simulator</strong> — models inter-domain stress propagation using weighted adjacency</li>
+      <li><strong>Resilience Scorer</strong> — measures coping capacity via recovery rate analysis</li>
+      <li><strong>Tipping Point Detector</strong> — identifies approaching breakdown thresholds per domain</li>
+      <li><strong>Buffer Analyzer</strong> — tracks stress buffers (sleep, exercise, social support) and depletion rates</li>
+      <li><strong>Recovery Forecaster</strong> — predicts time-to-recovery per domain based on historical patterns</li>
+      <li><strong>Insight Generator</strong> — ranked actionable recommendations for stress management</li>
+    </ol>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>addEvent(event)</code></td><td><code>void</code></td><td>Record a stress event with domain, severity, and source</td></tr>
+      <tr><td><code>loadSampleData()</code></td><td><code>void</code></td><td>Populate with sample data for demo/testing</td></tr>
+      <tr><td><code>events</code></td><td><code>List&lt;StressEvent&gt;</code></td><td>Unmodifiable list of all recorded stress events</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="focus-entropy">🎯 FocusEntropyEngineService</h2>
+    <p><code>lib/core/services/focus_entropy_engine_service.dart</code></p>
+    <p>Uses Shannon entropy (<code>H = −Σ p log₂ p</code>) to quantify how scattered attention is across life domains. Tracks context-switching costs, identifies deep-work blocks, scores flow-state quality, and forecasts focus trajectory via linear regression.</p>
+
+    <h3>Focus Grades</h3>
+    <table>
+      <tr><th>Grade</th><th>Emoji</th><th>Entropy Range</th><th>Meaning</th></tr>
+      <tr><td>Laser</td><td>🎯</td><td>&lt; 0.5 bits</td><td>Near-total single-domain focus</td></tr>
+      <tr><td>Focused</td><td>🔬</td><td>0.5–1.2 bits</td><td>Concentrated with minimal switching</td></tr>
+      <tr><td>Balanced</td><td>⚖️</td><td>1.2–2.0 bits</td><td>Healthy distribution across domains</td></tr>
+      <tr><td>Scattered</td><td>🌀</td><td>2.0–2.8 bits</td><td>Too many context switches</td></tr>
+      <tr><td>Chaotic</td><td>🌪️</td><td>&gt; 2.8 bits</td><td>Fragmented — unable to sustain focus</td></tr>
+    </table>
+
+    <h3>7 Sub-Engines</h3>
+    <ol>
+      <li><strong>Activity Logger</strong> — records focus sessions with domain, timestamp, duration</li>
+      <li><strong>Entropy Calculator</strong> — computes Shannon entropy on domain time distribution</li>
+      <li><strong>Context Switch Counter</strong> — counts domain transitions and estimates switching cost</li>
+      <li><strong>Deep Work Detector</strong> — identifies uninterrupted ≥25-minute single-domain sessions</li>
+      <li><strong>Flow State Scorer</strong> — composite 0–100 score from deep-work ratio and entropy</li>
+      <li><strong>Focus Forecast</strong> — linear-regression trend on daily entropy values</li>
+      <li><strong>Insight Generator</strong> — ranked actionable recommendations for focus improvement</li>
+    </ol>
+
+    <h3>Key Concepts</h3>
+    <ul>
+      <li><strong>Deep Work Block</strong> — any uninterrupted focus session ≥ 25 minutes on a single domain</li>
+      <li><strong>Context Switch Cost</strong> — estimated 15–23 minutes of reduced productivity per switch (based on UC Irvine research)</li>
+      <li><strong>Flow State</strong> — composite of deep-work ratio, low entropy, and sustained duration</li>
+      <li><strong>Focus Forecast</strong> — projects entropy trend forward to predict upcoming fragmentation risk</li>
+    </ul>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="chronotype-optimizer">🦁 ChronotypeOptimizerService</h2>
+    <p><code>lib/core/services/chronotype_optimizer_service.dart</code></p>
+    <p>Analyzes activity timing patterns to detect the user's natural chronotype, identifies peak performance windows for different task types, and provides personalized time-of-day recommendations for schedule optimization. Uses kernel density estimation on 24-hour energy curves.</p>
+
+    <h3>Chronotypes</h3>
+    <table>
+      <tr><th>Type</th><th>Emoji</th><th>Peak Hours</th><th>Profile</th></tr>
+      <tr><td>Lion</td><td>🦁</td><td>5 AM – 12 PM</td><td>Early riser, morning energy peak, evening wind-down</td></tr>
+      <tr><td>Bear</td><td>🐻</td><td>10 AM – 2 PM</td><td>Solar-aligned, most common type, steady mid-day energy</td></tr>
+      <tr><td>Wolf</td><td>🐺</td><td>4 PM – 12 AM</td><td>Night owl, creative bursts in evening, slow mornings</td></tr>
+      <tr><td>Dolphin</td><td>🐬</td><td>Variable</td><td>Light sleeper, irregular energy, multiple small peaks</td></tr>
+    </table>
+
+    <h3>Task Types</h3>
+    <table>
+      <tr><th>Type</th><th>Emoji</th><th>Best Scheduled When</th></tr>
+      <tr><td>Deep Work</td><td>🧠</td><td>During peak energy window</td></tr>
+      <tr><td>Creative</td><td>🎨</td><td>Slightly off-peak (relaxed inhibition)</td></tr>
+      <tr><td>Routine</td><td>📋</td><td>Low-energy periods (doesn't need focus)</td></tr>
+      <tr><td>Social</td><td>👥</td><td>Mid-energy periods</td></tr>
+      <tr><td>Physical</td><td>🏃</td><td>Depends on chronotype</td></tr>
+    </table>
+
+    <h3>7 Sub-Engines</h3>
+    <ol>
+      <li><strong>Activity Clock Logger</strong> — records activities with timestamps and task types</li>
+      <li><strong>Circadian Profile Builder</strong> — constructs 24-hour energy curve via kernel density estimation</li>
+      <li><strong>Chronotype Classifier</strong> — classifies user as Lion / Bear / Wolf / Dolphin</li>
+      <li><strong>Peak Window Detector</strong> — identifies optimal time windows per task type</li>
+      <li><strong>Schedule Alignment Scorer</strong> — scores current schedule vs. optimal alignment (0–100)</li>
+      <li><strong>Drift Detector</strong> — monitors circadian rhythm shifts over time</li>
+      <li><strong>Insight Generator</strong> — ranked actionable scheduling recommendations</li>
+    </ol>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="social-capital">🤝 SocialCapitalEngineService</h2>
+    <p><code>lib/core/services/social_capital_engine_service.dart</code></p>
+    <p>Autonomous relationship network health analyzer. Tracks social investment patterns, connection quality, reciprocity balance, and network diversity. Detects relationship neglect and provides proactive suggestions for maintaining social capital.</p>
+
+    <h3>Key Concepts</h3>
+    <ul>
+      <li><strong>Social Capital Score</strong> — composite network health metric (0–100) combining diversity, reciprocity, and engagement</li>
+      <li><strong>Reciprocity Balance</strong> — ratio of investment given vs. received per relationship</li>
+      <li><strong>Connection Decay</strong> — relationships lose strength over time without interaction, modeled as exponential decay</li>
+      <li><strong>Network Diversity</strong> — how many distinct social circles the user maintains (work, family, friends, community)</li>
+      <li><strong>Investment Nudges</strong> — proactive suggestions when high-value relationships show decay signals</li>
+    </ul>
+
+    <h3>Relationship Tiers</h3>
+    <table>
+      <tr><th>Tier</th><th>Max Connections</th><th>Interaction Cadence</th><th>Decay Rate</th></tr>
+      <tr><td>Inner Circle</td><td>~5</td><td>Weekly</td><td>Fastest decay if neglected</td></tr>
+      <tr><td>Close Friends</td><td>~15</td><td>Bi-weekly</td><td>Moderate decay</td></tr>
+      <tr><td>Active Network</td><td>~50</td><td>Monthly</td><td>Slow decay</td></tr>
+      <tr><td>Extended Network</td><td>~150</td><td>Quarterly</td><td>Very slow decay</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="friction-journal">🔧 FrictionJournalService</h2>
+    <p><code>lib/core/services/friction_journal_service.dart</code></p>
+    <p>Autonomous micro-frustration tracker. Categorizes and patterns recurring friction points in daily life, calculates cumulative time and energy costs, and generates elimination strategies. Surfaces the "death by a thousand cuts" problem that humans typically ignore.</p>
+
+    <h3>Key Concepts</h3>
+    <ul>
+      <li><strong>Friction Entry</strong> — a recorded frustration with category, severity, time cost, and context</li>
+      <li><strong>Pattern Detection</strong> — identifies recurring friction (same source, same time, same trigger)</li>
+      <li><strong>Cumulative Cost</strong> — aggregates minutes and energy spent on repeated micro-frustrations</li>
+      <li><strong>Elimination Strategy</strong> — ranked recommendations: automate, delegate, eliminate, accept</li>
+      <li><strong>Friction Score</strong> — per-category score combining frequency × severity × time cost</li>
+    </ul>
+
+    <h3>Friction Categories</h3>
+    <table>
+      <tr><th>Category</th><th>Examples</th><th>Typical Strategy</th></tr>
+      <tr><td>Technology</td><td>Slow loading, app crashes, password resets</td><td>Automate or switch tools</td></tr>
+      <tr><td>Process</td><td>Approval delays, redundant meetings, paperwork</td><td>Streamline or delegate</td></tr>
+      <tr><td>Environment</td><td>Noise, temperature, commute, clutter</td><td>Environmental redesign</td></tr>
+      <tr><td>Social</td><td>Miscommunication, waiting on others, interruptions</td><td>Set boundaries or batch</td></tr>
+      <tr><td>Personal</td><td>Decision paralysis, procrastination, forgetting things</td><td>Systemize or build habits</td></tr>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="callout callout-info">
       <strong>Integration Pattern</strong><br>
       The autonomous engines work best when connected to each other's output signals.
       For example, the <strong>Drift Detector</strong> can feed into <strong>Burnout Detector</strong>,
       the <strong>Momentum Engine</strong> can inform <strong>Streak Guardian</strong> risk assessment,
-      and the <strong>Willpower Budget</strong> can influence <strong>Ritual Engine</strong> micro-adjustments.
+      and the <strong>Willpower Budget</strong> can influence <strong>Ritual Engine</strong> micro-adjustments,
+      the <strong>Decision Fatigue</strong> detector can gate <strong>Regret Minimization</strong> decision recording,
+      and the <strong>Stress Cascade</strong> engine can feed into <strong>Burnout Detector</strong> risk signals.
       See <a href="architecture.html">Architecture</a> for the cross-service signal flow.
     </div>
 
