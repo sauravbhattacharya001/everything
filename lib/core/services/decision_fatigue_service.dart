@@ -606,21 +606,42 @@ class DecisionFatigueService {
     return _events.where((e) => e.timestamp.isAfter(startOfDay)).toList();
   }
 
+  /// Get today's events pre-sorted by timestamp (ascending).
+  ///
+  /// Filters and sorts in a single pass instead of letting each caller
+  /// independently copy + sort the same list.  Methods like
+  /// [detectFatigueSignals], [getCapacityState], and [generateInsights]
+  /// that previously sorted their own copy now accept an optional
+  /// pre-sorted list to avoid redundant O(n log n) work.
+  List<DecisionEvent> _getTodayEventsSorted({DateTime? now}) {
+    final today = now ?? DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final list = _events.where((e) => e.timestamp.isAfter(startOfDay)).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return list;
+  }
+
   // -------------------------------------------------------------------------
   // Capacity Analysis
   // -------------------------------------------------------------------------
 
   /// Calculate current capacity state.
-  CapacityState getCapacityState({DateTime? now}) {
+  ///
+  /// Accepts an optional [sortedToday] list (pre-sorted ascending by
+  /// timestamp) to avoid re-filtering and re-sorting when called from
+  /// [generateReport] which already has the data.
+  CapacityState getCapacityState(
+      {DateTime? now, List<DecisionEvent>? sortedToday}) {
     final currentTime = now ?? DateTime.now();
-    final todayEvents = getTodayEvents(now: currentTime);
+    final todayEvents =
+        sortedToday ?? _getTodayEventsSorted(now: currentTime);
     final totalCost =
         todayEvents.fold<double>(0, (sum, e) => sum + e.weight.cost);
 
     // Apply time-based partial recovery (every 2h gap = some recovery)
     double recoveredAmount = 0;
     if (todayEvents.isNotEmpty) {
-      todayEvents.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // todayEvents is already sorted — no need to re-sort.
       for (int i = 1; i < todayEvents.length; i++) {
         final gap = todayEvents[i]
             .timestamp
@@ -691,9 +712,18 @@ class DecisionFatigueService {
   // -------------------------------------------------------------------------
 
   /// Detect active fatigue signals from recent decision patterns.
-  List<FatigueSignal> detectFatigueSignals({DateTime? now}) {
+  ///
+  /// Accepts an optional [sortedToday] list (pre-sorted ascending by
+  /// timestamp) to avoid redundant filtering + sorting when called
+  /// from [generateReport].
+  List<FatigueSignal> detectFatigueSignals(
+      {DateTime? now, List<DecisionEvent>? sortedToday}) {
     final currentTime = now ?? DateTime.now();
-    final todayEvents = getTodayEvents(now: currentTime);
+    // Sort once here; pass the sorted list to every sub-detector that
+    // previously made its own copy + sort (3 redundant O(n log n) passes
+    // eliminated).
+    final todayEvents =
+        sortedToday ?? _getTodayEventsSorted(now: currentTime);
     final signals = <FatigueSignal>[];
 
     if (todayEvents.length < 3) return signals;
@@ -730,16 +760,14 @@ class DecisionFatigueService {
     return signals;
   }
 
+  /// [events] must be pre-sorted ascending by timestamp.
   FatigueSignal? _detectSpeedDrop(
       List<DecisionEvent> events, DateTime now) {
     if (events.length < 4) return null;
-    final sorted = List<DecisionEvent>.from(events)
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    // Compare first half avg deliberation to second half
-    final mid = sorted.length ~/ 2;
-    final firstHalf = sorted.sublist(0, mid);
-    final secondHalf = sorted.sublist(mid);
+    // events is already sorted — no copy + sort needed.
+    final mid = events.length ~/ 2;
+    final firstHalf = events.sublist(0, mid);
+    final secondHalf = events.sublist(mid);
 
     final avgFirst = firstHalf.fold<double>(
             0, (s, e) => s + e.deliberationTime.inMilliseconds) /
@@ -841,15 +869,14 @@ class DecisionFatigueService {
     return null;
   }
 
+  /// [events] must be pre-sorted ascending by timestamp.
   FatigueSignal? _detectDeliberationCollapse(
       List<DecisionEvent> events, DateTime now) {
     if (events.length < 6) return null;
-    final sorted = List<DecisionEvent>.from(events)
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    final mid = sorted.length ~/ 2;
-    final firstHalf = sorted.sublist(0, mid);
-    final secondHalf = sorted.sublist(mid);
+    // events is already sorted — no copy + sort needed.
+    final mid = events.length ~/ 2;
+    final firstHalf = events.sublist(0, mid);
+    final secondHalf = events.sublist(mid);
 
     final avgOptionsFirst =
         firstHalf.fold<double>(0, (s, e) => s + e.optionsConsidered) /
@@ -871,27 +898,26 @@ class DecisionFatigueService {
     return null;
   }
 
+  /// [events] must be pre-sorted ascending by timestamp.
   FatigueSignal? _detectCategorySwitching(
       List<DecisionEvent> events, DateTime now) {
     if (events.length < 5) return null;
-    final sorted = List<DecisionEvent>.from(events)
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
+    // events is already sorted — no copy + sort needed.
     int switches = 0;
-    for (int i = 1; i < sorted.length; i++) {
-      if (sorted[i].category != sorted[i - 1].category) {
+    for (int i = 1; i < events.length; i++) {
+      if (events[i].category != events[i - 1].category) {
         switches++;
       }
     }
 
-    final switchRate = switches / (sorted.length - 1);
+    final switchRate = switches / (events.length - 1);
     if (switchRate > 0.8) {
       return FatigueSignal(
         type: FatigueSignalType.categorySwitch,
         intensity: (switchRate - 0.8).clamp(0.0, 1.0) / 0.2,
         detectedAt: now,
         evidence:
-            '${switches} category switches in ${sorted.length} decisions (${(switchRate * 100).toStringAsFixed(0)}% switch rate)',
+            '${switches} category switches in ${events.length} decisions (${(switchRate * 100).toStringAsFixed(0)}% switch rate)',
       );
     }
     return null;
@@ -1046,10 +1072,20 @@ class DecisionFatigueService {
   // -------------------------------------------------------------------------
 
   /// Generate proactive recommendations based on current state.
-  List<FatigueRecommendation> generateRecommendations({DateTime? now}) {
+  ///
+  /// Accepts pre-computed [state], [signals], and [sortedToday] to avoid
+  /// redundant work when called from [generateReport].
+  List<FatigueRecommendation> generateRecommendations(
+      {DateTime? now,
+      CapacityState? state,
+      List<FatigueSignal>? signals,
+      List<DecisionEvent>? sortedToday}) {
     final currentTime = now ?? DateTime.now();
-    final state = getCapacityState(now: currentTime);
-    final signals = detectFatigueSignals(now: currentTime);
+    final effectiveSorted =
+        sortedToday ?? _getTodayEventsSorted(now: currentTime);
+    state ??= getCapacityState(now: currentTime, sortedToday: effectiveSorted);
+    signals ??=
+        detectFatigueSignals(now: currentTime, sortedToday: effectiveSorted);
     final recs = <FatigueRecommendation>[];
 
     // Based on fatigue level
@@ -1193,9 +1229,17 @@ class DecisionFatigueService {
   // -------------------------------------------------------------------------
 
   /// Generate autonomous insights from decision history.
-  List<String> generateInsights({DateTime? now}) {
+  ///
+  /// Accepts optional [sortedToday], [state], and [peaks] to reuse
+  /// values already computed by [generateReport].
+  List<String> generateInsights(
+      {DateTime? now,
+      List<DecisionEvent>? sortedToday,
+      CapacityState? state,
+      List<PeakWindow>? peaks}) {
     final currentTime = now ?? DateTime.now();
-    final todayEvents = getTodayEvents(now: currentTime);
+    final todayEvents =
+        sortedToday ?? _getTodayEventsSorted(now: currentTime);
     final insights = <String>[];
 
     if (todayEvents.isEmpty) {
@@ -1223,10 +1267,9 @@ class DecisionFatigueService {
 
     // Decision pace
     if (todayEvents.length >= 2) {
-      final sorted = List<DecisionEvent>.from(todayEvents)
-        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      // todayEvents is already sorted — no copy + sort needed.
       final span =
-          sorted.last.timestamp.difference(sorted.first.timestamp);
+          todayEvents.last.timestamp.difference(todayEvents.first.timestamp);
       if (span.inMinutes > 0) {
         final pace = todayEvents.length / (span.inMinutes / 60.0);
         insights.add(
@@ -1246,7 +1289,7 @@ class DecisionFatigueService {
     }
 
     // Quality trend
-    final state = getCapacityState(now: currentTime);
+    state ??= getCapacityState(now: currentTime, sortedToday: todayEvents);
     if (state.qualityEstimate < 50) {
       insights.add(
           '🔻 Decision quality estimate below 50%. Consider deferring important choices.');
@@ -1256,7 +1299,7 @@ class DecisionFatigueService {
     }
 
     // Peak window advice
-    final peaks = identifyPeakWindows();
+    peaks ??= identifyPeakWindows();
     if (peaks.isNotEmpty) {
       insights.add(
           '🎯 Your historical peak decision window: ${peaks.first.timeRange}');
@@ -1270,18 +1313,35 @@ class DecisionFatigueService {
   // -------------------------------------------------------------------------
 
   /// Generate a complete fatigue analysis report.
+  ///
+  /// Computes today's sorted events once and threads them through all
+  /// sub-analyses, eliminating previously redundant O(n) filter passes
+  /// and O(n log n) sorts across [getCapacityState],
+  /// [detectFatigueSignals], [generateRecommendations], and
+  /// [generateInsights].
   FatigueReport generateReport({DateTime? now}) {
     final currentTime = now ?? DateTime.now();
-    final state = getCapacityState(now: currentTime);
-    final signals = detectFatigueSignals(now: currentTime);
+    // Single-pass filter + sort for today's events.
+    final sortedToday = _getTodayEventsSorted(now: currentTime);
+    final state =
+        getCapacityState(now: currentTime, sortedToday: sortedToday);
+    final signals =
+        detectFatigueSignals(now: currentTime, sortedToday: sortedToday);
     final peaks = identifyPeakWindows();
     final batches = generateBatchSuggestions();
-    final recs = generateRecommendations(now: currentTime);
-    final insights = generateInsights(now: currentTime);
+    final recs = generateRecommendations(
+        now: currentTime,
+        state: state,
+        signals: signals,
+        sortedToday: sortedToday);
+    final insights = generateInsights(
+        now: currentTime,
+        sortedToday: sortedToday,
+        state: state,
+        peaks: peaks);
 
-    final todayEvents = getTodayEvents(now: currentTime);
     final catBreakdown = <DecisionCategory, int>{};
-    for (final e in todayEvents) {
+    for (final e in sortedToday) {
       catBreakdown[e.category] = (catBreakdown[e.category] ?? 0) + 1;
     }
 
