@@ -222,7 +222,7 @@ Everything App includes **220+ features** organized into 11 categories. Each fea
 | **Gradient Generator** | Create CSS/Flutter gradient definitions visually |
 | **Aspect Ratio** | Calculate and convert aspect ratios |
 
-## 🧠 Autonomous Intelligence (30 features)
+## 🧠 Autonomous Intelligence (35 features)
 
 | Feature | Description |
 |---------|-------------|
@@ -255,6 +255,8 @@ Everything App includes **220+ features** organized into 11 categories. Each fea
 | **Runway Engine** | Personal financial resilience calculator — autonomous financial runway estimation and scenario planning |
 | **Serendipity Engine** | Autonomous detection of unexpected connections between disparate life areas — surfaces "lucky" insights |
 | **Social Capital Engine** | Autonomous relationship network health analyzer — tracks social investment and connection quality |
+| **Stress Cascade Engine** | Autonomous stress propagation and resilience analyzer — models inter-domain stress cascades, tipping points, buffer depletion, and recovery forecasting |
+| **Focus Entropy Engine** | Autonomous focus fragmentation detector — uses Shannon entropy to quantify attention scatter, tracks context-switching costs, deep-work blocks, and flow-state quality |
 | **Willpower Budget** | Autonomous cognitive resource manager — models daily willpower as depletable resource with spending forecasts |
 
 ## 🔧 Infrastructure Services

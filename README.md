@@ -41,7 +41,7 @@ The app includes a full feature catalog organized into 11 categories — plannin
 
 👉 **[See the full Feature Catalog →](FEATURES.md)**
 
-### Autonomous Intelligence (30+ engines)
+### Autonomous Intelligence (35+ engines)
 
 What sets Everything apart is its **autonomous intelligence layer** — services that don't just store data, they actively monitor patterns, detect risks, and surface insights:
 
@@ -57,6 +57,10 @@ What sets Everything apart is its **autonomous intelligence layer** — services
 | 🌀 **Serendipity Engine** | Surfaces unexpected connections between disparate life areas |
 | 🎭 **Behavioral Fingerprint** | Builds behavioral signatures to detect anomalies and identity shifts |
 | ⚖️ **Balance Radar** | Multi-dimensional life balance assessment across 8 dimensions |
+| 🔬 **Focus Entropy** | Detects focus fragmentation patterns and quantifies attention scatter |
+| 🤝 **Social Capital** | Maps relationship network health and flags social debt accumulation |
+| 🛫 **Personal Runway** | Calculates financial resilience runway across multiple stress scenarios |
+| 🌊 **Stress Cascade** | Models stress propagation chains and identifies resilience bottlenecks |
 
 ### Security Built In
 
@@ -119,22 +123,22 @@ docker run -p 8080:80 everything-app
 | Metric | Count |
 |--------|-------|
 | **Features** | 220+ self-contained tools |
-| **Services** | 227 business-logic modules |
-| **Screens** | 210 dedicated UI views |
+| **Services** | 229 business-logic modules |
+| **Screens** | 212 dedicated UI views |
 | **Models** | 81 data classes |
-| **Tests** | 4,600+ unit tests (133 files) |
-| **Source Lines** | 190,000+ lines of Dart |
-| **Source Files** | 546 in lib |
+| **Tests** | 4,598 unit tests (135 files) |
+| **Source Lines** | 193,000+ lines of Dart |
+| **Source Files** | 550 in lib |
 
 ## 📁 Architecture
 
 ```
-lib/                             # 546 files · 190K+ lines
+lib/                             # 550 files · 193K+ lines
 ├── main.dart                    # Entry point, Firebase init, routes
 ├── core/
 │   ├── constants/               # API URLs, security allowlists
 │   ├── data/                    # Sample data generators
-│   ├── services/                # 227 business-logic modules
+│   ├── services/                # 229 business-logic modules
 │   └── utils/                   # Feature registry, date/format helpers
 ├── data/
 │   ├── local_storage.dart       # SharedPreferences wrapper
@@ -144,7 +148,7 @@ lib/                             # 546 files · 190K+ lines
 │   ├── blocs/                   # Cubit-based event state (BLoC)
 │   └── providers/               # Provider with O(1) index lookup
 └── views/
-    ├── home/                    # 210 feature screens
+    ├── home/                    # 212 feature screens
     ├── login/                   # Auth screens
     └── widgets/                 # Reusable UI components
 ```
@@ -158,7 +162,7 @@ lib/                             # 546 files · 190K+ lines
 | **Fail-Safe Persistence** | UI updates first, disk writes fire-and-forget with error logging — always responsive |
 | **Security by Default** | All HTTP goes through `HttpUtils` with scheme/host validation; pagination links checked against trusted-host allowlist |
 | **One Feature, One Service** | Every feature is a self-contained service — no god objects. Adding a feature requires only a `FeatureEntry` registration |
-| **Autonomous Intelligence** | 30+ agentic services monitor data and act proactively — burnout detection, drift warnings, habit correlations, and more |
+| **Autonomous Intelligence** | 35+ agentic services monitor data and act proactively — burnout detection, stress cascades, drift warnings, habit correlations, and more |
 
 ## 📚 API Reference
 
