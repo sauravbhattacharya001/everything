@@ -4,6 +4,7 @@ import '../../views/home/pattern_detector_screen.dart';
 import '../../views/home/color_mixer_screen.dart';
 import '../../views/home/text_stats_screen.dart';
 import '../../views/home/agenda_timeline_screen.dart';
+import '../../views/home/chronotype_optimizer_screen.dart';
 import '../../views/home/focus_entropy_screen.dart';
 import '../../views/home/stress_cascade_screen.dart';
 import '../../views/home/fuel_log_screen.dart';
@@ -479,6 +480,12 @@ class FeatureRegistry {
       icon: Icons.bedtime,
       category: FeatureCategory.health,
       builder: (_) => const SleepTrackerScreen(),
+    ),
+    FeatureEntry(
+      label: 'Chronotype Optimizer',
+      icon: Icons.access_time_filled,
+      category: FeatureCategory.health,
+      builder: (_) => const ChronotypeOptimizerScreen(),
     ),
     FeatureEntry(
       label: 'Sleep Calculator',
