@@ -1,0 +1,115 @@
+# Codecov configuration for the Everything app
+# Docs: https://docs.codecov.com/docs/codecov-yaml
+#
+# Goals:
+#   - Match the 30% coverage gate enforced by .github/workflows/coverage.yml
+#   - Ignore generated / non-app code so the percentage reflects real Dart logic
+#   - Keep PR comments compact and actionable
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 1
+  round: down
+  range: "30...90"
+
+  status:
+    project:
+      default:
+        target: 30%          # mirrors the gate in coverage.yml
+        threshold: 1%        # allow tiny regressions due to flaky line counting
+        if_ci_failed: error
+        only_pulls: false
+    patch:
+      default:
+        target: 60%          # new code should be better covered than legacy
+        threshold: 5%
+        if_ci_failed: error
+        only_pulls: true
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: false
+      macro: false
+
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: true      # don't spam PRs that don't change coverage
+  require_base: false
+  require_head: true
+
+# Files / paths excluded from coverage reporting.
+# Test files themselves, generated code, build artefacts, mocks, and the
+# Flutter shim entry-point are excluded so the headline percentage reflects
+# real library code under lib/.
+ignore:
+  - "test/**"
+  - "integration_test/**"
+  - "**/*.g.dart"
+  - "**/*.freezed.dart"
+  - "**/*.mocks.dart"
+  - "**/*.gen.dart"
+  - "**/generated/**"
+  - "build/**"
+  - ".dart_tool/**"
+  - "ios/**"
+  - "android/**"
+  - "macos/**"
+  - "linux/**"
+  - "windows/**"
+  - "web/**"
+  - "docs/**"
+  - "lib/main.dart"
+  - "lib/firebase_options.dart"
+
+# Flags let us split coverage by area in the dashboard.
+# unittests is the flag emitted by .github/workflows/coverage.yml.
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - type: project
+        target: 30%
+        threshold: 1%
+  individual_flags:
+    - name: unittests
+      paths:
+        - lib/
+      carryforward: true
+
+# Components surface per-area scores in PR comments. Paths match the
+# repository layout described in .github/copilot-instructions.md.
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        threshold: 2%
+  individual_components:
+    - component_id: services
+      name: Core Services
+      paths:
+        - lib/core/services/**
+    - component_id: state
+      name: State Management
+      paths:
+        - lib/state/**
+    - component_id: models
+      name: Models
+      paths:
+        - lib/models/**
+    - component_id: views
+      name: Views
+      paths:
+        - lib/views/**
+    - component_id: utils
+      name: Utilities
+      paths:
+        - lib/core/utils/**

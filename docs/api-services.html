@@ -557,6 +557,120 @@
       <tr><td><code>getAllProgress</code></td><td><code>() → List&lt;AchievementProgress&gt;</code></td><td>Progress for all registered achievements</td></tr>
     </table>
 
+    <h3 id="habit-momentum-service">🚀 HabitMomentumService</h3>
+    <p><code>lib/core/services/habit_momentum_service.dart</code></p>
+    <p>Agentic <em>cross-habit</em> streak/risk advisor. Individual trackers each show a single streak, but real users juggle many habits and one slip often drags the others down within days. This service answers: <em>which streaks are about to break, what is the smallest action I can take today to save the most-at-risk one, and is the overall pattern improving or collapsing?</em></p>
+    <p>Pure Dart, no Flutter or persistence dependency — same code powers in-app widgets, headless cron summaries, and unit tests. Sibling to <a href="#goal-portfolio-optimizer-service">GoalPortfolioOptimizerService</a> but operates on the higher-frequency habit layer.</p>
+
+    <h4>Scoring Pipeline</h4>
+    <ol>
+      <li>Aggregate per-habit windows over the trailing <code>windowDays</code> (default 28).</li>
+      <li>Compute a 0–100 breakage risk from five components: <em>drift</em> (last-7d consistency vs prior 7d), <em>recency</em> (consecutive recent misses), <em>buffer</em> (missable days left to hit the weekly target), <em>cadence</em> (weekday-pattern misses), and <em>intensity</em> (recent effort slip vs baseline). Weights are modulated by <code>HabitRiskAppetite</code>.</li>
+      <li>Assign a verdict: <code>ON_TRACK</code> / <code>MOMENTUM_RISING</code> / <code>AT_RISK</code> / <code>BREAKING</code> / <code>BROKEN</code>.</li>
+      <li>Pick a per-habit micro-intervention — the smallest action that meaningfully reduces risk today.</li>
+      <li>Emit a portfolio P0/P1/P2 playbook, an A–F grade, and autonomous insights (cluster-at-risk, keystone-in-danger, cross-habit fatigue, momentum-suggests-raising-target, etc.).</li>
+    </ol>
+
+    <h4>Verdicts</h4>
+    <table>
+      <tr><th>Verdict</th><th>Meaning</th><th>Default Response</th></tr>
+      <tr><td><code>ON_TRACK</code></td><td>Hitting the weekly target with healthy buffer</td><td>No intervention required</td></tr>
+      <tr><td><code>MOMENTUM_RISING</code></td><td>Last 7d consistency materially above prior 7d</td><td>Consider raising the target</td></tr>
+      <tr><td><code>AT_RISK</code></td><td>Drift or buffer pressure detected</td><td>Surface a micro-intervention</td></tr>
+      <tr><td><code>BREAKING</code></td><td>Composite risk ≥ 70 / 100</td><td>P0 playbook entry, due today</td></tr>
+      <tr><td><code>BROKEN</code></td><td>Streak already lost this window</td><td>Recovery plan, reset expectations</td></tr>
+    </table>
+
+    <h4>Key Types</h4>
+    <table>
+      <tr><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>HabitDailyRecord</code></td><td>Platform-agnostic per-habit per-day observation (<code>done</code> + optional 0..1 <code>intensity</code>)</td></tr>
+      <tr><td><code>HabitProfile</code></td><td>Static config: <code>weeklyTarget</code>, <code>zeroToleranceStreak</code>, <code>isKeystone</code>, <code>category</code></td></tr>
+      <tr><td><code>HabitMomentumReport</code></td><td>Per-habit analysis: verdict, streak, week consistency, risk score, score breakdown, reasons, intervention</td></tr>
+      <tr><td><code>HabitPlaybookAction</code></td><td>Portfolio-level recommendation tagged P0/P1/P2 with affected habit IDs</td></tr>
+      <tr><td><code>HabitPortfolioReport</code></td><td>Aggregate result with <code>portfolioRisk</code> 0–100, <code>grade</code> A–F, insights, and <code>formatText()</code>/<code>formatMarkdown()</code> renderers</td></tr>
+      <tr><td><code>HabitRiskAppetite</code></td><td><code>cautious</code> / <code>balanced</code> / <code>aggressive</code> — tightens or loosens thresholds</td></tr>
+    </table>
+
+    <h4>Service API</h4>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>HabitMomentumService({now, windowDays, riskAppetite})</code></td><td><code>HabitMomentumService</code></td><td>Stateless service. Inject a <code>now</code> callback for deterministic tests.</td></tr>
+      <tr><td><code>analyze({profiles, records})</code></td><td><code>HabitPortfolioReport</code></td><td>Score every habit, build the playbook, and return the full portfolio snapshot.</td></tr>
+    </table>
+
+    <h4>Example</h4>
+    <pre><code>final service = HabitMomentumService(
+  windowDays: 28,
+  riskAppetite: HabitRiskAppetite.balanced,
+);
+
+final report = service.analyze(
+  profiles: [
+    HabitProfile(habitId: 'sleep', displayName: 'Sleep 7h', weeklyTarget: 7, isKeystone: true),
+    HabitProfile(habitId: 'meditate', displayName: 'Meditate', weeklyTarget: 5),
+    HabitProfile(habitId: 'journal', displayName: 'Journal', weeklyTarget: 5),
+  ],
+  records: loadRecentRecords(), // List&lt;HabitDailyRecord&gt;
+);
+
+print(report.formatMarkdown());
+for (final h in report.habits.where((h) =&gt; h.verdict == HabitVerdict.atRisk)) {
+  print('${h.displayName}: ${h.intervention?.action}');
+}</code></pre>
+
+    <h3 id="goal-portfolio-optimizer-service">🎯 GoalPortfolioOptimizerService</h3>
+    <p><code>lib/core/services/goal_portfolio_optimizer_service.dart</code></p>
+    <p>Agentic <em>cross-goal</em> trade-off advisor. While <code>GoalAutopilotService</code> analyses risk per individual goal, real users have limited weekly capacity and must make trade-offs across many goals. This service answers: <em>given N active goals and a budget of H hours per week, which goals should I focus on now, which should I maintain, and which should I defer or drop?</em></p>
+
+    <h4>Algorithm</h4>
+    <ol>
+      <li>For each active goal compute <code>urgency</code> (deadline pressure 0..1), <code>value</code> (category importance × remaining-progress weight), <code>effort</code> (estimated remaining hours), and <code>roi = (urgency × value) / effort</code>.</li>
+      <li>Greedy knapsack: sort by ROI descending and pack goals into the weekly budget. Early entries become <code>FOCUS_NOW</code>, then <code>MAINTAIN</code>, then <code>DEFER</code>. Overdue + very-low-ROI goals are flagged <code>DROP_OR_ARCHIVE</code>.</li>
+      <li>Emit a portfolio summary with capacity utilisation, sacrifice warnings (deferred deadlines about to hit), and a P0/P1/P2 action playbook.</li>
+    </ol>
+
+    <h4>Verdicts</h4>
+    <table>
+      <tr><th>Verdict</th><th>Emoji</th><th>Meaning</th></tr>
+      <tr><td><code>focusNow</code></td><td>🎯</td><td>High ROI, fits in this week's budget — spend the allocated slice</td></tr>
+      <tr><td><code>maintain</code></td><td>🌿</td><td>Keep ticking with the minimum slice to avoid regression</td></tr>
+      <tr><td><code>defer</code></td><td>⏸️</td><td>Park this week; revisit next planning cycle</td></tr>
+      <tr><td><code>dropOrArchive</code></td><td>🗑️</td><td>Overdue or persistently low ROI — archive or rescope</td></tr>
+    </table>
+
+    <h4>Key Types</h4>
+    <table>
+      <tr><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>GoalAllocation</code></td><td>Per-goal recommendation: verdict, <code>recommendedHours</code>, urgency, value, ROI, priority score, reasons</td></tr>
+      <tr><td><code>PortfolioAction</code></td><td>P0/P1/P2 playbook entry tied to an optional goal ID</td></tr>
+      <tr><td><code>PortfolioPlan</code></td><td>Aggregate: budget vs allocated hours, utilisation, four verdict buckets, playbook, sacrifices, A–F health grade</td></tr>
+      <tr><td><code>PortfolioOptimizerConfig</code></td><td>Tuning knobs: <code>weeklyBudgetHours</code> (default 14), <code>maxHoursPerGoal</code> (8), <code>minSliceHours</code> (0.5), <code>riskAppetite</code> (<code>cautious</code>/<code>balanced</code>/<code>aggressive</code>)</td></tr>
+    </table>
+
+    <h4>Service API</h4>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>optimise(goals, {config, now})</code></td><td><code>PortfolioPlan</code></td><td>Run the greedy knapsack against the supplied goals and return a fully-scored portfolio plan.</td></tr>
+    </table>
+
+    <h4>Example</h4>
+    <pre><code>final optimizer = GoalPortfolioOptimizerService();
+final plan = optimizer.optimise(
+  activeGoals,
+  config: const PortfolioOptimizerConfig(
+    weeklyBudgetHours: 14,
+    maxHoursPerGoal: 8,
+    riskAppetite: 'balanced',
+  ),
+);
+
+print('Grade: ${plan.healthGrade} — utilisation ${(plan.utilisation * 100).round()}%');
+for (final a in plan.focusNow) {
+  print('FOCUS: ${a.goal.title} (~${a.recommendedHours}h, ROI ${a.roi.toStringAsFixed(2)})');
+}
+for (final s in plan.sacrifices) print('⚠️ $s');</code></pre>
+
     <!-- ─── Life Management ──────────────────────────────────── -->
     <h2 id="cat-life">🏡 Life Management</h2>
 
