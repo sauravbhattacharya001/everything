@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonomous Intelligence — Everything App Docs</title>
-  <meta name="description" content="API reference for the Everything App's 15 autonomous intelligence engines — self-monitoring systems for attention debt, momentum, drift detection, behavioral fingerprinting, burnout, willpower, rituals, regret minimization, decision fatigue, stress cascades, focus entropy, chronotype optimization, social capital, and friction journaling.">
+  <title>Autonomous Intelligence - Everything App Docs</title>
+  <meta name="description" content="API reference for the Everything App's 16 autonomous intelligence engines - self-monitoring systems for attention debt, momentum, drift detection, behavioral fingerprinting, burnout, willpower, rituals, regret minimization, decision fatigue, stress cascades, focus entropy, chronotype optimization, social capital, friction journaling, and cross-habit drift.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -42,6 +42,7 @@
       <a href="#ritual-engine" class="sidebar-link">🌅 Ritual Engine</a>
       <a href="#regret-minimization" class="sidebar-link">🔮 Regret Minimization</a>
       <a href="#streak-guardian" class="sidebar-link">🛡️ Streak Guardian</a>
+      <a href="#habit-momentum" class="sidebar-link">📈 Habit Momentum</a>
       <a href="#decision-fatigue" class="sidebar-link">🧮 Decision Fatigue</a>
       <a href="#stress-cascade" class="sidebar-link">🌊 Stress Cascade</a>
       <a href="#focus-entropy" class="sidebar-link">🎯 Focus Entropy</a>
@@ -59,11 +60,11 @@
   <main class="content">
     <div class="breadcrumb"><a href="index.html">Docs</a> <span>/</span> API Reference <span>/</span> Autonomous Intelligence</div>
     <h1>Autonomous Intelligence Engines</h1>
-    <p class="subtitle">Self-monitoring systems that proactively detect risks, generate insights, and plan corrective actions — no user intervention required.</p>
+    <p class="subtitle">Self-monitoring systems that proactively detect risks, generate insights, and plan corrective actions - no user intervention required.</p>
 
     <div class="callout callout-info">
       <strong>Design Philosophy</strong><br>
-      These engines implement <em>autonomous monitoring</em> — they continuously analyze behavioral data,
+      These engines implement <em>autonomous monitoring</em> - they continuously analyze behavioral data,
       classify states into lifecycle phases, detect anomalies via statistical methods (linear regression,
       compound interest models, Mahalanobis distance), and generate actionable recommendations.
       Each engine operates independently but shares cross-cutting signals when metrics overlap.
@@ -71,39 +72,40 @@
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="overview">Overview</h2>
-    <p>The autonomous intelligence layer contains 15 engines that model different aspects of cognitive and behavioral health. Unlike standard CRUD services, these engines maintain rolling statistical windows, classify lifecycle phases, predict future states, and generate proactive interventions.</p>
+    <p>The autonomous intelligence layer contains 16 engines that model different aspects of cognitive and behavioral health. Unlike standard CRUD services, these engines maintain rolling statistical windows, classify lifecycle phases, predict future states, and generate proactive interventions.</p>
 
     <table>
       <tr><th>Engine</th><th>Monitors</th><th>Key Metric</th><th>Intervention Style</th></tr>
-      <tr><td><a href="#attention-debt">Attention Debt</a></td><td>Deferred decisions &amp; unresolved items</td><td>Debt Score (0–100)</td><td>Sprint planning + amortization</td></tr>
+      <tr><td><a href="#attention-debt">Attention Debt</a></td><td>Deferred decisions &amp; unresolved items</td><td>Debt Score (0-100)</td><td>Sprint planning + amortization</td></tr>
       <tr><td><a href="#momentum-engine">Momentum Engine</a></td><td>Task completion throughput</td><td>Velocity (completions/day)</td><td>Adaptive micro-nudges</td></tr>
       <tr><td><a href="#drift-detector">Drift Detector</a></td><td>Gradual lifestyle regression</td><td>Drift severity per metric</td><td>Recovery nudges + tipping-point prediction</td></tr>
       <tr><td><a href="#behavioral-fingerprint">Behavioral Fingerprint</a></td><td>8-dimensional behavioral signature</td><td>Deviation distance from baseline</td><td>Change narratives</td></tr>
-      <tr><td><a href="#burnout-detector">Burnout Detector</a></td><td>Multi-signal burnout risk</td><td>Risk level (low–critical)</td><td>Recovery recommendations</td></tr>
-      <tr><td><a href="#willpower-budget">Willpower Budget</a></td><td>Daily cognitive resource depletion</td><td>Remaining budget (0–100)</td><td>Strategic recovery actions</td></tr>
-      <tr><td><a href="#ritual-engine">Ritual Engine</a></td><td>Daily routine adherence</td><td>Chain Health (0–100)</td><td>Timing micro-adjustments</td></tr>
+      <tr><td><a href="#burnout-detector">Burnout Detector</a></td><td>Multi-signal burnout risk</td><td>Risk level (low-critical)</td><td>Recovery recommendations</td></tr>
+      <tr><td><a href="#willpower-budget">Willpower Budget</a></td><td>Daily cognitive resource depletion</td><td>Remaining budget (0-100)</td><td>Strategic recovery actions</td></tr>
+      <tr><td><a href="#ritual-engine">Ritual Engine</a></td><td>Daily routine adherence</td><td>Chain Health (0-100)</td><td>Timing micro-adjustments</td></tr>
       <tr><td><a href="#regret-minimization">Regret Minimization</a></td><td>Decision outcomes over time</td><td>Regret patterns + bias detection</td><td>Personalized decision wisdom</td></tr>
-      <tr><td><a href="#streak-guardian">Streak Guardian</a></td><td>Cross-tracker streak risk</td><td>Streak risk level (safe–broken)</td><td>Proactive rescue strategies</td></tr>
-      <tr><td><a href="#decision-fatigue">Decision Fatigue</a></td><td>Decision quality degradation</td><td>Remaining capacity (0–100)</td><td>Batch/defer recommendations</td></tr>
+      <tr><td><a href="#streak-guardian">Streak Guardian</a></td><td>Cross-tracker streak risk</td><td>Streak risk level (safe-broken)</td><td>Proactive rescue strategies</td></tr>
+      <tr><td><a href="#habit-momentum">Habit Momentum</a></td><td>Cross-habit weekly drift/risk</td><td>Risk 0-100, A-F portfolio grade</td><td>Per-habit micro-interventions + P0/P1/P2 playbook</td></tr>
+      <tr><td><a href="#decision-fatigue">Decision Fatigue</a></td><td>Decision quality degradation</td><td>Remaining capacity (0-100)</td><td>Batch/defer recommendations</td></tr>
       <tr><td><a href="#stress-cascade">Stress Cascade</a></td><td>Inter-domain stress propagation</td><td>Cascade severity per domain</td><td>Buffer management + recovery forecasts</td></tr>
       <tr><td><a href="#focus-entropy">Focus Entropy</a></td><td>Attention fragmentation</td><td>Shannon entropy (bits)</td><td>Deep-work scheduling + flow coaching</td></tr>
-      <tr><td><a href="#chronotype-optimizer">Chronotype Optimizer</a></td><td>Circadian rhythm alignment</td><td>Alignment score (0–100)</td><td>Time-of-day scheduling optimization</td></tr>
-      <tr><td><a href="#social-capital">Social Capital</a></td><td>Relationship network health</td><td>Network health score (0–100)</td><td>Relationship investment nudges</td></tr>
+      <tr><td><a href="#chronotype-optimizer">Chronotype Optimizer</a></td><td>Circadian rhythm alignment</td><td>Alignment score (0-100)</td><td>Time-of-day scheduling optimization</td></tr>
+      <tr><td><a href="#social-capital">Social Capital</a></td><td>Relationship network health</td><td>Network health score (0-100)</td><td>Relationship investment nudges</td></tr>
       <tr><td><a href="#friction-journal">Friction Journal</a></td><td>Micro-frustration patterns</td><td>Friction score by category</td><td>Elimination strategies</td></tr>
     </table>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="attention-debt">🧠 AttentionDebtService</h2>
     <p><code>lib/core/services/attention_debt_service.dart</code></p>
-    <p>Models cognitive overhead as financial debt — unresolved items accrue <em>cognitive interest</em> over time using compound interest formulas. When total debt exceeds capacity, the system declares <strong>cognitive bankruptcy</strong> and triggers emergency triage.</p>
+    <p>Models cognitive overhead as financial debt - unresolved items accrue <em>cognitive interest</em> over time using compound interest formulas. When total debt exceeds capacity, the system declares <strong>cognitive bankruptcy</strong> and triggers emergency triage.</p>
 
     <h3>Core Concepts</h3>
     <ul>
-      <li><strong>Debt Item</strong> — any deferred decision, postponed task, or unresolved mental load</li>
-      <li><strong>Cognitive Interest</strong> — <code>baseCost × (1 + dailyRate)^daysOpen</code> — grows exponentially</li>
-      <li><strong>Postponement Penalty</strong> — each postponement adds 20% multiplier to effective cost</li>
-      <li><strong>Debt Score</strong> — 0–100 scale mapped from total debt vs. 500-unit capacity via sigmoid</li>
-      <li><strong>Bankruptcy Threshold</strong> — score ≥ 80 triggers emergency triage mode</li>
+      <li><strong>Debt Item</strong> - any deferred decision, postponed task, or unresolved mental load</li>
+      <li><strong>Cognitive Interest</strong> - <code>baseCost × (1 + dailyRate)^daysOpen</code> - grows exponentially</li>
+      <li><strong>Postponement Penalty</strong> - each postponement adds 20% multiplier to effective cost</li>
+      <li><strong>Debt Score</strong> - 0-100 scale mapped from total debt vs. 500-unit capacity via sigmoid</li>
+      <li><strong>Bankruptcy Threshold</strong> - score ≥ 80 triggers emergency triage mode</li>
     </ul>
 
     <h3>Debt Categories &amp; Interest Rates</h3>
@@ -124,9 +126,9 @@
     <table>
       <tr><th>Urgency</th><th>Ratio Threshold</th><th>Meaning</th></tr>
       <tr><td>🟢 Low</td><td>&lt; 1.5×</td><td>Recently added, manageable</td></tr>
-      <tr><td>🟡 Moderate</td><td>1.5×–3×</td><td>Starting to accumulate interest</td></tr>
-      <tr><td>🟠 High</td><td>3×–6×</td><td>Significant cognitive burden</td></tr>
-      <tr><td>🔴 Critical</td><td>6×–12×</td><td>Actively draining cognitive resources</td></tr>
+      <tr><td>🟡 Moderate</td><td>1.5×-3×</td><td>Starting to accumulate interest</td></tr>
+      <tr><td>🟠 High</td><td>3×-6×</td><td>Significant cognitive burden</td></tr>
+      <tr><td>🔴 Critical</td><td>6×-12×</td><td>Actively draining cognitive resources</td></tr>
       <tr><td>💀 Bankruptcy</td><td>≥ 12×</td><td>Item alone is overwhelming</td></tr>
     </table>
 
@@ -134,10 +136,10 @@
     <p>The service autonomously recommends sprint types based on current debt score:</p>
     <table>
       <tr><th>Sprint Type</th><th>Duration</th><th>Trigger (Debt Score)</th><th>Purpose</th></tr>
-      <tr><td>Micro Sprint</td><td>15 min</td><td>&lt; 30</td><td>Resolve 1–2 quick items</td></tr>
-      <tr><td>Focus Sprint</td><td>45 min</td><td>30–60</td><td>Tackle 1 medium item deeply</td></tr>
-      <tr><td>Deep Clean</td><td>2 hours</td><td>60–80</td><td>Clear multiple items</td></tr>
-      <tr><td>Emergency Triage</td><td>60 min</td><td>≥ 80</td><td>Bankruptcy mode — triage everything</td></tr>
+      <tr><td>Micro Sprint</td><td>15 min</td><td>&lt; 30</td><td>Resolve 1-2 quick items</td></tr>
+      <tr><td>Focus Sprint</td><td>45 min</td><td>30-60</td><td>Tackle 1 medium item deeply</td></tr>
+      <tr><td>Deep Clean</td><td>2 hours</td><td>60-80</td><td>Clear multiple items</td></tr>
+      <tr><td>Emergency Triage</td><td>60 min</td><td>≥ 80</td><td>Bankruptcy mode - triage everything</td></tr>
     </table>
 
     <h3>Key Methods</h3>
@@ -147,7 +149,7 @@
       <tr><td><code>resolveItem(id)</code></td><td><code>void</code></td><td>Mark item as resolved (sets resolvedAt)</td></tr>
       <tr><td><code>postponeItem(id)</code></td><td><code>void</code></td><td>Increment postponement counter (+20% penalty)</td></tr>
       <tr><td><code>totalDebt</code></td><td><code>double</code></td><td>Sum of all open items' effective costs</td></tr>
-      <tr><td><code>debtScore</code></td><td><code>double</code></td><td>0–100 cognitive load score</td></tr>
+      <tr><td><code>debtScore</code></td><td><code>double</code></td><td>0-100 cognitive load score</td></tr>
       <tr><td><code>topOffenders([n])</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Top N most expensive open items</td></tr>
       <tr><td><code>itemsApproachingCritical({withinDays})</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Items that will hit critical urgency within N days</td></tr>
       <tr><td><code>planSprintItems(type)</code></td><td><code>List&lt;AttentionDebtItem&gt;</code></td><td>Select priority items for a sprint session</td></tr>
@@ -196,15 +198,15 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><td>✈️ Cruising</td><td>Stable high velocity</td><td>Protect the flow state, avoid disruptions</td></tr>
       <tr><td>🛶 Coasting</td><td>Velocity stable but declining slightly</td><td>Micro-nudges to prevent stalling</td></tr>
       <tr><td>⚠️ Stalling</td><td>Clear velocity drop, blockers likely</td><td>Blocker identification + targeted nudges</td></tr>
-      <tr><td>💥 Crashed</td><td>Near-zero velocity, momentum lost</td><td>Recovery protocol — restart with micro-goals</td></tr>
+      <tr><td>💥 Crashed</td><td>Near-zero velocity, momentum lost</td><td>Recovery protocol - restart with micro-goals</td></tr>
     </table>
 
     <h3>Key Concepts</h3>
     <ul>
-      <li><strong>Velocity</strong> — rolling completion rate over configurable windows (default: 7/14/30 days)</li>
-      <li><strong>Acceleration</strong> — change in velocity between consecutive windows (positive = speeding up)</li>
-      <li><strong>Blocker Detection</strong> — pattern analysis to identify what's causing momentum loss</li>
-      <li><strong>Micro-Nudges</strong> — context-aware, adaptive suggestions calibrated to current phase</li>
+      <li><strong>Velocity</strong> - rolling completion rate over configurable windows (default: 7/14/30 days)</li>
+      <li><strong>Acceleration</strong> - change in velocity between consecutive windows (positive = speeding up)</li>
+      <li><strong>Blocker Detection</strong> - pattern analysis to identify what's causing momentum loss</li>
+      <li><strong>Micro-Nudges</strong> - context-aware, adaptive suggestions calibrated to current phase</li>
     </ul>
 
     <h3>Key Methods</h3>
@@ -222,7 +224,7 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="drift-detector">🐸 DriftDetectorService</h2>
     <p><code>lib/core/services/drift_detector_service.dart</code></p>
-    <p>The "boiling frog" detector — monitors gradual lifestyle regression across multiple metrics using <strong>linear regression</strong> over rolling windows. Detects slow negative changes that humans don't notice, predicts tipping points, and correlates cross-metric slides.</p>
+    <p>The "boiling frog" detector - monitors gradual lifestyle regression across multiple metrics using <strong>linear regression</strong> over rolling windows. Detects slow negative changes that humans don't notice, predicts tipping points, and correlates cross-metric slides.</p>
 
     <h3>Drift Severity Levels</h3>
     <table>
@@ -236,11 +238,11 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>How It Works</h3>
     <ol>
-      <li><strong>Data Collection</strong> — aggregates daily metric values from other services (sleep quality, mood, productivity, etc.)</li>
-      <li><strong>Rolling Regression</strong> — fits linear regression over configurable windows to detect slope direction</li>
-      <li><strong>Tipping Point Prediction</strong> — extrapolates when a metric will cross a danger threshold at current rate</li>
-      <li><strong>Cross-Metric Correlation</strong> — detects when multiple metrics drift together (e.g., sleep down → mood down → productivity down)</li>
-      <li><strong>Recovery Nudges</strong> — generates targeted suggestions based on which metrics are sliding and their correlations</li>
+      <li><strong>Data Collection</strong> - aggregates daily metric values from other services (sleep quality, mood, productivity, etc.)</li>
+      <li><strong>Rolling Regression</strong> - fits linear regression over configurable windows to detect slope direction</li>
+      <li><strong>Tipping Point Prediction</strong> - extrapolates when a metric will cross a danger threshold at current rate</li>
+      <li><strong>Cross-Metric Correlation</strong> - detects when multiple metrics drift together (e.g., sleep down → mood down → productivity down)</li>
+      <li><strong>Recovery Nudges</strong> - generates targeted suggestions based on which metrics are sliding and their correlations</li>
     </ol>
 
     <h3>Key Methods</h3>
@@ -262,7 +264,7 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <h3>Behavioral Dimensions</h3>
     <table>
       <tr><th>Dimension</th><th>What It Measures</th></tr>
-      <tr><td>🕐 Activity Timing</td><td>When you tend to be active — early bird vs. night owl patterns</td></tr>
+      <tr><td>🕐 Activity Timing</td><td>When you tend to be active - early bird vs. night owl patterns</td></tr>
       <tr><td>⚡ Task Velocity</td><td>How quickly you complete tasks once started</td></tr>
       <tr><td>📂 Category Preferences</td><td>Which categories of activity dominate your time</td></tr>
       <tr><td>📊 Consistency</td><td>How regular your daily patterns are day-to-day</td></tr>
@@ -275,11 +277,11 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <h3>Identity Phases</h3>
     <table>
       <tr><th>Phase</th><th>Description</th></tr>
-      <tr><td>🟢 Authentic</td><td>Behavior closely matches established baseline — "being yourself"</td></tr>
-      <tr><td>🟡 Shifting</td><td>Moderate deviation — possible context change or adaptation</td></tr>
-      <tr><td>🟠 Exploring</td><td>Significant deviation — actively trying new patterns</td></tr>
-      <tr><td>🔴 Disrupted</td><td>Major deviation — external disruption or crisis</td></tr>
-      <tr><td>🟣 Transformed</td><td>Sustained deviation — your baseline has fundamentally changed</td></tr>
+      <tr><td>🟢 Authentic</td><td>Behavior closely matches established baseline - "being yourself"</td></tr>
+      <tr><td>🟡 Shifting</td><td>Moderate deviation - possible context change or adaptation</td></tr>
+      <tr><td>🟠 Exploring</td><td>Significant deviation - actively trying new patterns</td></tr>
+      <tr><td>🔴 Disrupted</td><td>Major deviation - external disruption or crisis</td></tr>
+      <tr><td>🟣 Transformed</td><td>Sustained deviation - your baseline has fundamentally changed</td></tr>
     </table>
 
     <h3>Key Methods</h3>
@@ -306,26 +308,26 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><td>🟡 Moderate</td><td>Some stress indicators present</td><td>Monitor, schedule recovery</td></tr>
       <tr><td>🟠 Elevated</td><td>Multiple warning signals active</td><td>Reduce load, increase breaks</td></tr>
       <tr><td>🔴 High</td><td>Burnout trajectory confirmed</td><td>Immediate load reduction required</td></tr>
-      <tr><td>💀 Critical</td><td>Active burnout state</td><td>Emergency intervention — cancel non-essentials</td></tr>
+      <tr><td>💀 Critical</td><td>Active burnout state</td><td>Emergency intervention - cancel non-essentials</td></tr>
     </table>
 
     <h3>Signal Sources</h3>
     <ul>
-      <li><strong>Sleep Quality</strong> — declining sleep duration or quality trends</li>
-      <li><strong>Mood Patterns</strong> — persistent low mood or emotional flatness</li>
-      <li><strong>Productivity Changes</strong> — declining output despite same or increased effort</li>
-      <li><strong>Social Withdrawal</strong> — reduced contact tracker activity</li>
-      <li><strong>Habit Disruption</strong> — broken streaks across multiple trackers</li>
-      <li><strong>Energy Levels</strong> — sustained low energy readings</li>
-      <li><strong>Screen Time</strong> — excessive or erratic screen time patterns</li>
+      <li><strong>Sleep Quality</strong> - declining sleep duration or quality trends</li>
+      <li><strong>Mood Patterns</strong> - persistent low mood or emotional flatness</li>
+      <li><strong>Productivity Changes</strong> - declining output despite same or increased effort</li>
+      <li><strong>Social Withdrawal</strong> - reduced contact tracker activity</li>
+      <li><strong>Habit Disruption</strong> - broken streaks across multiple trackers</li>
+      <li><strong>Energy Levels</strong> - sustained low energy readings</li>
+      <li><strong>Screen Time</strong> - excessive or erratic screen time patterns</li>
     </ul>
 
     <h3>Key Methods</h3>
     <table>
       <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
       <tr><td><code>analyze()</code></td><td><code>BurnoutAnalysis</code></td><td>Full multi-signal burnout assessment</td></tr>
-      <tr><td><code>riskLevel</code></td><td><code>BurnoutRiskLevel</code></td><td>Current classification (low–critical)</td></tr>
-      <tr><td><code>resilienceScore</code></td><td><code>double</code></td><td>0–100 resilience rating</td></tr>
+      <tr><td><code>riskLevel</code></td><td><code>BurnoutRiskLevel</code></td><td>Current classification (low-critical)</td></tr>
+      <tr><td><code>resilienceScore</code></td><td><code>double</code></td><td>0-100 resilience rating</td></tr>
       <tr><td><code>warningSignals</code></td><td><code>List&lt;BurnoutSignal&gt;</code></td><td>Active warning indicators with severity</td></tr>
       <tr><td><code>recommendations</code></td><td><code>List&lt;String&gt;</code></td><td>Prioritized recovery recommendations</td></tr>
     </table>
@@ -338,19 +340,19 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <h3>Willpower Zones</h3>
     <table>
       <tr><th>Zone</th><th>Budget Range</th><th>Behavior</th></tr>
-      <tr><td>🟢 Full Tank</td><td>80–100</td><td>Peak cognitive capacity — make important decisions now</td></tr>
-      <tr><td>🟡 Comfortable</td><td>60–80</td><td>Good capacity — routine decisions and focused work</td></tr>
-      <tr><td>🟠 Stretching</td><td>40–60</td><td>Declining — avoid major decisions, use routines</td></tr>
-      <tr><td>🔴 Depleted</td><td>20–40</td><td>Decision fatigue active — autopilot mode recommended</td></tr>
-      <tr><td>💀 Empty</td><td>0–20</td><td>Ego depletion — rest immediately, no decisions</td></tr>
+      <tr><td>🟢 Full Tank</td><td>80-100</td><td>Peak cognitive capacity - make important decisions now</td></tr>
+      <tr><td>🟡 Comfortable</td><td>60-80</td><td>Good capacity - routine decisions and focused work</td></tr>
+      <tr><td>🟠 Stretching</td><td>40-60</td><td>Declining - avoid major decisions, use routines</td></tr>
+      <tr><td>🔴 Depleted</td><td>20-40</td><td>Decision fatigue active - autopilot mode recommended</td></tr>
+      <tr><td>💀 Empty</td><td>0-20</td><td>Ego depletion - rest immediately, no decisions</td></tr>
     </table>
 
     <h3>Demand &amp; Recovery Model</h3>
     <ul>
-      <li><strong>Demands</strong> — decisions, resisting temptation, sustained focus, context switches, emotional regulation</li>
-      <li><strong>Recovery</strong> — rest breaks, meals, exercise, meditation, nature exposure, sleep</li>
-      <li><strong>Fatigue Forecast</strong> — predicts when budget will cross each zone boundary at current drain rate</li>
-      <li><strong>Strategic Score</strong> — rates how well the user allocates high-demand tasks to high-budget periods</li>
+      <li><strong>Demands</strong> - decisions, resisting temptation, sustained focus, context switches, emotional regulation</li>
+      <li><strong>Recovery</strong> - rest breaks, meals, exercise, meditation, nature exposure, sleep</li>
+      <li><strong>Fatigue Forecast</strong> - predicts when budget will cross each zone boundary at current drain rate</li>
+      <li><strong>Strategic Score</strong> - rates how well the user allocates high-demand tasks to high-budget periods</li>
     </ul>
 
     <h3>Key Methods</h3>
@@ -358,7 +360,7 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
       <tr><td><code>recordDemand(demand)</code></td><td><code>void</code></td><td>Log a willpower-draining event with cost</td></tr>
       <tr><td><code>recordRecovery(action)</code></td><td><code>void</code></td><td>Log a recovery action with restoration amount</td></tr>
-      <tr><td><code>remainingBudget</code></td><td><code>double</code></td><td>Current willpower remaining (0–100)</td></tr>
+      <tr><td><code>remainingBudget</code></td><td><code>double</code></td><td>Current willpower remaining (0-100)</td></tr>
       <tr><td><code>currentZone</code></td><td><code>WillpowerZone</code></td><td>Current zone classification</td></tr>
       <tr><td><code>forecastFatigue()</code></td><td><code>FatigueForecast</code></td><td>Predict when each zone boundary will be crossed</td></tr>
       <tr><td><code>strategicScore</code></td><td><code>double</code></td><td>How well cognitive resources are being managed</td></tr>
@@ -373,19 +375,19 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <h3>Rhythm States</h3>
     <table>
       <tr><th>State</th><th>Description</th></tr>
-      <tr><td>🔒 Locked In</td><td>Ritual executed consistently at optimal time — fully habitualized</td></tr>
+      <tr><td>🔒 Locked In</td><td>Ritual executed consistently at optimal time - fully habitualized</td></tr>
       <tr><td>✅ Consistent</td><td>Regular execution with minor timing variance</td></tr>
-      <tr><td>📉 Drifting</td><td>Timing becoming inconsistent — intervention window open</td></tr>
-      <tr><td>⚠️ Disrupted</td><td>Active disruption detected — pattern broken</td></tr>
+      <tr><td>📉 Drifting</td><td>Timing becoming inconsistent - intervention window open</td></tr>
+      <tr><td>⚠️ Disrupted</td><td>Active disruption detected - pattern broken</td></tr>
       <tr><td>❌ Abandoned</td><td>No execution for extended period</td></tr>
     </table>
 
     <h3>Key Concepts</h3>
     <ul>
-      <li><strong>Timing Score</strong> (0–100) — how close each execution was to the learned optimal window</li>
-      <li><strong>Chain Health</strong> (0–100) — overall daily ritual sequence scoring</li>
-      <li><strong>Disruption Types</strong> — 6 classified disruption patterns (schedule shift, motivation loss, external blocker, fatigue, overload, travel)</li>
-      <li><strong>Micro-Adjustments</strong> — small, actionable timing/sequence changes based on recent data</li>
+      <li><strong>Timing Score</strong> (0-100) - how close each execution was to the learned optimal window</li>
+      <li><strong>Chain Health</strong> (0-100) - overall daily ritual sequence scoring</li>
+      <li><strong>Disruption Types</strong> - 6 classified disruption patterns (schedule shift, motivation loss, external blocker, fatigue, overload, travel)</li>
+      <li><strong>Micro-Adjustments</strong> - small, actionable timing/sequence changes based on recent data</li>
     </ul>
 
     <h3>Key Methods</h3>
@@ -395,7 +397,7 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><td><code>recordExecution(ritualId, timestamp)</code></td><td><code>void</code></td><td>Log a ritual execution event</td></tr>
       <tr><td><code>getRhythmState(ritualId)</code></td><td><code>RhythmState</code></td><td>Current lifecycle phase for a ritual</td></tr>
       <tr><td><code>timingScore(ritualId)</code></td><td><code>double</code></td><td>How close recent executions are to optimal</td></tr>
-      <tr><td><code>chainHealth</code></td><td><code>double</code></td><td>Overall daily ritual chain health (0–100)</td></tr>
+      <tr><td><code>chainHealth</code></td><td><code>double</code></td><td>Overall daily ritual chain health (0-100)</td></tr>
       <tr><td><code>detectDisruptions()</code></td><td><code>List&lt;Disruption&gt;</code></td><td>Active disruptions with type and severity</td></tr>
       <tr><td><code>suggestAdjustments()</code></td><td><code>List&lt;MicroAdjustment&gt;</code></td><td>Context-aware timing/sequence recommendations</td></tr>
     </table>
@@ -403,18 +405,18 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="regret-minimization">🔮 RegretMinimizationService</h2>
     <p><code>lib/core/services/regret_minimization_service.dart</code></p>
-    <p>Inspired by Bezos's regret minimization framework — records decisions with context and stakes, tracks outcomes over time, detects regret patterns (action vs. inaction), identifies recurring cognitive biases, and distills personalized decision-making wisdom. The ultimate question: <em>"Will 80-year-old me regret NOT doing this?"</em></p>
+    <p>Inspired by Bezos's regret minimization framework - records decisions with context and stakes, tracks outcomes over time, detects regret patterns (action vs. inaction), identifies recurring cognitive biases, and distills personalized decision-making wisdom. The ultimate question: <em>"Will 80-year-old me regret NOT doing this?"</em></p>
 
     <h3>Decision Domains</h3>
     <p>Decisions are categorized across 8 life domains: <strong>Career</strong>, <strong>Relationships</strong>, <strong>Health</strong>, <strong>Finance</strong>, <strong>Education</strong>, <strong>Lifestyle</strong>, <strong>Creative</strong>, and <strong>Other</strong>. Each domain builds its own regret profile over time.</p>
 
     <h3>Analysis Pipeline</h3>
     <ol>
-      <li><strong>Decision Recording</strong> — log decisions with context, stakes, emotional state, and alternatives considered</li>
-      <li><strong>Outcome Tracking</strong> — revisit decisions after configurable time periods to record actual outcomes</li>
-      <li><strong>Regret Classification</strong> — categorize outcomes as <em>regret of action</em> (did it, wish I hadn't) or <em>regret of inaction</em> (didn't do it, wish I had)</li>
-      <li><strong>Bias Detection</strong> — identify recurring cognitive biases from decision patterns (status quo bias, loss aversion, sunk cost, etc.)</li>
-      <li><strong>Wisdom Distillation</strong> — generate personalized decision-making principles from your history</li>
+      <li><strong>Decision Recording</strong> - log decisions with context, stakes, emotional state, and alternatives considered</li>
+      <li><strong>Outcome Tracking</strong> - revisit decisions after configurable time periods to record actual outcomes</li>
+      <li><strong>Regret Classification</strong> - categorize outcomes as <em>regret of action</em> (did it, wish I hadn't) or <em>regret of inaction</em> (didn't do it, wish I had)</li>
+      <li><strong>Bias Detection</strong> - identify recurring cognitive biases from decision patterns (status quo bias, loss aversion, sunk cost, etc.)</li>
+      <li><strong>Wisdom Distillation</strong> - generate personalized decision-making principles from your history</li>
     </ol>
 
     <h3>Key Methods</h3>
@@ -439,7 +441,7 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><th>Level</th><th>Description</th><th>Action</th></tr>
       <tr><td>🟢 Safe</td><td>Streak on track, no concerns</td><td>Continue as normal</td></tr>
       <tr><td>🟡 Watch</td><td>Slight delay or variance detected</td><td>Gentle reminder</td></tr>
-      <tr><td>🟠 Danger</td><td>Streak at risk — time running out today</td><td>Urgent nudge with specific action</td></tr>
+      <tr><td>🟠 Danger</td><td>Streak at risk - time running out today</td><td>Urgent nudge with specific action</td></tr>
       <tr><td>🔴 Critical</td><td>Hours remaining before streak breaks</td><td>Emergency rescue strategy</td></tr>
       <tr><td>💔 Broken</td><td>Streak has ended</td><td>Recovery plan + motivation boost</td></tr>
     </table>
@@ -452,8 +454,81 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
       <tr><td><code>assessAll()</code></td><td><code>List&lt;StreakRiskAssessment&gt;</code></td><td>Evaluate all monitored streaks</td></tr>
       <tr><td><code>atRiskStreaks()</code></td><td><code>List&lt;StreakRiskAssessment&gt;</code></td><td>Only streaks in danger/critical state</td></tr>
       <tr><td><code>generateRescue(trackerId)</code></td><td><code>RescueStrategy</code></td><td>Generate specific rescue action for at-risk streak</td></tr>
-      <tr><td><code>healthScore</code></td><td><code>double</code></td><td>Overall streak portfolio health (0–100)</td></tr>
+      <tr><td><code>healthScore</code></td><td><code>double</code></td><td>Overall streak portfolio health (0-100)</td></tr>
     </table>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <h2 id="habit-momentum">📈 HabitMomentumService</h2>
+    <p><code>lib/core/services/habit_momentum_service.dart</code></p>
+    <p>Cross-habit weekly drift / breakage advisor. While each tracker exposes its own streak, real users juggle dozens of habits at once - when one slips, others tend to follow within days. This service rolls every habit's recent record history into a single portfolio view that answers: <em>"Which streaks are about to break, what's the smallest action I can take today to save the most at-risk one, and is the overall pattern improving or collapsing?"</em></p>
+
+    <h3>Pipeline</h3>
+    <ol>
+      <li>Aggregate per-habit windows over the trailing <code>windowDays</code> (default 28).</li>
+      <li>Compute five risk components (each 0-100), weighted and combined into a single risk score.</li>
+      <li>Assign a per-habit verdict (<code>ON_TRACK</code> → <code>BROKEN</code>).</li>
+      <li>Generate the smallest action that preserves the streak - the <em>micro-intervention</em>.</li>
+      <li>Roll up into a P0/P1/P2 playbook and an A-F portfolio grade with autonomous insights (cluster-at-risk, keystone-in-danger, rising-momentum-suggests-raising-target, ...).</li>
+    </ol>
+
+    <h3>Risk Components</h3>
+    <table>
+      <tr><th>Component</th><th>Weight</th><th>What it measures</th></tr>
+      <tr><td>Drift</td><td>0.30</td><td>Last-7-day consistency vs prior-7-day consistency (drop is bad)</td></tr>
+      <tr><td>Recency</td><td>0.30</td><td>Explicit logged misses in the last 3 days</td></tr>
+      <tr><td>Buffer</td><td>0.20</td><td>How many missable days remain before this week's target is unreachable</td></tr>
+      <tr><td>Cadence</td><td>0.10</td><td>Misses on the user's <em>most frequent</em> weekdays (for sub-daily targets)</td></tr>
+      <tr><td>Intensity</td><td>0.10</td><td>Trailing 14-day average intensity vs prior 14-day average</td></tr>
+    </table>
+    <p>The combined raw score is modulated by <code>HabitRiskAppetite</code> (<code>cautious</code> ×1.15 / <code>balanced</code> ×1.0 / <code>aggressive</code> ×0.85) and amplified ×1.10 for <code>isKeystone</code> habits.</p>
+
+    <h3>Verdicts</h3>
+    <table>
+      <tr><th>Verdict</th><th>Trigger</th><th>UI intent</th></tr>
+      <tr><td>🟢 On Track</td><td>Score &lt; 40, week ≥ 0.20, no recent breakage</td><td>No nudge - quiet success</td></tr>
+      <tr><td>🟢 Momentum Rising</td><td>Week &gt; prior week AND week ≥ 0.85</td><td>Suggest raising the weekly target</td></tr>
+      <tr><td>🟡 At Risk</td><td>Score ≥ 40, or buffer days &lt; 0</td><td>Gentle micro-intervention</td></tr>
+      <tr><td>🟠 Breaking</td><td>Score ≥ 70, or ≥ 3 logged misses in the last 3 days</td><td>Urgent specific action</td></tr>
+      <tr><td>🔴 Broken</td><td>Streak ended (or zero-tolerance violation)</td><td>Recovery playbook</td></tr>
+    </table>
+
+    <h3>Streak Semantics (unlogged ≠ missed)</h3>
+    <p>The engine distinguishes three day states: <code>done</code>, <code>missed</code> (explicit <code>HabitDailyRecord</code> with <code>done: false</code>), and <code>unlogged</code> (no record at all). For non-zero-tolerance habits, trailing <code>unlogged</code> days do <strong>not</strong> reset the current streak or wipe <code>longestStreak</code> - only an explicit miss does. Zero-tolerance habits (medication, sobriety) treat any non-done day as breaking. This keeps the engine from emitting false <code>BREAKING</code> / <code>BROKEN</code> verdicts for sparse-but-clean loggers (e.g. Mon/Wed/Fri) or freshly-onboarded users with no data yet.</p>
+
+    <h3>Key Types</h3>
+    <table>
+      <tr><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>HabitDailyRecord</code></td><td>One observation: <code>habitId</code>, <code>date</code>, <code>done</code>, optional <code>intensity</code> 0..1</td></tr>
+      <tr><td><code>HabitProfile</code></td><td>Per-habit config: <code>weeklyTarget</code>, <code>zeroToleranceStreak</code>, <code>isKeystone</code></td></tr>
+      <tr><td><code>HabitMomentumReport</code></td><td>Per-habit result: streak, risk, verdict, reasons, micro-intervention</td></tr>
+      <tr><td><code>HabitPortfolioReport</code></td><td>Top-level result: per-habit reports, P0/P1/P2 playbook, portfolio risk + grade + insights</td></tr>
+    </table>
+
+    <h3>Key Methods</h3>
+    <table>
+      <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+      <tr><td><code>analyze(profiles, records)</code></td><td><code>HabitPortfolioReport</code></td><td>Single entry point - stateless, safe to instantiate per call</td></tr>
+    </table>
+    <p>Constructor: <code>HabitMomentumService({DateTime Function()? now, int windowDays = 28, HabitRiskAppetite riskAppetite = HabitRiskAppetite.balanced})</code>. The injectable <code>now</code> is what makes the service trivially testable - see <a href="testing.html">testing.html</a> for the deterministic clock pattern.</p>
+
+    <h3>Quick Example</h3>
+    <pre><code>final svc = HabitMomentumService();
+final report = svc.analyze(
+  profiles: [
+    HabitProfile(habitId: 'water', displayName: 'Water', weeklyTarget: 7),
+    HabitProfile(habitId: 'meds',  displayName: 'Meds',  zeroToleranceStreak: true),
+  ],
+  records: store.recentHabitRecords(days: 28),
+);
+for (final h in report.habits) {
+  print('${h.habitId}: ${h.verdict.name}  risk=${h.riskScore.toStringAsFixed(0)}');
+}
+print('Portfolio: ${report.grade} (risk ${report.portfolioRisk.toStringAsFixed(0)})');
+for (final step in report.playbook) {
+  print('  ${step.priority.name.toUpperCase()}: ${step.action}');
+}</code></pre>
+
+    <p>Sibling of <a href="#momentum-engine">MomentumEngineService</a> (task/goal completion velocity) and <a href="#streak-guardian">StreakGuardianService</a> (per-tracker streak rescue). <code>HabitMomentumService</code> operates on the higher-frequency <em>habit</em> layer specifically.</p>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="decision-fatigue">🧮 DecisionFatigueService</h2>
@@ -462,11 +537,11 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>Core Concepts</h3>
     <ul>
-      <li><strong>Decision Event</strong> — each choice recorded with weight, category, and outcome</li>
-      <li><strong>Quality Score</strong> — estimated decision quality that drops as capacity depletes</li>
-      <li><strong>Capacity</strong> — daily decision budget (100 units) that depletes with each choice weighted by cognitive cost</li>
-      <li><strong>Peak Window</strong> — historical time slots when decision quality was highest</li>
-      <li><strong>Batch Suggestion</strong> — recommendation to group similar-category decisions together</li>
+      <li><strong>Decision Event</strong> - each choice recorded with weight, category, and outcome</li>
+      <li><strong>Quality Score</strong> - estimated decision quality that drops as capacity depletes</li>
+      <li><strong>Capacity</strong> - daily decision budget (100 units) that depletes with each choice weighted by cognitive cost</li>
+      <li><strong>Peak Window</strong> - historical time slots when decision quality was highest</li>
+      <li><strong>Batch Suggestion</strong> - recommendation to group similar-category decisions together</li>
     </ul>
 
     <h3>Decision Weights &amp; Cognitive Cost</h3>
@@ -483,10 +558,10 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <table>
       <tr><th>Level</th><th>Capacity Remaining</th><th>Recommendation</th></tr>
       <tr><td>🟢 Fresh</td><td>&gt; 80%</td><td>Tackle important decisions now</td></tr>
-      <tr><td>🔵 Alert</td><td>60–80%</td><td>Still sharp — moderate decisions OK</td></tr>
-      <tr><td>🟡 Mildly Tired</td><td>40–60%</td><td>Batch trivial decisions, defer significant ones</td></tr>
-      <tr><td>🟠 Fatigued</td><td>20–40%</td><td>Only essential decisions — defer everything else</td></tr>
-      <tr><td>🔴 Exhausted</td><td>&lt; 20%</td><td>No major decisions — defer to tomorrow</td></tr>
+      <tr><td>🔵 Alert</td><td>60-80%</td><td>Still sharp - moderate decisions OK</td></tr>
+      <tr><td>🟡 Mildly Tired</td><td>40-60%</td><td>Batch trivial decisions, defer significant ones</td></tr>
+      <tr><td>🟠 Fatigued</td><td>20-40%</td><td>Only essential decisions - defer everything else</td></tr>
+      <tr><td>🔴 Exhausted</td><td>&lt; 20%</td><td>No major decisions - defer to tomorrow</td></tr>
     </table>
 
     <h3>Decision Categories</h3>
@@ -519,13 +594,13 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>7 Sub-Engines</h3>
     <ol>
-      <li><strong>Stress Source Tracker</strong> — logs stressors with severity and domain classification</li>
-      <li><strong>Cascade Simulator</strong> — models inter-domain stress propagation using weighted adjacency</li>
-      <li><strong>Resilience Scorer</strong> — measures coping capacity via recovery rate analysis</li>
-      <li><strong>Tipping Point Detector</strong> — identifies approaching breakdown thresholds per domain</li>
-      <li><strong>Buffer Analyzer</strong> — tracks stress buffers (sleep, exercise, social support) and depletion rates</li>
-      <li><strong>Recovery Forecaster</strong> — predicts time-to-recovery per domain based on historical patterns</li>
-      <li><strong>Insight Generator</strong> — ranked actionable recommendations for stress management</li>
+      <li><strong>Stress Source Tracker</strong> - logs stressors with severity and domain classification</li>
+      <li><strong>Cascade Simulator</strong> - models inter-domain stress propagation using weighted adjacency</li>
+      <li><strong>Resilience Scorer</strong> - measures coping capacity via recovery rate analysis</li>
+      <li><strong>Tipping Point Detector</strong> - identifies approaching breakdown thresholds per domain</li>
+      <li><strong>Buffer Analyzer</strong> - tracks stress buffers (sleep, exercise, social support) and depletion rates</li>
+      <li><strong>Recovery Forecaster</strong> - predicts time-to-recovery per domain based on historical patterns</li>
+      <li><strong>Insight Generator</strong> - ranked actionable recommendations for stress management</li>
     </ol>
 
     <h3>Key Methods</h3>
@@ -539,35 +614,35 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <!-- ═══════════════════════════════════════════════════════════ -->
     <h2 id="focus-entropy">🎯 FocusEntropyEngineService</h2>
     <p><code>lib/core/services/focus_entropy_engine_service.dart</code></p>
-    <p>Uses Shannon entropy (<code>H = −Σ p log₂ p</code>) to quantify how scattered attention is across life domains. Tracks context-switching costs, identifies deep-work blocks, scores flow-state quality, and forecasts focus trajectory via linear regression.</p>
+    <p>Uses Shannon entropy (<code>H = -Σ p log2 p</code>) to quantify how scattered attention is across life domains. Tracks context-switching costs, identifies deep-work blocks, scores flow-state quality, and forecasts focus trajectory via linear regression.</p>
 
     <h3>Focus Grades</h3>
     <table>
       <tr><th>Grade</th><th>Emoji</th><th>Entropy Range</th><th>Meaning</th></tr>
       <tr><td>Laser</td><td>🎯</td><td>&lt; 0.5 bits</td><td>Near-total single-domain focus</td></tr>
-      <tr><td>Focused</td><td>🔬</td><td>0.5–1.2 bits</td><td>Concentrated with minimal switching</td></tr>
-      <tr><td>Balanced</td><td>⚖️</td><td>1.2–2.0 bits</td><td>Healthy distribution across domains</td></tr>
-      <tr><td>Scattered</td><td>🌀</td><td>2.0–2.8 bits</td><td>Too many context switches</td></tr>
-      <tr><td>Chaotic</td><td>🌪️</td><td>&gt; 2.8 bits</td><td>Fragmented — unable to sustain focus</td></tr>
+      <tr><td>Focused</td><td>🔬</td><td>0.5-1.2 bits</td><td>Concentrated with minimal switching</td></tr>
+      <tr><td>Balanced</td><td>⚖️</td><td>1.2-2.0 bits</td><td>Healthy distribution across domains</td></tr>
+      <tr><td>Scattered</td><td>🌀</td><td>2.0-2.8 bits</td><td>Too many context switches</td></tr>
+      <tr><td>Chaotic</td><td>🌪️</td><td>&gt; 2.8 bits</td><td>Fragmented - unable to sustain focus</td></tr>
     </table>
 
     <h3>7 Sub-Engines</h3>
     <ol>
-      <li><strong>Activity Logger</strong> — records focus sessions with domain, timestamp, duration</li>
-      <li><strong>Entropy Calculator</strong> — computes Shannon entropy on domain time distribution</li>
-      <li><strong>Context Switch Counter</strong> — counts domain transitions and estimates switching cost</li>
-      <li><strong>Deep Work Detector</strong> — identifies uninterrupted ≥25-minute single-domain sessions</li>
-      <li><strong>Flow State Scorer</strong> — composite 0–100 score from deep-work ratio and entropy</li>
-      <li><strong>Focus Forecast</strong> — linear-regression trend on daily entropy values</li>
-      <li><strong>Insight Generator</strong> — ranked actionable recommendations for focus improvement</li>
+      <li><strong>Activity Logger</strong> - records focus sessions with domain, timestamp, duration</li>
+      <li><strong>Entropy Calculator</strong> - computes Shannon entropy on domain time distribution</li>
+      <li><strong>Context Switch Counter</strong> - counts domain transitions and estimates switching cost</li>
+      <li><strong>Deep Work Detector</strong> - identifies uninterrupted ≥25-minute single-domain sessions</li>
+      <li><strong>Flow State Scorer</strong> - composite 0-100 score from deep-work ratio and entropy</li>
+      <li><strong>Focus Forecast</strong> - linear-regression trend on daily entropy values</li>
+      <li><strong>Insight Generator</strong> - ranked actionable recommendations for focus improvement</li>
     </ol>
 
     <h3>Key Concepts</h3>
     <ul>
-      <li><strong>Deep Work Block</strong> — any uninterrupted focus session ≥ 25 minutes on a single domain</li>
-      <li><strong>Context Switch Cost</strong> — estimated 15–23 minutes of reduced productivity per switch (based on UC Irvine research)</li>
-      <li><strong>Flow State</strong> — composite of deep-work ratio, low entropy, and sustained duration</li>
-      <li><strong>Focus Forecast</strong> — projects entropy trend forward to predict upcoming fragmentation risk</li>
+      <li><strong>Deep Work Block</strong> - any uninterrupted focus session ≥ 25 minutes on a single domain</li>
+      <li><strong>Context Switch Cost</strong> - estimated 15-23 minutes of reduced productivity per switch (based on UC Irvine research)</li>
+      <li><strong>Flow State</strong> - composite of deep-work ratio, low entropy, and sustained duration</li>
+      <li><strong>Focus Forecast</strong> - projects entropy trend forward to predict upcoming fragmentation risk</li>
     </ul>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -578,9 +653,9 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
     <h3>Chronotypes</h3>
     <table>
       <tr><th>Type</th><th>Emoji</th><th>Peak Hours</th><th>Profile</th></tr>
-      <tr><td>Lion</td><td>🦁</td><td>5 AM – 12 PM</td><td>Early riser, morning energy peak, evening wind-down</td></tr>
-      <tr><td>Bear</td><td>🐻</td><td>10 AM – 2 PM</td><td>Solar-aligned, most common type, steady mid-day energy</td></tr>
-      <tr><td>Wolf</td><td>🐺</td><td>4 PM – 12 AM</td><td>Night owl, creative bursts in evening, slow mornings</td></tr>
+      <tr><td>Lion</td><td>🦁</td><td>5 AM - 12 PM</td><td>Early riser, morning energy peak, evening wind-down</td></tr>
+      <tr><td>Bear</td><td>🐻</td><td>10 AM - 2 PM</td><td>Solar-aligned, most common type, steady mid-day energy</td></tr>
+      <tr><td>Wolf</td><td>🐺</td><td>4 PM - 12 AM</td><td>Night owl, creative bursts in evening, slow mornings</td></tr>
       <tr><td>Dolphin</td><td>🐬</td><td>Variable</td><td>Light sleeper, irregular energy, multiple small peaks</td></tr>
     </table>
 
@@ -596,13 +671,13 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>7 Sub-Engines</h3>
     <ol>
-      <li><strong>Activity Clock Logger</strong> — records activities with timestamps and task types</li>
-      <li><strong>Circadian Profile Builder</strong> — constructs 24-hour energy curve via kernel density estimation</li>
-      <li><strong>Chronotype Classifier</strong> — classifies user as Lion / Bear / Wolf / Dolphin</li>
-      <li><strong>Peak Window Detector</strong> — identifies optimal time windows per task type</li>
-      <li><strong>Schedule Alignment Scorer</strong> — scores current schedule vs. optimal alignment (0–100)</li>
-      <li><strong>Drift Detector</strong> — monitors circadian rhythm shifts over time</li>
-      <li><strong>Insight Generator</strong> — ranked actionable scheduling recommendations</li>
+      <li><strong>Activity Clock Logger</strong> - records activities with timestamps and task types</li>
+      <li><strong>Circadian Profile Builder</strong> - constructs 24-hour energy curve via kernel density estimation</li>
+      <li><strong>Chronotype Classifier</strong> - classifies user as Lion / Bear / Wolf / Dolphin</li>
+      <li><strong>Peak Window Detector</strong> - identifies optimal time windows per task type</li>
+      <li><strong>Schedule Alignment Scorer</strong> - scores current schedule vs. optimal alignment (0-100)</li>
+      <li><strong>Drift Detector</strong> - monitors circadian rhythm shifts over time</li>
+      <li><strong>Insight Generator</strong> - ranked actionable scheduling recommendations</li>
     </ol>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -612,11 +687,11 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>Key Concepts</h3>
     <ul>
-      <li><strong>Social Capital Score</strong> — composite network health metric (0–100) combining diversity, reciprocity, and engagement</li>
-      <li><strong>Reciprocity Balance</strong> — ratio of investment given vs. received per relationship</li>
-      <li><strong>Connection Decay</strong> — relationships lose strength over time without interaction, modeled as exponential decay</li>
-      <li><strong>Network Diversity</strong> — how many distinct social circles the user maintains (work, family, friends, community)</li>
-      <li><strong>Investment Nudges</strong> — proactive suggestions when high-value relationships show decay signals</li>
+      <li><strong>Social Capital Score</strong> - composite network health metric (0-100) combining diversity, reciprocity, and engagement</li>
+      <li><strong>Reciprocity Balance</strong> - ratio of investment given vs. received per relationship</li>
+      <li><strong>Connection Decay</strong> - relationships lose strength over time without interaction, modeled as exponential decay</li>
+      <li><strong>Network Diversity</strong> - how many distinct social circles the user maintains (work, family, friends, community)</li>
+      <li><strong>Investment Nudges</strong> - proactive suggestions when high-value relationships show decay signals</li>
     </ul>
 
     <h3>Relationship Tiers</h3>
@@ -635,11 +710,11 @@ service.completeSprint(sprint.id, [<span class="string">'debt_1'</span>]);
 
     <h3>Key Concepts</h3>
     <ul>
-      <li><strong>Friction Entry</strong> — a recorded frustration with category, severity, time cost, and context</li>
-      <li><strong>Pattern Detection</strong> — identifies recurring friction (same source, same time, same trigger)</li>
-      <li><strong>Cumulative Cost</strong> — aggregates minutes and energy spent on repeated micro-frustrations</li>
-      <li><strong>Elimination Strategy</strong> — ranked recommendations: automate, delegate, eliminate, accept</li>
-      <li><strong>Friction Score</strong> — per-category score combining frequency × severity × time cost</li>
+      <li><strong>Friction Entry</strong> - a recorded frustration with category, severity, time cost, and context</li>
+      <li><strong>Pattern Detection</strong> - identifies recurring friction (same source, same time, same trigger)</li>
+      <li><strong>Cumulative Cost</strong> - aggregates minutes and energy spent on repeated micro-frustrations</li>
+      <li><strong>Elimination Strategy</strong> - ranked recommendations: automate, delegate, eliminate, accept</li>
+      <li><strong>Friction Score</strong> - per-category score combining frequency × severity × time cost</li>
     </ul>
 
     <h3>Friction Categories</h3>
