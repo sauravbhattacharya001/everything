@@ -96,6 +96,12 @@ enum HabitVerdict {
 /// Playbook priority bucket.
 enum HabitPlaybookPriority { p0, p1, p2 }
 
+/// Internal: classification of a single day's record state.
+/// `unlogged` (no record at all) is intentionally distinct from `missed`
+/// (explicit `done: false`) so streak / risk calculations can apply the
+/// right policy per habit (zero-tolerance treats both as breaking).
+enum _DayState { done, missed, unlogged }
+
 /// Smallest action the user can take to preserve a habit's streak.
 class HabitMicroIntervention {
   final String action;
@@ -343,6 +349,17 @@ class HabitMomentumService {
     );
   }
 
+  /// Classify a day as done / missed / unlogged given the indexed record map.
+  /// Centralizes the distinction so streak and risk logic stay in sync.
+  static _DayState _stateFor(
+    Map<DateTime, HabitDailyRecord> byDate,
+    DateTime day,
+  ) {
+    final r = byDate[day];
+    if (r == null) return _DayState.unlogged;
+    return r.done ? _DayState.done : _DayState.missed;
+  }
+
   HabitMomentumReport _analyzeOne(
     HabitProfile profile,
     List<HabitDailyRecord> records,
@@ -360,44 +377,64 @@ class HabitMomentumService {
     final daily = List<HabitDailyRecord>.from(byDate.values)
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    // Current streak: walk back from today while done==true (or yesterday).
+    // Current streak: walk back from today while done==true.
+    //
+    // We distinguish three day states: done / missed / unlogged. For
+    // non-zero-tolerance habits a *trailing* run of unlogged days (e.g. the
+    // user just hasn't tapped the log button today, or doesn't track this
+    // habit on weekends) is skipped — only an explicit `done: false` breaks
+    // the streak. For zero-tolerance habits (medication, sobriety) the
+    // contract is stricter: any non-done day, logged or not, breaks it.
     int currentStreak = 0;
+    bool stillTrailing = true; // haven't yet seen a logged day going backwards
     for (int i = 0; i < windowDays; i++) {
       final day = today.subtract(Duration(days: i));
-      final r = byDate[day];
-      if (r != null && r.done) {
+      final state = _stateFor(byDate, day);
+      if (state == _DayState.done) {
         currentStreak++;
-      } else if (i == 0) {
-        // Today not yet logged — peek yesterday-based streak instead of zeroing.
-        continue;
+        stillTrailing = false;
+      } else if (state == _DayState.unlogged) {
+        if (profile.zeroToleranceStreak) break;
+        if (stillTrailing) continue; // trailing gap — skip
+        break; // gap inside the run breaks it
       } else {
-        break;
+        break; // explicit miss
       }
     }
 
-    // Longest streak in window.
+    // Longest streak in window. Same policy: unlogged days for normal habits
+    // do not reset an in-progress run (the user simply didn't log); explicit
+    // misses do. We also capture the open run at the end so that if today is
+    // unlogged after a long streak, `longest` reflects reality instead of 0.
     int longest = 0;
     int run = 0;
     for (int i = windowDays - 1; i >= 0; i--) {
       final day = today.subtract(Duration(days: i));
-      final r = byDate[day];
-      if (r != null && r.done) {
+      final state = _stateFor(byDate, day);
+      if (state == _DayState.done) {
         run++;
         longest = math.max(longest, run);
+      } else if (state == _DayState.unlogged && !profile.zeroToleranceStreak) {
+        // do not reset run — treat as a hole, not a miss.
       } else {
         run = 0;
       }
     }
+    // Capture any still-open run (covered by `longest = max(...)` inside the
+    // loop already, but kept explicit for clarity / future refactors).
+    longest = math.max(longest, run);
 
     final week = _consistency(byDate, today, 0, 7);
     final prior = _consistency(byDate, today, 7, 7);
 
-    // Recent misses in last 3 days (excluding today if not logged).
+    // Recent misses in last 3 days. Only explicit logged misses count;
+    // unlogged days are not penalized here (the user may simply not have
+    // opened the app yet). This keeps `riskScore` and `verdict` from
+    // flipping to BREAKING on sparse-but-clean histories.
     int recentMisses = 0;
     for (int i = 1; i <= 3; i++) {
       final day = today.subtract(Duration(days: i));
-      final r = byDate[day];
-      if (r == null || !r.done) recentMisses++;
+      if (_stateFor(byDate, day) == _DayState.missed) recentMisses++;
     }
 
     // Buffer days: how many more this week can be skipped before
@@ -465,14 +502,25 @@ class HabitMomentumService {
     final todayRec = byDate[today];
     final todayMissed = todayRec != null && !todayRec.done;
 
+    // Count explicit logged misses across the whole window. Used to gate the
+    // BROKEN verdict so a brand-new / sparse-history user isn't graded F just
+    // because they have no data yet.
+    final hasAnyLoggedMiss = byDate.values.any((r) => !r.done);
+    final hasAnyLoggedDone = byDate.values.any((r) => r.done);
+
     // verdict
     HabitVerdict verdict;
     if (profile.zeroToleranceStreak && todayMissed) {
       verdict = HabitVerdict.broken;
     } else if (profile.zeroToleranceStreak && recentMisses >= 1 && currentStreak == 0) {
       verdict = HabitVerdict.broken;
-    } else if (currentStreak == 0 && week < 0.20) {
+    } else if (currentStreak == 0 && week < 0.20 && hasAnyLoggedMiss) {
+      // Only declare BROKEN when we actually have evidence of misses.
+      // An empty / freshly-onboarded profile reports onTrack instead.
       verdict = HabitVerdict.broken;
+    } else if (!hasAnyLoggedDone && !hasAnyLoggedMiss) {
+      // No data at all — default to onTrack rather than scaring the user.
+      verdict = HabitVerdict.onTrack;
     } else if (score >= 70 || recentMisses >= 3) {
       verdict = HabitVerdict.breaking;
     } else if (score >= 40 || bufferDaysLeft < 0) {

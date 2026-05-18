@@ -264,4 +264,104 @@ void main() {
       expect(r.habits.first.currentStreak, greaterThanOrEqualTo(14));
     });
   });
+
+  group('regression: issue #143 (unlogged != missed)', () {
+    // Bug 1: opening the app before today's log used to wipe longestStreak.
+    test('today unlogged after 10-day prior streak: longestStreak preserved',
+        () {
+      final svc = make();
+      final profile = HabitProfile(habitId: 'x', displayName: 'X');
+      // 10 consecutive done days ending yesterday; today has no record.
+      final records = List<HabitDailyRecord>.generate(
+        10,
+        (i) => HabitDailyRecord(
+          habitId: 'x',
+          // i=0 -> yesterday, i=9 -> 10 days ago
+          date: today.subtract(Duration(days: i + 1)),
+          done: true,
+        ),
+      );
+      final r = svc.analyze(profiles: [profile], records: records).habits.first;
+      expect(r.currentStreak, 10,
+          reason: 'today unlogged should not zero a 10-day run');
+      expect(r.longestStreak, 10,
+          reason: 'longestStreak must capture the open run when today is unlogged');
+    });
+
+    // Bug 2: sparse-but-clean histories (Mon/Wed/Fri) used to generate
+    // spurious BREAKING / BROKEN verdicts because null was treated as a miss.
+    test('sparse history (M/W/F all done) does not trigger BREAKING', () {
+      // today = Sunday 2026-05-17, so this week's M/W/F are 11/13/15.
+      final svc = make();
+      final profile = HabitProfile(
+        habitId: 'sparse',
+        displayName: 'Sparse',
+        weeklyTarget: 3,
+      );
+      final logged = <DateTime>[
+        _d(2026, 5, 4), _d(2026, 5, 6), _d(2026, 5, 8),  // prev week M/W/F
+        _d(2026, 5, 11), _d(2026, 5, 13), _d(2026, 5, 15), // this week M/W/F
+      ];
+      final records = logged
+          .map((d) => HabitDailyRecord(habitId: 'sparse', date: d, done: true))
+          .toList();
+      final r = svc.analyze(profiles: [profile], records: records).habits.first;
+      expect(r.verdict, isNot(HabitVerdict.breaking),
+          reason: 'clean sparse history should not be flagged BREAKING');
+      expect(r.verdict, isNot(HabitVerdict.broken),
+          reason: 'clean sparse history should not be flagged BROKEN');
+      // No explicit logged misses anywhere in the window.
+      // riskScore should be modest, well below the BREAKING threshold.
+      expect(r.riskScore, lessThan(70.0));
+    });
+
+    // Bug 2 policy split: zero-tolerance habits must still break on gap.
+    test('zero-tolerance habit: unlogged day mid-window still breaks streak',
+        () {
+      final svc = make();
+      final profile = HabitProfile(
+        habitId: 'meds',
+        displayName: 'Meds',
+        zeroToleranceStreak: true,
+      );
+      // Done for the last 5 days INCLUDING today, but with a gap at day-2
+      // (yesterday-but-one) where no record exists.
+      final records = <HabitDailyRecord>[
+        HabitDailyRecord(habitId: 'meds', date: today, done: true),
+        HabitDailyRecord(
+            habitId: 'meds',
+            date: today.subtract(const Duration(days: 1)),
+            done: true),
+        // day -2 intentionally omitted (unlogged)
+        HabitDailyRecord(
+            habitId: 'meds',
+            date: today.subtract(const Duration(days: 3)),
+            done: true),
+        HabitDailyRecord(
+            habitId: 'meds',
+            date: today.subtract(const Duration(days: 4)),
+            done: true),
+      ];
+      final r = svc.analyze(profiles: [profile], records: records).habits.first;
+      // Walking back from today: done, done, unlogged -> break.
+      // currentStreak should be 2, not 4.
+      expect(r.currentStreak, 2,
+          reason: 'zero-tolerance habit must treat unlogged as breaking');
+    });
+
+    // Empty / freshly-onboarded profile must not be graded BROKEN.
+    test('empty records produces onTrack, not BROKEN', () {
+      final svc = make();
+      final profiles = List<HabitProfile>.generate(
+        5,
+        (i) => HabitProfile(habitId: 'h$i', displayName: 'H$i'),
+      );
+      final r = svc.analyze(profiles: profiles, records: const []);
+      for (final h in r.habits) {
+        expect(h.verdict, HabitVerdict.onTrack,
+            reason: 'empty history must default to onTrack');
+        expect(h.riskScore, lessThan(70.0));
+      }
+    });
+  });
 }
