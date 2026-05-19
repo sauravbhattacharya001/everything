@@ -39,7 +39,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// and removes the plaintext key. This ensures zero data loss on upgrade.
 class EncryptedPreferencesService {
   static const String _keyAlias = 'encrypted_prefs_aes_key';
-  static const String _encPrefix = 'enc_v1:';
+  // v1: AES-GCM only (no separate HMAC) — read-only legacy, re-encrypted on next write.
+  // v2: AES-GCM + explicit HMAC-SHA256 over (iv ‖ ciphertext). REQUIRED on read.
+  //     This closes a downgrade attack where an attacker with write access to
+  //     SharedPreferences could strip the HMAC suffix and replace ciphertext,
+  //     relying solely on the underlying GCM tag (which historically has not
+  //     been validated reliably by the `encrypt` package — see _encrypt comment).
+  static const String _encPrefixV1 = 'enc_v1:';
+  static const String _encPrefixV2 = 'enc_v2:';
 
   static EncryptedPreferencesService? _instance;
   late final Uint8List _key;
@@ -89,9 +96,18 @@ class EncryptedPreferencesService {
     final raw = prefs.getString(key);
     if (raw == null) return null;
 
-    if (raw.startsWith(_encPrefix)) {
-      // Already encrypted — decrypt it.
-      return _decrypt(raw.substring(_encPrefix.length));
+    if (raw.startsWith(_encPrefixV2)) {
+      // Current format — HMAC required.
+      return _decrypt(raw.substring(_encPrefixV2.length), requireHmac: true);
+    }
+
+    if (raw.startsWith(_encPrefixV1)) {
+      // Legacy format — accept without HMAC for migration only, then
+      // re-encrypt under v2 so future reads enforce HMAC.
+      final plaintext =
+          _decrypt(raw.substring(_encPrefixV1.length), requireHmac: false);
+      await setString(key, plaintext);
+      return plaintext;
     }
 
     // Plaintext data from before encryption was enabled — migrate it.
@@ -99,11 +115,12 @@ class EncryptedPreferencesService {
     return raw;
   }
 
-  /// Encrypts and writes a value to SharedPreferences.
+  /// Encrypts and writes a value to SharedPreferences using the current
+  /// (v2) envelope format. Always emits an HMAC.
   Future<void> setString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     final encrypted = _encrypt(value);
-    await prefs.setString(key, '$_encPrefix$encrypted');
+    await prefs.setString(key, '$_encPrefixV2$encrypted');
   }
 
   /// Removes a key from SharedPreferences.
@@ -166,19 +183,30 @@ class EncryptedPreferencesService {
 
   /// Decrypts a value produced by [_encrypt].
   ///
-  /// Verifies the HMAC integrity tag before decryption (if present).
-  /// Values without an HMAC (written before this security fix) are
-  /// still accepted but will be re-encrypted with HMAC on next write.
-  String _decrypt(String encoded) {
+  /// When [requireHmac] is true (the default for the v2 envelope), the
+  /// payload MUST contain three dot-separated parts (iv, ciphertext, hmac)
+  /// and the HMAC must verify. This prevents an attacker who can write to
+  /// SharedPreferences from stripping the HMAC suffix to downgrade the
+  /// envelope to the legacy v1 format and bypass integrity checks.
+  ///
+  /// When [requireHmac] is false (legacy v1 reads only), the HMAC is
+  /// optional — but the caller is expected to immediately re-encrypt the
+  /// value under v2 so subsequent reads enforce HMAC.
+  String _decrypt(String encoded, {required bool requireHmac}) {
     final parts = encoded.split('.');
     if (parts.length < 2 || parts.length > 3) {
       throw FormatException('Invalid encrypted format');
     }
 
+    if (requireHmac && parts.length != 3) {
+      throw FormatException(
+          'HMAC missing on v2 envelope — refusing to decrypt (possible downgrade attack)');
+    }
+
     final iv = base64Decode(parts[0]);
     final ciphertext = base64Decode(parts[1]);
 
-    // Verify HMAC if present (v2 format with 3 parts).
+    // Verify HMAC if present (always for v2, optional for v1 legacy reads).
     if (parts.length == 3) {
       final storedHmac = base64Decode(parts[2]);
       final hmac = Hmac(sha256, _hmacKey);
