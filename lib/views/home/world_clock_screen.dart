@@ -149,7 +149,7 @@ class _WorldClockScreenState extends State<WorldClockScreen> {
                         return ListTile(
                           leading: Text(preset.emoji ?? '🌍', style: const TextStyle(fontSize: 24)),
                           title: Text(preset.label),
-                          subtitle: Text('${preset.timeZoneName}  •  ${WorldClockService.formatOffset(preset.utcOffset)}'),
+                          subtitle: Text('${preset.currentAbbreviation()}  •  ${WorldClockService.formatCurrentOffset(preset)}'),
                           onTap: () async {
                             await _service.addClock(preset);
                             Navigator.of(ctx).pop();
@@ -186,7 +186,7 @@ class _ClockCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final now = WorldClockService.nowIn(entry.utcOffset);
+    final now = WorldClockService.nowInEntry(entry);
     final hour = now.hour;
     final minute = now.minute;
     final second = now.second;
@@ -195,7 +195,7 @@ class _ClockCard extends StatelessWidget {
         '${second.toString().padLeft(2, '0')}';
     final dateStr = _formatDate(now);
     final period = hour >= 6 && hour < 18;
-    final diffStr = WorldClockService.timeDiffFromLocal(entry.utcOffset);
+    final diffStr = WorldClockService.timeDiffFromLocalForEntry(entry);
 
     return Dismissible(
       key: ValueKey('dismiss_${entry.id}'),
@@ -243,7 +243,7 @@ class _ClockCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${entry.timeZoneName}  •  ${WorldClockService.formatOffset(entry.utcOffset)}',
+                      '${entry.currentAbbreviation()}  •  ${WorldClockService.formatCurrentOffset(entry)}',
                       style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                     ),
                     Text(

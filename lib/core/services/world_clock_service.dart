@@ -2,6 +2,14 @@ import '../services/persistent_state_mixin.dart';
 import '../../models/world_clock_entry.dart';
 
 /// Service that manages saved world-clock time zones with persistence.
+///
+/// Each preset carries both its *standard-time* UTC offset and an optional
+/// [DstRule] so that the displayed wall-clock time tracks daylight saving
+/// transitions automatically (see issue #146). When you need the live
+/// offset / abbreviation, prefer the `*ForEntry` helpers below over the
+/// legacy [nowIn] / [formatOffset] / [timeDiffFromLocal] forms (which now
+/// assume the supplied [Duration] is already the *current* effective
+/// offset).
 class WorldClockService with PersistentStateMixin {
   WorldClockService._();
   static final WorldClockService instance = WorldClockService._();
@@ -13,26 +21,30 @@ class WorldClockService with PersistentStateMixin {
   List<WorldClockEntry> get clocks => List.unmodifiable(_clocks);
 
   // ── Predefined popular time zones ──
+  //
+  // Each entry's `utcOffset` is the *standard-time* offset; the `dstRule`
+  // field tells the renderer whether to add an hour during the local
+  // daylight-saving window.
 
   static final List<WorldClockEntry> presets = [
     WorldClockEntry(id: 'utc', label: 'UTC', timeZoneName: 'UTC', utcOffset: Duration.zero, emoji: '🌐'),
-    WorldClockEntry(id: 'nyc', label: 'New York', timeZoneName: 'EST/EDT', utcOffset: const Duration(hours: -5), emoji: '🗽'),
-    WorldClockEntry(id: 'lax', label: 'Los Angeles', timeZoneName: 'PST/PDT', utcOffset: const Duration(hours: -8), emoji: '🌴'),
-    WorldClockEntry(id: 'chi', label: 'Chicago', timeZoneName: 'CST/CDT', utcOffset: const Duration(hours: -6), emoji: '🌬️'),
-    WorldClockEntry(id: 'den', label: 'Denver', timeZoneName: 'MST/MDT', utcOffset: const Duration(hours: -7), emoji: '🏔️'),
-    WorldClockEntry(id: 'lon', label: 'London', timeZoneName: 'GMT/BST', utcOffset: Duration.zero, emoji: '🇬🇧'),
-    WorldClockEntry(id: 'par', label: 'Paris', timeZoneName: 'CET/CEST', utcOffset: const Duration(hours: 1), emoji: '🇫🇷'),
-    WorldClockEntry(id: 'ber', label: 'Berlin', timeZoneName: 'CET/CEST', utcOffset: const Duration(hours: 1), emoji: '🇩🇪'),
+    WorldClockEntry(id: 'nyc', label: 'New York', timeZoneName: 'EST/EDT', utcOffset: const Duration(hours: -5), emoji: '🗽', dstRule: DstRule.usNorthAmerica),
+    WorldClockEntry(id: 'lax', label: 'Los Angeles', timeZoneName: 'PST/PDT', utcOffset: const Duration(hours: -8), emoji: '🌴', dstRule: DstRule.usNorthAmerica),
+    WorldClockEntry(id: 'chi', label: 'Chicago', timeZoneName: 'CST/CDT', utcOffset: const Duration(hours: -6), emoji: '🏙', dstRule: DstRule.usNorthAmerica),
+    WorldClockEntry(id: 'den', label: 'Denver', timeZoneName: 'MST/MDT', utcOffset: const Duration(hours: -7), emoji: '🏔', dstRule: DstRule.usNorthAmerica),
+    WorldClockEntry(id: 'lon', label: 'London', timeZoneName: 'GMT/BST', utcOffset: Duration.zero, emoji: '🇬🇧', dstRule: DstRule.europe),
+    WorldClockEntry(id: 'par', label: 'Paris', timeZoneName: 'CET/CEST', utcOffset: const Duration(hours: 1), emoji: '🇫🇷', dstRule: DstRule.europe),
+    WorldClockEntry(id: 'ber', label: 'Berlin', timeZoneName: 'CET/CEST', utcOffset: const Duration(hours: 1), emoji: '🇩🇪', dstRule: DstRule.europe),
     WorldClockEntry(id: 'mow', label: 'Moscow', timeZoneName: 'MSK', utcOffset: const Duration(hours: 3), emoji: '🇷🇺'),
     WorldClockEntry(id: 'dxb', label: 'Dubai', timeZoneName: 'GST', utcOffset: const Duration(hours: 4), emoji: '🇦🇪'),
     WorldClockEntry(id: 'kol', label: 'Kolkata', timeZoneName: 'IST', utcOffset: const Duration(hours: 5, minutes: 30), emoji: '🇮🇳'),
     WorldClockEntry(id: 'bkk', label: 'Bangkok', timeZoneName: 'ICT', utcOffset: const Duration(hours: 7), emoji: '🇹🇭'),
     WorldClockEntry(id: 'sha', label: 'Shanghai', timeZoneName: 'CST', utcOffset: const Duration(hours: 8), emoji: '🇨🇳'),
     WorldClockEntry(id: 'tyo', label: 'Tokyo', timeZoneName: 'JST', utcOffset: const Duration(hours: 9), emoji: '🇯🇵'),
-    WorldClockEntry(id: 'syd', label: 'Sydney', timeZoneName: 'AEST/AEDT', utcOffset: const Duration(hours: 10), emoji: '🇦🇺'),
-    WorldClockEntry(id: 'akl', label: 'Auckland', timeZoneName: 'NZST/NZDT', utcOffset: const Duration(hours: 12), emoji: '🇳🇿'),
+    WorldClockEntry(id: 'syd', label: 'Sydney', timeZoneName: 'AEST/AEDT', utcOffset: const Duration(hours: 10), emoji: '🇦🇺', dstRule: DstRule.australiaEast),
+    WorldClockEntry(id: 'akl', label: 'Auckland', timeZoneName: 'NZST/NZDT', utcOffset: const Duration(hours: 12), emoji: '🇳🇿', dstRule: DstRule.newZealand),
     WorldClockEntry(id: 'hon', label: 'Honolulu', timeZoneName: 'HST', utcOffset: const Duration(hours: -10), emoji: '🌺'),
-    WorldClockEntry(id: 'sao', label: 'São Paulo', timeZoneName: 'BRT', utcOffset: const Duration(hours: -3), emoji: '🇧🇷'),
+    WorldClockEntry(id: 'sao', label: 'Sao Paulo', timeZoneName: 'BRT', utcOffset: const Duration(hours: -3), emoji: '🇧🇷'),
     WorldClockEntry(id: 'jnb', label: 'Johannesburg', timeZoneName: 'SAST', utcOffset: const Duration(hours: 2), emoji: '🇿🇦'),
     WorldClockEntry(id: 'sin', label: 'Singapore', timeZoneName: 'SGT', utcOffset: const Duration(hours: 8), emoji: '🇸🇬'),
     WorldClockEntry(id: 'sel', label: 'Seoul', timeZoneName: 'KST', utcOffset: const Duration(hours: 9), emoji: '🇰🇷'),
@@ -76,9 +88,21 @@ class WorldClockService with PersistentStateMixin {
   }
 
   /// Get current DateTime for a given UTC offset.
+  ///
+  /// **Prefer [nowInEntry] for preset zones** — this helper assumes
+  /// [utcOffset] is already the live (DST-adjusted) offset and is kept for
+  /// backward compatibility with callers that already do their own
+  /// resolution.
   static DateTime nowIn(Duration utcOffset) {
     final utcNow = DateTime.now().toUtc();
     return utcNow.add(utcOffset);
+  }
+
+  /// Get current DateTime for the given preset entry, applying any active
+  /// DST shift. Pass [utcNow] in tests to pin a specific instant.
+  static DateTime nowInEntry(WorldClockEntry entry, [DateTime? utcNow]) {
+    final now = (utcNow ?? DateTime.now()).toUtc();
+    return now.add(entry.currentOffset(now));
   }
 
   /// Format offset as e.g. "UTC+5:30" or "UTC-8".
@@ -91,7 +115,14 @@ class WorldClockService with PersistentStateMixin {
     return 'UTC$sign$hours:${minutes.toString().padLeft(2, '0')}';
   }
 
+  /// Format the entry's *current* offset (DST-aware) as "UTC+1", "UTC-4".
+  static String formatCurrentOffset(WorldClockEntry entry, [DateTime? utcNow]) =>
+      formatOffset(entry.currentOffset(utcNow));
+
   /// Get time difference description from local.
+  ///
+  /// **Prefer [timeDiffFromLocalForEntry] for preset zones** — this helper
+  /// treats [targetOffset] as already DST-adjusted.
   static String timeDiffFromLocal(Duration targetOffset) {
     final localOffset = DateTime.now().timeZoneOffset;
     final diff = targetOffset - localOffset;
@@ -102,6 +133,12 @@ class WorldClockService with PersistentStateMixin {
     final minutes = totalMinutes.abs() % 60;
     if (minutes == 0) return '${sign}${hours}h from local';
     return '${sign}${hours}h ${minutes}m from local';
+  }
+
+  /// DST-aware variant of [timeDiffFromLocal] for preset entries.
+  static String timeDiffFromLocalForEntry(WorldClockEntry entry,
+      [DateTime? utcNow]) {
+    return timeDiffFromLocal(entry.currentOffset(utcNow));
   }
 
   Future<void> _save() async {
