@@ -2,7 +2,7 @@
 
 # 📱 Everything App
 
-### A unified productivity hub — events, calendars, analytics, and 220+ tools in one Flutter app
+### A unified productivity hub — events, calendars, analytics, and 200+ tools in one Flutter app
 
 [![CI](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml/badge.svg)](https://github.com/sauravbhattacharya001/everything/actions/workflows/codeql.yml)
@@ -23,7 +23,7 @@
 
 ## 🎯 What You Get
 
-**Everything App** is a Flutter-based productivity suite that grows with you. At its core: event management with priority tracking, Firebase auth, Microsoft Graph calendar sync, and an analytics dashboard. Around that core: **220+ built-in tools** spanning health, finance, lifestyle, games, intelligence, and developer utilities — all in **190K+ lines of Dart** with **4,600+ unit tests** across 133 test files.
+**Everything App** is a Flutter-based productivity suite that grows with you. At its core: event management with priority tracking, Firebase auth, Microsoft Graph calendar sync, and an analytics dashboard. Around that core: **200+ built-in tools** spanning health, finance, lifestyle, games, intelligence, and developer utilities — all in **199K+ lines of Dart** with **4,900+ unit tests** across 142 test files.
 
 ### Core Features
 
@@ -35,7 +35,7 @@
 | 🔍 **Search & Filter** | Full-text search, priority filter chips, multi-criteria sorting |
 | 📆 **Microsoft Graph Sync** | Fetch Outlook/M365 calendar events with paginated API requests |
 
-### 220+ Built-in Tools
+### 200+ Built-in Tools
 
 The app includes a full feature catalog organized into 11 categories — planning, productivity, health & wellness, finance, lifestyle, organization, tracking, games & puzzles, developer utilities, autonomous intelligence, and infrastructure services. Every feature has its own screen, service, and local persistence.
 
@@ -122,23 +122,23 @@ docker run -p 8080:80 everything-app
 
 | Metric | Count |
 |--------|-------|
-| **Features** | 220+ self-contained tools |
-| **Services** | 229 business-logic modules |
+| **Features** | 208 registered tools |
+| **Services** | 235 business-logic modules |
 | **Screens** | 212 dedicated UI views |
 | **Models** | 81 data classes |
-| **Tests** | 4,598 unit tests (135 files) |
-| **Source Lines** | 193,000+ lines of Dart |
-| **Source Files** | 550 in lib |
+| **Tests** | 4,904 unit tests (142 files) |
+| **Source Lines** | 199,000+ lines of Dart |
+| **Source Files** | 557 in lib |
 
 ## 📁 Architecture
 
 ```
-lib/                             # 550 files · 193K+ lines
+lib/                             # 557 files · 199K+ lines
 ├── main.dart                    # Entry point, Firebase init, routes
 ├── core/
 │   ├── constants/               # API URLs, security allowlists
 │   ├── data/                    # Sample data generators
-│   ├── services/                # 229 business-logic modules
+│   ├── services/                # 235 business-logic modules
 │   └── utils/                   # Feature registry, date/format helpers
 ├── data/
 │   ├── local_storage.dart       # SharedPreferences wrapper
