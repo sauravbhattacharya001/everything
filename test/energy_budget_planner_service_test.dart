@@ -68,7 +68,7 @@ void main() {
         () {
       final svc = _svc();
       final events = [
-        for (int i = 0; i < 8)
+        for (int i = 0; i < 8; i++)
           _ev('m$i', 9 + i, minutes: 60, kind: EventKind.meeting, priority: 2),
       ];
       final plan = svc.analyze(events);
@@ -172,7 +172,7 @@ void main() {
     test('4+ back-to-back events fire cascade-risk insight', () {
       final svc = _svc(maxBuffers: 0); // disable buffers so run is intact
       final events = [
-        for (int i = 0; i < 5)
+        for (int i = 0; i < 5; i++)
           _ev('m$i', 9 + i, minutes: 60, kind: EventKind.meeting, priority: 4),
       ];
       final plan = svc.analyze(events);
@@ -211,7 +211,7 @@ void main() {
     test('buffer inserts count <= maxBufferInserts', () {
       final svc = _svc(maxBuffers: 2);
       final events = [
-        for (int i = 0; i < 7)
+        for (int i = 0; i < 7; i++)
           _ev('m$i', 9 + i, minutes: 60, kind: EventKind.meeting, priority: 4),
       ];
       final plan = svc.analyze(events);
