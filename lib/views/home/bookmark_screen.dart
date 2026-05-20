@@ -102,7 +102,22 @@ class _BookmarkScreenState extends State<BookmarkScreen>
     final url = _urlController.text.trim();
     if (title.isEmpty || url.isEmpty) return;
 
-    final normalizedUrl = url.startsWith('http') ? url : 'https://$url';
+    // Only the `http(s)://` prefix should bypass the auto-prepend.
+    // The previous `startsWith('http')` heuristic also matched bogus
+    // schemes like `httpx:`, `httpfoo:` — preserve them only when they
+    // are a real http/https scheme.
+    final normalizedUrl = RegExp(r'^https?://', caseSensitive: false).hasMatch(url)
+        ? url
+        : 'https://$url';
+
+    // Defense in depth: reject dangerous schemes (`javascript:`, `data:`,
+    // `vbscript:`, `file:`, …) at the user-add entry point too, not just
+    // on JSON import. See Bookmark.isSafeUrl for the allowlist.
+    if (!Bookmark.isSafeUrl(normalizedUrl)) {
+      SnackBarHelper.error(context, 'Unsupported or unsafe URL scheme');
+      return;
+    }
+
     final tags = _tagsController.text
         .split(',')
         .map((t) => t.trim().toLowerCase())
