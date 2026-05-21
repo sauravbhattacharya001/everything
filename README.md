@@ -122,23 +122,23 @@ docker run -p 8080:80 everything-app
 
 | Metric | Count |
 |--------|-------|
-| **Features** | 208 registered tools |
-| **Services** | 235 business-logic modules |
+| **Features** | 207 registered tools |
+| **Services** | 236 business-logic modules |
 | **Screens** | 212 dedicated UI views |
 | **Models** | 81 data classes |
-| **Tests** | 4,904 unit tests (142 files) |
-| **Source Lines** | 199,000+ lines of Dart |
-| **Source Files** | 557 in lib |
+| **Tests** | 4,780 unit tests (145 files) |
+| **Source Lines** | 200,000+ lines of Dart |
+| **Source Files** | 558 in lib |
 
 ## 📁 Architecture
 
 ```
-lib/                             # 557 files · 199K+ lines
+lib/                             # 558 files · 200K+ lines
 ├── main.dart                    # Entry point, Firebase init, routes
 ├── core/
 │   ├── constants/               # API URLs, security allowlists
 │   ├── data/                    # Sample data generators
-│   ├── services/                # 235 business-logic modules
+│   ├── services/                # 236 business-logic modules
 │   └── utils/                   # Feature registry, date/format helpers
 ├── data/
 │   ├── local_storage.dart       # SharedPreferences wrapper

@@ -1,6 +1,6 @@
 # 📱 Feature Catalog
 
-Everything App includes **200+ features** organized into 11 categories. Each feature has a dedicated screen, service, and local persistence — **235 services, 212 screens, 81 data models, 4,900+ tests**.
+Everything App includes **200+ features** organized into 11 categories. Each feature has a dedicated screen, service, and local persistence — **236 services, 212 screens, 81 data models, 4,780+ tests**.
 
 > **For developers:** Features are registered in [`lib/core/utils/feature_registry.dart`](lib/core/utils/feature_registry.dart). Adding a new feature requires only a single `FeatureEntry` — the navigation drawer picks it up automatically.
 
@@ -301,11 +301,11 @@ These services support the app's core architecture rather than user-facing featu
 ## Architecture Overview
 
 ```
-lib/                             # 557 files · 199K+ lines
+lib/                             # 558 files | 200K+ lines
 ├── core/
 │   ├── constants/       # App-wide constants
 │   ├── data/            # Sample data generators
-│   ├── services/        # 235 business-logic modules
+│   ├── services/        # 236 business-logic modules
 │   └── utils/           # Feature registry, date/formatting helpers
 ├── data/
 │   ├── local_storage.dart      # SharedPreferences wrapper
