@@ -89,7 +89,7 @@ class WorldClockService with PersistentStateMixin {
 
   /// Get current DateTime for a given UTC offset.
   ///
-  /// **Prefer [nowInEntry] for preset zones** — this helper assumes
+  /// **Prefer [nowInEntry] for preset zones** - this helper assumes
   /// [utcOffset] is already the live (DST-adjusted) offset and is kept for
   /// backward compatibility with callers that already do their own
   /// resolution.
@@ -121,24 +121,40 @@ class WorldClockService with PersistentStateMixin {
 
   /// Get time difference description from local.
   ///
-  /// **Prefer [timeDiffFromLocalForEntry] for preset zones** — this helper
+  /// **Prefer [timeDiffFromLocalForEntry] for preset zones** - this helper
   /// treats [targetOffset] as already DST-adjusted.
-  static String timeDiffFromLocal(Duration targetOffset) {
-    final localOffset = DateTime.now().timeZoneOffset;
+  ///
+  /// Pass [localOffsetOverride] in tests to pin the local time-zone offset
+  /// (otherwise [DateTime.now]`.timeZoneOffset` is used, which depends on
+  /// the host machine's clock).
+  static String timeDiffFromLocal(Duration targetOffset,
+      {Duration? localOffsetOverride}) {
+    final localOffset = localOffsetOverride ?? DateTime.now().timeZoneOffset;
     final diff = targetOffset - localOffset;
     final totalMinutes = diff.inMinutes;
     if (totalMinutes == 0) return 'Same as local';
-    final sign = totalMinutes > 0 ? '+' : '';
-    final hours = totalMinutes ~/ 60;
-    final minutes = totalMinutes.abs() % 60;
-    if (minutes == 0) return '${sign}${hours}h from local';
-    return '${sign}${hours}h ${minutes}m from local';
+    // Previously the negative sign was dropped whenever the diff was a
+    // sub-hour negative value (e.g. -30 min): truncating `-30 ~/ 60`
+    // gave 0, and `sign` was the empty string, so the user saw
+    // "0h 30m from local" with no indication that the zone was *behind*
+    // local time. Build the formatted string off the absolute value and
+    // attach the sign exactly once.
+    final sign = totalMinutes > 0 ? '+' : '-';
+    final absMinutes = totalMinutes.abs();
+    final hours = absMinutes ~/ 60;
+    final minutes = absMinutes % 60;
+    if (hours == 0) return '$sign${minutes}m from local';
+    if (minutes == 0) return '$sign${hours}h from local';
+    return '$sign${hours}h ${minutes}m from local';
   }
 
   /// DST-aware variant of [timeDiffFromLocal] for preset entries.
   static String timeDiffFromLocalForEntry(WorldClockEntry entry,
-      [DateTime? utcNow]) {
-    return timeDiffFromLocal(entry.currentOffset(utcNow));
+      {DateTime? utcNow, Duration? localOffsetOverride}) {
+    return timeDiffFromLocal(
+      entry.currentOffset(utcNow),
+      localOffsetOverride: localOffsetOverride,
+    );
   }
 
   Future<void> _save() async {

@@ -194,6 +194,112 @@ void main() {
     });
   });
 
+  group('WorldClockService.timeDiffFromLocal', () {
+    test('reports "Same as local" when offsets match', () {
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(hours: -8),
+          localOffsetOverride: const Duration(hours: -8),
+        ),
+        'Same as local',
+      );
+    });
+
+    test('formats positive whole-hour diff', () {
+      // Target = UTC+5, local = UTC-8 => +13h.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(hours: 5),
+          localOffsetOverride: const Duration(hours: -8),
+        ),
+        '+13h from local',
+      );
+    });
+
+    test('formats negative whole-hour diff with explicit minus sign', () {
+      // Target = UTC-8, local = UTC+0 => -8h. Previously printed "-8h";
+      // still does, but the test pins the behaviour.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(hours: -8),
+          localOffsetOverride: Duration.zero,
+        ),
+        '-8h from local',
+      );
+    });
+
+    test('formats positive hour+minute diff (e.g. Kolkata from PST)', () {
+      // Target = UTC+5:30, local = UTC-8 => +13h 30m.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(hours: 5, minutes: 30),
+          localOffsetOverride: const Duration(hours: -8),
+        ),
+        '+13h 30m from local',
+      );
+    });
+
+    test('regression: sub-hour negative diff keeps minus sign and omits 0h',
+        () {
+      // Target = UTC+0, local = UTC+0:30 => -30 minutes. Before the fix
+      // this returned "0h 30m from local" with no sign at all, telling the
+      // user nothing about the direction. After the fix we drop the empty
+      // hours component and keep the minus sign.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          Duration.zero,
+          localOffsetOverride: const Duration(minutes: 30),
+        ),
+        '-30m from local',
+      );
+    });
+
+    test('positive sub-hour diff also drops the 0h component', () {
+      // Target = UTC+0:30, local = UTC+0 => +30m.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(minutes: 30),
+          localOffsetOverride: Duration.zero,
+        ),
+        '+30m from local',
+      );
+    });
+
+    test('negative diff with hour+minute components keeps minus on hour', () {
+      // Target = UTC-9:30 (NMT), local = UTC+0 => -9h 30m.
+      expect(
+        WorldClockService.timeDiffFromLocal(
+          const Duration(hours: -9, minutes: -30),
+          localOffsetOverride: Duration.zero,
+        ),
+        '-9h 30m from local',
+      );
+    });
+
+    test('timeDiffFromLocalForEntry uses DST-aware offset and override', () {
+      final nyc =
+          WorldClockService.presets.firstWhere((p) => p.id == 'nyc');
+      // Mid-July => EDT (UTC-4). Local pinned to UTC+0 => -4h.
+      expect(
+        WorldClockService.timeDiffFromLocalForEntry(
+          nyc,
+          utcNow: DateTime.utc(2025, 7, 15, 12),
+          localOffsetOverride: Duration.zero,
+        ),
+        '-4h from local',
+      );
+      // Mid-January => EST (UTC-5).
+      expect(
+        WorldClockService.timeDiffFromLocalForEntry(
+          nyc,
+          utcNow: DateTime.utc(2025, 1, 15, 12),
+          localOffsetOverride: Duration.zero,
+        ),
+        '-5h from local',
+      );
+    });
+  });
+
   group('WorldClockEntry JSON round-trip', () {
     test('preserves dstRule', () {
       final original = byId['nyc']!;
