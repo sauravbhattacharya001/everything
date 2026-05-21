@@ -164,6 +164,13 @@ lib/                             # 557 files · 199K+ lines
 | **One Feature, One Service** | Every feature is a self-contained service — no god objects. Adding a feature requires only a `FeatureEntry` registration |
 | **Autonomous Intelligence** | 35+ agentic services monitor data and act proactively — burnout detection, stress cascades, drift warnings, habit correlations, and more |
 
+## 📖 Deep Dives
+
+For contributors who want to understand the codebase, two long-form references live under [`docs/`](docs/):
+
+- **[Autonomous Intelligence Layer](docs/AUTONOMOUS_INTELLIGENCE.md)** — full catalog of the 24 engines/detectors, the conventions they share, and a checklist for adding new ones.
+- **[Performance Engineering Guide](docs/PERFORMANCE.md)** — the complexity bar, anti-patterns to avoid, and the pre-PR checklist for any change that touches a hot path.
+
 ## 📚 API Reference
 
 <details>
