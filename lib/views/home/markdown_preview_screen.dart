@@ -23,6 +23,27 @@ class _MarkdownPreviewScreenState extends State<MarkdownPreviewScreen> {
   final _controller = TextEditingController();
   bool _showEditor = true;
 
+  /// Inline-markdown pattern. Group indices (1-based):
+  ///   1: bold+italic content (`***...***`)
+  ///   2: bold content (`**...**`)
+  ///   3: italic content (`*...*`)
+  ///   4: strikethrough content (`~~...~~`)
+  ///   5: inline-code content (between backticks)
+  ///   6: link label  (`[label]`)
+  ///   7: link href   (`(href)`)
+  ///
+  /// Compiled once so that re-rendering a paragraph never reconstructs the
+  /// regex, and so link rendering no longer needs a second `firstMatch` pass
+  /// over each link to extract its parts.
+  static final RegExp _inlinePattern = RegExp(
+    r'\*\*\*(.+?)\*\*\*'      // 1: bold+italic
+    r'|\*\*(.+?)\*\*'           // 2: bold
+    r'|\*(.+?)\*'               // 3: italic
+    r'|~~(.+?)~~'               // 4: strikethrough
+    r'|`([^`]+)`'               // 5: inline code
+    r'|\[(.+?)\]\(([^)\s]+)\)', // 6,7: link label + href
+  );
+
   static const _sampleMarkdown = '''# Welcome to Markdown Preview
 
 ## Features
@@ -89,19 +110,16 @@ void main() {
   }
 
   /// Render inline markdown formatting (bold, italic, code, strikethrough, links).
+  ///
+  /// Uses the hoisted [_inlinePattern] and reads the alternation's capture
+  /// groups directly (no per-link secondary regex pass), so a paragraph with
+  /// N inline spans is O(N) in regex work rather than O(N) plus an extra
+  /// `RegExp` construction per link.
   List<InlineSpan> _renderInline(String text, TextStyle base) {
     final spans = <InlineSpan>[];
-    final pattern = RegExp(
-      r'(\*\*\*.+?\*\*\*)'       // bold+italic
-      r'|(\*\*.+?\*\*)'           // bold
-      r'|(\*.+?\*)'               // italic
-      r'|(~~.+?~~)'               // strikethrough
-      r'|(`[^`]+`)'               // inline code
-      r'|(\[.+?\]\(.+?\))',       // link
-    );
 
     var lastEnd = 0;
-    for (final match in pattern.allMatches(text)) {
+    for (final match in _inlinePattern.allMatches(text)) {
       if (match.start > lastEnd) {
         spans.add(TextSpan(
           text: text.substring(lastEnd, match.start),
@@ -109,28 +127,39 @@ void main() {
         ));
       }
 
-      final m = match.group(0)!;
-      if (m.startsWith('***') && m.endsWith('***')) {
+      final boldItalic = match.group(1);
+      final bold = match.group(2);
+      final italic = match.group(3);
+      final strike = match.group(4);
+      final code = match.group(5);
+      final linkLabel = match.group(6);
+      // group(7) is the link href - currently rendered as styled text only;
+      // a future tap-handler can read it without another regex pass.
+
+      if (boldItalic != null) {
         spans.add(TextSpan(
-          text: m.substring(3, m.length - 3),
-          style: base.copyWith(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic),
+          text: boldItalic,
+          style: base.copyWith(
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+          ),
         ));
-      } else if (m.startsWith('**') && m.endsWith('**')) {
+      } else if (bold != null) {
         spans.add(TextSpan(
-          text: m.substring(2, m.length - 2),
+          text: bold,
           style: base.copyWith(fontWeight: FontWeight.bold),
         ));
-      } else if (m.startsWith('*') && m.endsWith('*')) {
+      } else if (italic != null) {
         spans.add(TextSpan(
-          text: m.substring(1, m.length - 1),
+          text: italic,
           style: base.copyWith(fontStyle: FontStyle.italic),
         ));
-      } else if (m.startsWith('~~') && m.endsWith('~~')) {
+      } else if (strike != null) {
         spans.add(TextSpan(
-          text: m.substring(2, m.length - 2),
+          text: strike,
           style: base.copyWith(decoration: TextDecoration.lineThrough),
         ));
-      } else if (m.startsWith('`') && m.endsWith('`')) {
+      } else if (code != null) {
         spans.add(WidgetSpan(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -139,7 +168,7 @@ void main() {
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
-              m.substring(1, m.length - 1),
+              code,
               style: base.copyWith(
                 fontFamily: 'monospace',
                 fontSize: (base.fontSize ?? 14) - 1,
@@ -147,17 +176,14 @@ void main() {
             ),
           ),
         ));
-      } else if (m.startsWith('[')) {
-        final linkMatch = RegExp(r'\[(.+?)\]\((.+?)\)').firstMatch(m);
-        if (linkMatch != null) {
-          spans.add(TextSpan(
-            text: linkMatch.group(1),
-            style: base.copyWith(
-              color: Colors.blue,
-              decoration: TextDecoration.underline,
-            ),
-          ));
-        }
+      } else if (linkLabel != null) {
+        spans.add(TextSpan(
+          text: linkLabel,
+          style: base.copyWith(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+          ),
+        ));
       }
 
       lastEnd = match.end;
