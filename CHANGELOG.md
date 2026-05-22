@@ -3,6 +3,11 @@
 All notable changes to **Everything** are documented in this file.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### ✨ Features
+- **GoalCheckinCadenceAdvisorService** — 7th agentic sibling to GoalPortfolioOptimizer / HabitMomentum / EnergyBudgetPlanner / DailyTopThreeAdvisor / WeeklyReviewSynthesizer / GoalDeadlineRiskAdvisor. Flags goals overdue for review based on priority + deadline-pressure-modulated cadence, classifies into ON_CADENCE / DUE_SOON / OVERDUE / OVERDUE_CRITICAL / NEW / PAUSED, rolls up to portfolio overdue score + band + A–F grade, and emits a deduped P0-first playbook (EMERGENCY_REVIEW_SWEEP / TRIAGE_PASSED_DEADLINES / CHECK_IN_TOP_PRIORITIES / SCHEDULE_OVERDUE_CHECKINS / TIGHTEN_DEADLINE_CADENCE / KICKOFF_NEVER_CHECKED_GOALS / PRE_BOOK_DUE_SOON / AUDIT_PAUSED_GOALS / SET_NEW_GOAL_CADENCES / CADENCE_OK). text / markdown / json renderers, deterministic, dependency-free. 15 unit tests.
+
 ## [7.35.0] - 2026-05-17
 
 ### ✨ Features — 16 new autonomous engines & advisors
