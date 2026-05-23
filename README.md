@@ -170,6 +170,7 @@ For contributors who want to understand the codebase, two long-form references l
 
 - **[Autonomous Intelligence Layer](docs/AUTONOMOUS_INTELLIGENCE.md)** — full catalog of the 24 engines/detectors, the conventions they share, and a checklist for adding new ones.
 - **[Performance Engineering Guide](docs/PERFORMANCE.md)** — the complexity bar, anti-patterns to avoid, and the pre-PR checklist for any change that touches a hot path.
+- **[Service Catalog](SERVICES.md)** — auto-generated index of all 240 services under `lib/core/services`, grouped into 9 categories, with one-line descriptions pulled from each file's doc comment.
 
 ## 📚 API Reference
 
