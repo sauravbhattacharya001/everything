@@ -1,5 +1,3 @@
-import 'dart:math' show pow;
-
 /// Represents a single point in the compound interest projection.
 class ProjectionPoint {
   final int year;
@@ -96,6 +94,11 @@ class CompoundInterestService {
   }
 
   /// Calculate how many years to reach a target balance.
+  ///
+  /// Returns `0` when `principal` already meets or exceeds `target`.
+  /// Returns `maxYears` when the target is unreachable (e.g. zero rate +
+  /// zero contribution + target above principal, or insufficient growth
+  /// within the `maxYears` horizon).
   int yearsToReach({
     required double principal,
     required double annualRate,
@@ -104,11 +107,18 @@ class CompoundInterestService {
     CompoundFrequency compoundFrequency = CompoundFrequency.monthly,
     int maxYears = 100,
   }) {
+    // Already at or above target - no growth needed.
+    if (principal >= target) return 0;
+
     final r = annualRate / 100;
     final n = compoundFrequency.periodsPerYear;
     final contributionPerPeriod = monthlyContribution * 12 / n;
-    double balance = principal;
 
+    // No mechanism for the balance to grow towards target - bail early
+    // instead of spinning for `maxYears` iterations.
+    if (r <= 0 && contributionPerPeriod <= 0) return maxYears;
+
+    double balance = principal;
     for (int year = 1; year <= maxYears; year++) {
       for (int period = 0; period < n; period++) {
         balance += balance * (r / n);
