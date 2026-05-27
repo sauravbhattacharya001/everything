@@ -45,8 +45,6 @@ class PredictabilityInfo {
 
 /// Service that analyses demo tracker data for cross-tracker patterns.
 class PatternDetectorService {
-  static final _rng = Random(42);
-
   // ── Tracker names ──────────────────────────────────────────────
   static const trackers = [
     'Mood',
@@ -64,13 +62,21 @@ class PatternDetectorService {
   ];
 
   // ── Demo data (30 days) with embedded correlations ─────────────
-  List<Map<String, List<double>>> generateDemoData() {
+  /// Generates 30 days of demo tracker data with embedded correlations.
+  ///
+  /// The RNG is seeded *per call* (default seed `42`) so this method is
+  /// deterministic — calling it twice on the same (or different) instances
+  /// returns equal data. Previously the RNG was a class-level `static final`
+  /// which advanced across calls, breaking demo previews and snapshot tests
+  /// (see issue #148).
+  List<Map<String, List<double>>> generateDemoData({int seed = 42}) {
     const days = 30;
+    final rng = Random(seed);
     final data = <String, List<double>>{};
 
     // Base random series
     List<double> base(double mean, double std) =>
-        List.generate(days, (_) => mean + _rng.nextDouble() * std * 2 - std);
+        List.generate(days, (_) => mean + rng.nextDouble() * std * 2 - std);
 
     final sleep = base(7, 1.5);
     final exercise = base(6000, 3000);
@@ -80,11 +86,11 @@ class PatternDetectorService {
 
     // Correlated series
     final mood = List.generate(days, (i) =>
-        5 + sleep[i] * 0.3 - caffeine[i] * 0.005 + exercise[i] * 0.0003 + (_rng.nextDouble() - 0.5));
+        5 + sleep[i] * 0.3 - caffeine[i] * 0.005 + exercise[i] * 0.0003 + (rng.nextDouble() - 0.5));
     final stress = List.generate(days, (i) =>
-        5 - sleep[i] * 0.2 + screenTime[i] * 0.3 + caffeine[i] * 0.003 + (_rng.nextDouble() - 0.5));
+        5 - sleep[i] * 0.2 + screenTime[i] * 0.3 + caffeine[i] * 0.003 + (rng.nextDouble() - 0.5));
     final productivity = List.generate(days, (i) =>
-        4 + sleep[i] * 0.25 + meditation[i] * 0.05 - stress[i] * 0.15 + (_rng.nextDouble() - 0.5));
+        4 + sleep[i] * 0.25 + meditation[i] * 0.05 - stress[i] * 0.15 + (rng.nextDouble() - 0.5));
     final heartRate = base(72, 8);
     final water = base(2000, 500);
     final calories = base(2200, 400);
