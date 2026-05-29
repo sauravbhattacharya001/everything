@@ -37,6 +37,12 @@ class BloodPressureService {
 
   // ── Summary ──
 
+  /// Computes aggregate statistics across all [entries].
+  ///
+  /// Returns a [BPSummary] with averages, min/max ranges, reading count,
+  /// an overall BP category derived from the mean systolic/diastolic, and
+  /// a breakdown of how many readings fall into each [BPCategory].
+  /// Returns zeroed values when [entries] is empty.
   BPSummary summarize(List<BloodPressureEntry> entries) {
     if (entries.isEmpty) {
       return const BPSummary(
@@ -97,6 +103,12 @@ class BloodPressureService {
 
   // ── Trend ──
 
+  /// Determines the systolic blood pressure trend over time.
+  ///
+  /// Splits [entries] into chronological halves and compares mean systolic
+  /// values.  A drop of ≥5 mmHg indicates [BPTrend.improving]; a rise of
+  /// ≥5 mmHg indicates [BPTrend.worsening]; otherwise [BPTrend.stable].
+  /// Returns [BPTrend.insufficient] when fewer than 4 readings are available.
   BPTrend trend(List<BloodPressureEntry> entries) {
     if (entries.length < 4) return BPTrend.insufficient;
 
@@ -116,6 +128,7 @@ class BloodPressureService {
     return BPTrend.stable;
   }
 
+  /// Returns a human-readable emoji + text label for the given [BPTrend].
   String trendLabel(BPTrend t) {
     switch (t) {
       case BPTrend.improving:
@@ -131,6 +144,7 @@ class BloodPressureService {
 
   // ── Entries for date range ──
 
+  /// Filters [entries] to those recorded strictly between [start] and [end].
   List<BloodPressureEntry> entriesInRange(
     List<BloodPressureEntry> entries,
     DateTime start,
@@ -141,6 +155,7 @@ class BloodPressureService {
         .toList();
   }
 
+  /// Filters [entries] to those recorded on the same calendar day as [date].
   List<BloodPressureEntry> entriesForDate(
     List<BloodPressureEntry> entries,
     DateTime date,
@@ -152,6 +167,12 @@ class BloodPressureService {
 
   // ── Insights ──
 
+  /// Generates a list of human-readable insight strings from [entries].
+  ///
+  /// Includes the overall average with category, pulse average (if tracked),
+  /// trend direction, variability warnings, time-of-day analysis (morning vs
+  /// at-rest comparison for potential white-coat effect), and lifestyle advice
+  /// based on the overall category.  Returns an empty list for empty input.
   List<String> generateInsights(List<BloodPressureEntry> entries) {
     final insights = <String>[];
     if (entries.isEmpty) return insights;

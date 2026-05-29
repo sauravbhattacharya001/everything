@@ -20,15 +20,21 @@ class Poll {
   })  : votes = votes ?? {},
         createdAt = createdAt ?? DateTime.now();
 
+  /// Total number of votes cast across all options.
   int get totalVotes => votes.values.fold(0, (a, b) => a + b);
 
+  /// Returns the number of votes for a specific [index], or 0 if none.
   int votesFor(int index) => votes[index] ?? 0;
 
+  /// Returns the fraction of total votes for [index] (0.0–1.0).
+  ///
+  /// Returns 0 when no votes have been cast.
   double percentFor(int index) {
     if (totalVotes == 0) return 0;
     return votesFor(index) / totalVotes;
   }
 
+  /// Index of the option with the most votes, or `null` if no votes cast.
   int? get winningIndex {
     if (totalVotes == 0) return null;
     int maxVotes = -1;
@@ -42,6 +48,7 @@ class Poll {
     return winner;
   }
 
+  /// Serializes this poll to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
         'id': id,
         'question': question,
@@ -70,6 +77,10 @@ class QuickPollService {
 
   List<Poll> get polls => List.unmodifiable(_polls);
 
+  /// Loads polls from local storage on first access.
+  ///
+  /// Subsequent calls are no-ops (idempotent). Call this before accessing
+  /// [polls] to ensure data is hydrated from disk.
   Future<void> load() async {
     if (_loaded) return;
     final raw = await StorageBackend.read(_storageKey);
@@ -84,6 +95,8 @@ class QuickPollService {
     await StorageBackend.write(_storageKey, jsonEncode(_polls.map((p) => p.toJson()).toList()));
   }
 
+  /// Creates a new poll with [question] and [options], persists it, and
+  /// returns the created [Poll] instance.
   Future<Poll> createPoll(String question, List<String> options) async {
     final poll = Poll(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -95,23 +108,28 @@ class QuickPollService {
     return poll;
   }
 
+  /// Records a single vote on [optionIndex] for the poll identified by
+  /// [pollId]. Throws if the poll is not found.
   Future<void> vote(String pollId, int optionIndex) async {
     final poll = _polls.firstWhere((p) => p.id == pollId);
     poll.votes[optionIndex] = (poll.votes[optionIndex] ?? 0) + 1;
     await _save();
   }
 
+  /// Marks the poll as closed, preventing further votes in the UI.
   Future<void> closePoll(String pollId) async {
     final poll = _polls.firstWhere((p) => p.id == pollId);
     poll.isClosed = true;
     await _save();
   }
 
+  /// Permanently removes a poll from storage.
   Future<void> deletePoll(String pollId) async {
     _polls.removeWhere((p) => p.id == pollId);
     await _save();
   }
 
+  /// Clears all votes and reopens the poll for new responses.
   Future<void> resetVotes(String pollId) async {
     final poll = _polls.firstWhere((p) => p.id == pollId);
     poll.votes.clear();
