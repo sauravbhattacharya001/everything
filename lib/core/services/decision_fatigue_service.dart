@@ -22,284 +22,89 @@ import 'dart:math';
 
 /// Decision weight categories.
 enum DecisionWeight {
-  trivial,
-  minor,
-  moderate,
-  significant,
-  critical;
+  trivial('Trivial', 1.0, '·'),
+  minor('Minor', 2.5, '○'),
+  moderate('Moderate', 5.0, '●'),
+  significant('Significant', 10.0, '◆'),
+  critical('Critical', 20.0, '★');
 
-  String get label {
-    switch (this) {
-      case DecisionWeight.trivial:
-        return 'Trivial';
-      case DecisionWeight.minor:
-        return 'Minor';
-      case DecisionWeight.moderate:
-        return 'Moderate';
-      case DecisionWeight.significant:
-        return 'Significant';
-      case DecisionWeight.critical:
-        return 'Critical';
-    }
-  }
+  final String label;
 
   /// Cognitive cost multiplier.
-  double get cost {
-    switch (this) {
-      case DecisionWeight.trivial:
-        return 1.0;
-      case DecisionWeight.minor:
-        return 2.5;
-      case DecisionWeight.moderate:
-        return 5.0;
-      case DecisionWeight.significant:
-        return 10.0;
-      case DecisionWeight.critical:
-        return 20.0;
-    }
-  }
+  final double cost;
+  final String emoji;
 
-  String get emoji {
-    switch (this) {
-      case DecisionWeight.trivial:
-        return '·';
-      case DecisionWeight.minor:
-        return '○';
-      case DecisionWeight.moderate:
-        return '●';
-      case DecisionWeight.significant:
-        return '◆';
-      case DecisionWeight.critical:
-        return '★';
-    }
-  }
+  const DecisionWeight(this.label, this.cost, this.emoji);
 }
 
 /// Decision category for pattern grouping.
 enum DecisionCategory {
-  scheduling,
-  financial,
-  social,
-  dietary,
-  professional,
-  creative,
-  health,
-  logistics,
-  purchasing,
-  prioritization;
+  scheduling('Scheduling', '📅'),
+  financial('Financial', '💰'),
+  social('Social', '👥'),
+  dietary('Dietary', '🍽️'),
+  professional('Professional', '💼'),
+  creative('Creative', '🎨'),
+  health('Health', '🏥'),
+  logistics('Logistics', '🚚'),
+  purchasing('Purchasing', '🛒'),
+  prioritization('Prioritization', '🎯');
 
-  String get label {
-    switch (this) {
-      case DecisionCategory.scheduling:
-        return 'Scheduling';
-      case DecisionCategory.financial:
-        return 'Financial';
-      case DecisionCategory.social:
-        return 'Social';
-      case DecisionCategory.dietary:
-        return 'Dietary';
-      case DecisionCategory.professional:
-        return 'Professional';
-      case DecisionCategory.creative:
-        return 'Creative';
-      case DecisionCategory.health:
-        return 'Health';
-      case DecisionCategory.logistics:
-        return 'Logistics';
-      case DecisionCategory.purchasing:
-        return 'Purchasing';
-      case DecisionCategory.prioritization:
-        return 'Prioritization';
-    }
-  }
+  final String label;
+  final String emoji;
 
-  String get emoji {
-    switch (this) {
-      case DecisionCategory.scheduling:
-        return '📅';
-      case DecisionCategory.financial:
-        return '💰';
-      case DecisionCategory.social:
-        return '👥';
-      case DecisionCategory.dietary:
-        return '🍽️';
-      case DecisionCategory.professional:
-        return '💼';
-      case DecisionCategory.creative:
-        return '🎨';
-      case DecisionCategory.health:
-        return '🏥';
-      case DecisionCategory.logistics:
-        return '🚚';
-      case DecisionCategory.purchasing:
-        return '🛒';
-      case DecisionCategory.prioritization:
-        return '🎯';
-    }
-  }
+  const DecisionCategory(this.label, this.emoji);
 }
 
 /// Fatigue level classification.
 enum FatigueLevel {
-  fresh,
-  alert,
-  mildlyTired,
-  fatigued,
-  exhausted;
+  fresh('Fresh', '🌟', 80.0),
+  alert('Alert', '✅', 60.0),
+  mildlyTired('Mildly Tired', '😐', 40.0),
+  fatigued('Fatigued', '😓', 20.0),
+  exhausted('Exhausted', '🧠💤', 0.0);
 
-  String get label {
-    switch (this) {
-      case FatigueLevel.fresh:
-        return 'Fresh';
-      case FatigueLevel.alert:
-        return 'Alert';
-      case FatigueLevel.mildlyTired:
-        return 'Mildly Tired';
-      case FatigueLevel.fatigued:
-        return 'Fatigued';
-      case FatigueLevel.exhausted:
-        return 'Exhausted';
-    }
-  }
-
-  String get emoji {
-    switch (this) {
-      case FatigueLevel.fresh:
-        return '🌟';
-      case FatigueLevel.alert:
-        return '✅';
-      case FatigueLevel.mildlyTired:
-        return '😐';
-      case FatigueLevel.fatigued:
-        return '😓';
-      case FatigueLevel.exhausted:
-        return '🧠💤';
-    }
-  }
+  final String label;
+  final String emoji;
 
   /// Threshold for capacity remaining (0-100).
-  double get capacityThreshold {
-    switch (this) {
-      case FatigueLevel.fresh:
-        return 80.0;
-      case FatigueLevel.alert:
-        return 60.0;
-      case FatigueLevel.mildlyTired:
-        return 40.0;
-      case FatigueLevel.fatigued:
-        return 20.0;
-      case FatigueLevel.exhausted:
-        return 0.0;
-    }
-  }
+  final double capacityThreshold;
+
+  const FatigueLevel(this.label, this.emoji, this.capacityThreshold);
 }
 
 /// Type of fatigue signal detected.
 enum FatigueSignalType {
-  decisionSpeedDrop,
-  choiceAvoidance,
-  defaultBias,
-  impulsiveChoice,
-  optionOverload,
-  reversalFrequency,
-  deliberationCollapse,
-  categorySwitch;
+  decisionSpeedDrop('Speed Degradation', 'Decisions taking significantly longer than baseline'),
+  choiceAvoidance('Choice Avoidance', 'Postponing or delegating decisions that normally get made'),
+  defaultBias('Default Bias', 'Choosing defaults/status-quo more often than usual'),
+  impulsiveChoice('Impulsive Choice', 'Making rapid choices without normal deliberation'),
+  optionOverload('Option Overload', 'Feeling overwhelmed by number of alternatives'),
+  reversalFrequency('Reversal Frequency', 'Changing mind more often than baseline'),
+  deliberationCollapse('Deliberation Collapse', 'Skipping comparison/evaluation steps'),
+  categorySwitch('Category Switch Cost', 'Rapid switching between unrelated decision types');
 
-  String get label {
-    switch (this) {
-      case FatigueSignalType.decisionSpeedDrop:
-        return 'Speed Degradation';
-      case FatigueSignalType.choiceAvoidance:
-        return 'Choice Avoidance';
-      case FatigueSignalType.defaultBias:
-        return 'Default Bias';
-      case FatigueSignalType.impulsiveChoice:
-        return 'Impulsive Choice';
-      case FatigueSignalType.optionOverload:
-        return 'Option Overload';
-      case FatigueSignalType.reversalFrequency:
-        return 'Reversal Frequency';
-      case FatigueSignalType.deliberationCollapse:
-        return 'Deliberation Collapse';
-      case FatigueSignalType.categorySwitch:
-        return 'Category Switch Cost';
-    }
-  }
+  final String label;
+  final String description;
 
-  String get description {
-    switch (this) {
-      case FatigueSignalType.decisionSpeedDrop:
-        return 'Decisions taking significantly longer than baseline';
-      case FatigueSignalType.choiceAvoidance:
-        return 'Postponing or delegating decisions that normally get made';
-      case FatigueSignalType.defaultBias:
-        return 'Choosing defaults/status-quo more often than usual';
-      case FatigueSignalType.impulsiveChoice:
-        return 'Making rapid choices without normal deliberation';
-      case FatigueSignalType.optionOverload:
-        return 'Feeling overwhelmed by number of alternatives';
-      case FatigueSignalType.reversalFrequency:
-        return 'Changing mind more often than baseline';
-      case FatigueSignalType.deliberationCollapse:
-        return 'Skipping comparison/evaluation steps';
-      case FatigueSignalType.categorySwitch:
-        return 'Rapid switching between unrelated decision types';
-    }
-  }
+  const FatigueSignalType(this.label, this.description);
 }
 
 /// Recommendation type.
 enum RecommendationType {
-  batchSimilar,
-  deferHeavy,
-  eliminateOptions,
-  useHeuristic,
-  delegateChoice,
-  restFirst,
-  scheduleForPeak,
-  simplifyFraming;
+  batchSimilar('Batch Similar Decisions', '📦'),
+  deferHeavy('Defer Heavy Decisions', '⏰'),
+  eliminateOptions('Eliminate Options', '✂️'),
+  useHeuristic('Use Heuristic Rule', '🧭'),
+  delegateChoice('Delegate Choice', '🤝'),
+  restFirst('Rest Before Deciding', '☕'),
+  scheduleForPeak('Schedule for Peak Window', '🎯'),
+  simplifyFraming('Simplify the Framing', '🔍');
 
-  String get label {
-    switch (this) {
-      case RecommendationType.batchSimilar:
-        return 'Batch Similar Decisions';
-      case RecommendationType.deferHeavy:
-        return 'Defer Heavy Decisions';
-      case RecommendationType.eliminateOptions:
-        return 'Eliminate Options';
-      case RecommendationType.useHeuristic:
-        return 'Use Heuristic Rule';
-      case RecommendationType.delegateChoice:
-        return 'Delegate Choice';
-      case RecommendationType.restFirst:
-        return 'Rest Before Deciding';
-      case RecommendationType.scheduleForPeak:
-        return 'Schedule for Peak Window';
-      case RecommendationType.simplifyFraming:
-        return 'Simplify the Framing';
-    }
-  }
+  final String label;
+  final String emoji;
 
-  String get emoji {
-    switch (this) {
-      case RecommendationType.batchSimilar:
-        return '📦';
-      case RecommendationType.deferHeavy:
-        return '⏰';
-      case RecommendationType.eliminateOptions:
-        return '✂️';
-      case RecommendationType.useHeuristic:
-        return '🧭';
-      case RecommendationType.delegateChoice:
-        return '🤝';
-      case RecommendationType.restFirst:
-        return '☕';
-      case RecommendationType.scheduleForPeak:
-        return '🎯';
-      case RecommendationType.simplifyFraming:
-        return '🔍';
-    }
-  }
+  const RecommendationType(this.label, this.emoji);
 }
 
 // ---------------------------------------------------------------------------
