@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../utils/date_streak_calculator.dart';
 import '../utils/date_utils.dart';
 
 /// A breathing pattern defines the phases and timing of a breathing exercise.
@@ -252,24 +253,18 @@ class BreathingExerciseService {
       totalSeconds += e.totalDurationSeconds;
     }
 
-    // Current streak: consecutive days with a session, walking back from today
-    final daySet = <String>{};
-    for (final e in entries) {
-      daySet.add(AppDateUtils.dateKey(e.timestamp));
-    }
-    int streak = 0;
-    var day = DateTime(today.year, today.month, today.day);
-    while (daySet.contains(AppDateUtils.dateKey(day))) {
-      streak++;
-      day = day.subtract(const Duration(days: 1));
-    }
+    // Current streak via shared DateStreakCalculator (DST-safe).
+    final streak = DateStreakCalculator.compute(
+      entries.map((e) => e.timestamp),
+      referenceDate: today,
+    );
 
     return BreathingWeeklyStats(
       totalSessions: weekEntries.length,
       totalMinutes: (totalSeconds / 60).round(),
       totalCycles: totalCycles,
       byPattern: byPattern,
-      currentStreak: streak,
+      currentStreak: streak.current,
     );
   }
 }

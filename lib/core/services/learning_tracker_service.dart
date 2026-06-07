@@ -1,4 +1,5 @@
 import '../../models/learning_item.dart';
+import '../utils/date_streak_calculator.dart';
 
 /// Service for managing learning items and analytics.
 class LearningTrackerService {
@@ -114,28 +115,18 @@ class LearningTrackerService {
   }
 
   /// Current study streak (consecutive days with sessions).
+  ///
+  /// Uses [DateStreakCalculator] which normalises dates to UTC midnight,
+  /// making the result immune to DST transitions.
   int get currentStreak {
-    final now = DateTime.now();
-    final allDates = <DateTime>{};
+    final allDates = <DateTime>[];
     for (final item in _items) {
       for (final session in item.sessions) {
-        allDates.add(DateTime(session.date.year, session.date.month, session.date.day));
+        allDates.add(session.date);
       }
     }
     if (allDates.isEmpty) return 0;
-
-    int streak = 0;
-    var check = DateTime(now.year, now.month, now.day);
-    // Allow today or yesterday as start
-    if (!allDates.contains(check)) {
-      check = check.subtract(const Duration(days: 1));
-      if (!allDates.contains(check)) return 0;
-    }
-    while (allDates.contains(check)) {
-      streak++;
-      check = check.subtract(const Duration(days: 1));
-    }
-    return streak;
+    return DateStreakCalculator.compute(allDates).current;
   }
 
   /// Suggested next items to study (in-progress by priority, then planned).

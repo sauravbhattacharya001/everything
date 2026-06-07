@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../utils/date_streak_calculator.dart';
 import '../utils/date_utils.dart';
 
 /// Category for daily challenges.
@@ -192,52 +193,23 @@ class DailyChallengeService {
   }
 
   /// Get current streak of consecutive completed days.
+  ///
+  /// Uses [DateStreakCalculator] for DST-safe, deduplicated streak logic.
   int getCurrentStreak() {
     if (_history.isEmpty) return 0;
-    final completed = _history.where((r) => r.completed).toList();
-    if (completed.isEmpty) return 0;
-
-    int streak = 0;
-    var checkDate = DateTime.now();
-
-    // If today isn't completed yet, start checking from yesterday
-    if (!isTodayCompleted) {
-      checkDate = checkDate.subtract(const Duration(days: 1));
-    }
-
-    while (true) {
-      final key = AppDateUtils.dateKey(checkDate);
-      if (completed.any((r) => AppDateUtils.dateKey(r.date) == key)) {
-        streak++;
-        checkDate = checkDate.subtract(const Duration(days: 1));
-      } else {
-        break;
-      }
-    }
-    return streak;
+    final completedDates = _history
+        .where((r) => r.completed)
+        .map((r) => r.date);
+    return DateStreakCalculator.compute(completedDates).current;
   }
 
   /// Get longest streak ever.
   int getLongestStreak() {
     if (_history.isEmpty) return 0;
-    final completed = _history.where((r) => r.completed).toList();
-    if (completed.isEmpty) return 0;
-
-    final dates = completed.map((r) => AppDateUtils.dateKey(r.date)).toSet().toList()..sort();
-    int longest = 1;
-    int current = 1;
-
-    for (int i = 1; i < dates.length; i++) {
-      final prev = _parseKey(dates[i - 1]);
-      final curr = _parseKey(dates[i]);
-      if (curr.difference(prev).inDays == 1) {
-        current++;
-        if (current > longest) longest = current;
-      } else {
-        current = 1;
-      }
-    }
-    return longest;
+    final completedDates = _history
+        .where((r) => r.completed)
+        .map((r) => r.date);
+    return DateStreakCalculator.compute(completedDates).longest;
   }
 
   /// Get completions per category.
@@ -265,9 +237,4 @@ class DailyChallengeService {
   }
 
   String _todayKey() => AppDateUtils.dateKey(DateTime.now());
-  DateTime _parseKey(String key) {
-    final parts = key.split('-');
-    return DateTime(
-        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-  }
 }

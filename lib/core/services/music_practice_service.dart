@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../utils/date_streak_calculator.dart';
 import 'storage_backend.dart';
 
 /// Music Practice Tracker service — log instrument practice sessions,
@@ -71,38 +72,22 @@ class MusicPracticeService {
   // ── Analytics ──
 
   /// Current streak in consecutive days.
+  ///
+  /// Delegates to [DateStreakCalculator] for DST-safe calendar-day
+  /// arithmetic instead of manual day-walking.
   static int currentStreak(List<PracticeSession> sessions) {
     if (sessions.isEmpty) return 0;
-    final days = _uniqueDays(sessions);
-    final today = _dateOnly(DateTime.now());
-    int streak = 0;
-    var check = today;
-    // Allow today or yesterday as starting point
-    if (!days.contains(check)) {
-      check = check.subtract(const Duration(days: 1));
-      if (!days.contains(check)) return 0;
-    }
-    while (days.contains(check)) {
-      streak++;
-      check = check.subtract(const Duration(days: 1));
-    }
-    return streak;
+    return DateStreakCalculator.compute(
+      sessions.map((s) => s.date),
+    ).current;
   }
 
   /// Longest ever streak.
   static int longestStreak(List<PracticeSession> sessions) {
     if (sessions.isEmpty) return 0;
-    final days = _uniqueDays(sessions).toList()..sort();
-    int longest = 1, current = 1;
-    for (int i = 1; i < days.length; i++) {
-      if (days[i].difference(days[i - 1]).inDays == 1) {
-        current++;
-        if (current > longest) longest = current;
-      } else {
-        current = 1;
-      }
-    }
-    return longest;
+    return DateStreakCalculator.compute(
+      sessions.map((s) => s.date),
+    ).longest;
   }
 
   /// Total minutes this week (Mon–Sun).
@@ -135,9 +120,6 @@ class MusicPracticeService {
     }
     return map;
   }
-
-  static Set<DateTime> _uniqueDays(List<PracticeSession> sessions) =>
-      sessions.map((s) => _dateOnly(s.date)).toSet();
 
   static DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 }
