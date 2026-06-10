@@ -1,20 +1,59 @@
 /// Data and logic for an interactive periodic table of elements.
+///
+/// Exposes an immutable [Element] value type plus [PeriodicTableService],
+/// a small static facade for looking elements up by number, symbol, name or
+/// category. All 118 confirmed elements are bundled as compile-time
+/// constants, so lookups are offline and allocation-free.
 
+/// A single chemical element and its commonly displayed properties.
+///
+/// Optional numeric properties (electronegativity, density, melting/boiling
+/// points, discovery year) are `null` when no reliable value exists — most
+/// often for the heaviest synthetic elements.
 class Element {
+  /// Atomic number (proton count, `Z`); unique and 1-based.
   final int atomicNumber;
+
+  /// One- or two-letter element symbol, e.g. `H`, `He`, `Uue`.
   final String symbol;
+
+  /// Full element name, e.g. `Hydrogen`.
   final String name;
+
+  /// Standard atomic weight in unified atomic mass units (u). For elements
+  /// with no stable isotope this is the mass number of the most stable one.
   final double atomicMass;
+
+  /// Element category label (one of [PeriodicTableService.categories]).
   final String category;
+
+  /// Group (column) number, 1–18. Lanthanides/actinides use group 3.
   final int group;
+
+  /// Period (row) number, 1–7.
   final int period;
+
+  /// Ground-state electron configuration, e.g. `[He] 2s¹`.
   final String electronConfig;
+
+  /// Pauling electronegativity, or `null` if not measured/applicable.
   final double? electronegativity;
+
+  /// Density at STP in g/cm³, or `null` if unknown.
   final double? density; // g/cm³
+
+  /// Melting point in kelvin, or `null` if unknown.
   final double? meltingPoint; // K
+
+  /// Boiling point in kelvin, or `null` if unknown.
   final double? boilingPoint; // K
+
+  /// Year of discovery (negative values denote BCE), or `null` if unknown.
   final int? yearDiscovered;
 
+  /// Creates an immutable [Element]. Required fields are always known for
+  /// every confirmed element; optional fields may be omitted when no
+  /// reliable value exists.
   const Element({
     required this.atomicNumber,
     required this.symbol,
@@ -31,11 +70,17 @@ class Element {
     this.yearDiscovered,
   });
 
+  /// [atomicMass] formatted for display: whole numbers show no decimals,
+  /// otherwise three decimal places (e.g. `1` for He-rounded, `1.008`).
   String get massFormatted => atomicMass.toStringAsFixed(
       atomicMass == atomicMass.roundToDouble() ? 0 : 3);
 }
 
+/// Static facade over the bundled [Element] dataset.
 class PeriodicTableService {
+  /// Canonical element category labels, ordered roughly by the periodic
+  /// table's metallic-to-nonmetallic progression. Used for filtering and
+  /// legend rendering.
   static const categories = [
     'Alkali Metal',
     'Alkaline Earth Metal',
@@ -49,6 +94,11 @@ class PeriodicTableService {
     'Actinide',
   ];
 
+  /// Returns elements matching [query] (case-insensitive).
+  ///
+  /// Matches when the trimmed query is a substring of the element name or
+  /// category, equals the symbol exactly, or equals the atomic number.
+  /// An empty query returns the full [elements] list unchanged.
   static List<Element> search(String query) {
     final q = query.toLowerCase().trim();
     if (q.isEmpty) return elements;
@@ -60,6 +110,8 @@ class PeriodicTableService {
     }).toList();
   }
 
+  /// Returns the element with atomic number [n], or `null` if [n] is outside
+  /// the supported 1–118 range.
   static Element? byNumber(int n) {
     try {
       return elements.firstWhere((e) => e.atomicNumber == n);

@@ -15,7 +15,27 @@ class PasswordStrengthService {
   static final _reSymbol = RegExp(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`]');
   static final _reNonAlpha = RegExp(r'[^a-zA-Z]');
 
-  /// Analyze a password and return a detailed strength report.
+  /// Analyze a [password] and return a detailed [PasswordAnalysis] report.
+  ///
+  /// The analysis is purely local and deterministic — no network calls and
+  /// no external word lists are consulted. It combines four signals:
+  ///
+  /// * **Entropy** — Shannon entropy in bits, computed as
+  ///   `length * log2(charsetSize)`, where `charsetSize` is the size of the
+  ///   alphabet the password draws from (lowercase 26, uppercase 26,
+  ///   digits 10, common symbols 33, any non-ASCII rune +100).
+  /// * **Crack time** — a rough offline-attack estimate assuming an
+  ///   attacker can try 10 billion (1e10) guesses per second against the
+  ///   full key space (`2^entropy`).
+  /// * **Pattern detection** — flags sequential runs, repeated patterns,
+  ///   keyboard walks, common passwords and excessive repetition.
+  /// * **Composite score** — a 0–100 value blending the above into a single
+  ///   number mapped to a human label (`Very Weak` … `Very Strong`).
+  ///
+  /// An empty [password] short-circuits to a zeroed report labelled
+  /// `'Empty'`. The returned report is safe to display field-by-field; the
+  /// original [password] is echoed back in [PasswordAnalysis.password] for
+  /// convenience but is never logged or transmitted.
   static PasswordAnalysis analyze(String password) {
     if (password.isEmpty) {
       return PasswordAnalysis(
@@ -154,6 +174,12 @@ class PasswordStrengthService {
     );
   }
 
+  /// Render a crack-time estimate in [seconds] as a human-friendly string
+  /// (e.g. `'42 minutes'`, `'3 years'`, `'2 billion years'`).
+  ///
+  /// Buckets escalate from `'Instant'` (< 1 ms) up to billions of years so
+  /// the UI never shows an unreadable number of seconds. Year-scale
+  /// thresholds use a 365-day year for simplicity.
   static String _formatCrackTime(double seconds) {
     if (seconds < 0.001) return 'Instant';
     if (seconds < 1) return '< 1 second';
@@ -175,6 +201,11 @@ class PasswordStrengthService {
     return '${(seconds / (86400 * 365 * 1e9)).toStringAsFixed(0)} billion years';
   }
 
+  /// Whether [pw] contains three consecutive characters whose code units
+  /// increase by one each step (e.g. `abc`, `123`, `xyz`).
+  ///
+  /// Comparison is done on UTF-16 code units, so it only catches ascending
+  /// runs within a contiguous block of the character set.
   static bool _hasSequentialChars(String pw) {
     for (int i = 0; i < pw.length - 2; i++) {
       if (pw.codeUnitAt(i) + 1 == pw.codeUnitAt(i + 1) &&
@@ -185,6 +216,16 @@ class PasswordStrengthService {
     return false;
   }
 
+  /// Whether [pw] is entirely composed of a repeated prefix
+  /// (e.g. `abcabc`, `xyxyxy`).
+  ///
+  /// Tries every candidate block length from 2 up to `pw.length ~/ 2` and
+  /// reports a match when the whole string is that block tiled end-to-end.
+  /// Returns `false` for passwords shorter than four characters.
+  ///
+  /// Implementation note: the check compares characters by index modulo the
+  /// block length rather than allocating concatenated candidate strings,
+  /// keeping it allocation-free for the keystroke-driven UI.
   static bool _hasRepeatedPattern(String pw) {
     if (pw.length < 4) return false;
     // Check if pw consists entirely of a repeated prefix of length `len`.
@@ -203,6 +244,11 @@ class PasswordStrengthService {
     return false;
   }
 
+  /// Whether [pw] contains a well-known keyboard pattern such as `qwerty`,
+  /// `asdf`, `zxcv` or a straight digit run.
+  ///
+  /// [pw] is expected to already be lower-cased by the caller. The check is
+  /// a substring match against a small curated list of adjacent-key runs.
   static bool _isKeyboardWalk(String pw) {
     const walks = [
       'qwerty', 'asdf', 'zxcv', 'qwertyuiop', 'asdfghjkl',
@@ -214,12 +260,23 @@ class PasswordStrengthService {
     return false;
   }
 
+  /// Whether every letter in [pw] shares the same case (all upper or all
+  /// lower), ignoring digits and symbols.
+  ///
+  /// Returns `false` when [pw] contains no letters at all, since case is
+  /// undefined in that case.
   static bool _isAllSameCase(String pw) {
     final letters = pw.replaceAll(_reNonAlpha, '');
     if (letters.isEmpty) return false;
     return letters == letters.toUpperCase() || letters == letters.toLowerCase();
   }
 
+  /// Whether [pw] exactly matches a small built-in set of the most common
+  /// breached/default passwords (e.g. `password`, `123456`, `admin`).
+  ///
+  /// [pw] is expected to already be lower-cased by the caller. A match here
+  /// heavily penalizes the composite score because such passwords are
+  /// trivially guessed regardless of their nominal entropy.
   static bool _isCommonPassword(String pw) {
     const common = {
       'password', '123456', '12345678', 'qwerty', 'abc123', 'monkey',
@@ -234,25 +291,66 @@ class PasswordStrengthService {
   }
 }
 
-/// Result of password strength analysis.
+/// Immutable result of [PasswordStrengthService.analyze].
+///
+/// All fields are computed locally; no part of this object leaves the device
+/// unless the caller chooses to surface it in the UI.
 class PasswordAnalysis {
+  /// The password that was analyzed, echoed back verbatim.
   final String password;
+
+  /// Composite strength score in the range `0`–`100` (higher is stronger).
   final int score;
+
+  /// Human-readable strength band derived from [score]:
+  /// `Very Weak`, `Weak`, `Fair`, `Strong`, `Very Strong` (or `Empty`).
   final String label;
+
+  /// Estimated Shannon entropy in **bits** (`length * log2(charsetSize)`).
   final double entropy;
+
+  /// Estimated time to brute-force the full key space, in **seconds**,
+  /// assuming 1e10 guesses/second. Can be astronomically large.
   final double crackTimeSeconds;
+
+  /// [crackTimeSeconds] formatted as a friendly string (e.g. `'3 years'`).
   final String crackTimeLabel;
+
+  /// Human-readable weaknesses detected (sequential chars, common password,
+  /// keyboard walk, high repetition, etc.). Empty when none were found.
   final List<String> patterns;
+
+  /// Actionable tips for strengthening the password. Empty when the password
+  /// is already strong and no improvements are suggested.
   final List<String> suggestions;
+
+  /// Size of the character alphabet the password draws from, used as the
+  /// base for the [entropy] calculation.
   final int charsetSize;
+
+  /// Whether the password contains at least one uppercase letter `A`–`Z`.
   final bool hasUpper;
+
+  /// Whether the password contains at least one lowercase letter `a`–`z`.
   final bool hasLower;
+
+  /// Whether the password contains at least one digit `0`–`9`.
   final bool hasDigit;
+
+  /// Whether the password contains at least one ASCII symbol.
   final bool hasSymbol;
+
+  /// Whether the password contains any non-ASCII rune (code point > 127).
   final bool hasUnicode;
+
+  /// Number of distinct runes in the password.
   final int uniqueChars;
+
+  /// Number of repeated runes, i.e. `length - uniqueChars`.
   final int repeatedChars;
 
+  /// Creates an immutable password analysis result. Normally obtained via
+  /// [PasswordStrengthService.analyze] rather than constructed directly.
   const PasswordAnalysis({
     required this.password,
     required this.score,
